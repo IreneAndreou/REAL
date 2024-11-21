@@ -1,0 +1,23 @@
+name: real
+channels:
+  - conda-forge
+dependencies:
+  - python=3.9  # Ensure compatibility with libraries
+  - numpy
+  - pandas
+  - matplotlib
+  - scikit-learn
+  - xgboost
+  - tensorflow
+  - pytorch
+  - torchvision
+  - uproot
+  - optuna
+  - scipy
+  - tqdm
+  - mplhep
+  - seaborn  # Optional, used for enhanced plotting
+  - pip
+  - pip:
+      - joblib  # If not included in conda-forge
+      - uproot4  # Sometimes the specific version is needed
