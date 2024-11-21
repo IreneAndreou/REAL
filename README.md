@@ -10,7 +10,7 @@ REAL improves the modeling of jet to τ<sub>h</sub> backgrounds by leveraging ad
 ## Installation and Setup
 Clone the repository:
 ```bash
-git clone https://IreneAndreou//REAL.git
+git clone https://github.com/IreneAndreou/REAL.git
 cd REAL
 ```
 
