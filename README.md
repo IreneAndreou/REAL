@@ -4,11 +4,22 @@ REAL improves the modeling of jet to τ<sub>h</sub> backgrounds by leveraging ad
 
 ## Features
 - **Adaptive Reweighting**: Uses ML techniques to reweight a high-dimensional dataset, mapping events that fail a tau ID onto those that pass the tau ID.
-- **Jet to \(\tau_h\) Fake Factors**: Focuses on improving modeling for jet to τ<sub>h</sub> backgrounds.
+- **Jet to τ<sub>h</sub> Fake Factors**: Focuses on improving modeling for jet to τ<sub>h</sub> backgrounds.
 - **Generalization**: Plans to expand to all particle misidentification rates in future iterations.
 
-## Installation
+## Installation and Setup
 Clone the repository:
 ```bash
 git clone https://IreneAndreou//REAL.git
 cd REAL
+
+Create and Activate the Conda Environment:
+Use the provided environment.yml file to create and activate the environment:
+
+Create the environment:
+```bash
+conda env create -f environment.yml
+
+Activate the environment:
+```bash
+conda activate real
