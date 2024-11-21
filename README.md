@@ -13,14 +13,14 @@ Clone the repository:
 git clone https://IreneAndreou//REAL.git
 cd REAL
 ```
-Create and Activate the Conda Environment:
-Use the provided environment.yml file to create and activate the environment:
 
-Create the environment:
+### Use the provided environment.yml file to create and activate the environment:
+
 ```bash
 conda env create -f environment.yml
 ```
-Activate the environment:
+
+### Activate the environment:
 ```bash
 conda activate real
 ```
