@@ -1,2 +1,14 @@
-# REAL
-REAL (Reweighting Events using Adaptive Learning) improves the modeling of jet to hadronic tau backgrounds using machine learning techniques like BDTs for multi-dimensional reweighting. It addresses limitations of traditional methods, enabling more accurate background estimation.
+# REAL: Reweighting Events using Adaptive Learning
+
+REAL improves the modeling of jet to \(\tau_h\) backgrounds by leveraging advanced machine learning (ML) techniques such as Boosted Decision Trees (BDTs). By addressing the limitations of traditional fake factor methods, REAL enables more accurate multi-dimensional reweighting and background estimation.
+
+## Features
+- **Adaptive Reweighting**: Uses ML techniques to reweight a high-dimensional dataset, mapping events that fail a tau ID onto those that pass the tau ID.
+- **Jet to \(\tau_h\) Fake Factors**: Focuses on improving modeling for jet to \(\tau_h\) backgrounds.
+- **Generalization**: Plans to expand to all particle misidentification rates in future iterations.
+
+## Installation
+Clone the repository:
+```bash
+git clone https://IreneAndreou//REAL.git
+cd REAL
