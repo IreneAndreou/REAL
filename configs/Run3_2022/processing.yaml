@@ -1,0 +1,16 @@
+input_files:
+  - "data_all_events_Run3_2022.root"
+  - "mc_all_events_Run3_2022.root"
+output_dir: "/vols/cms/ia2318/REAL/data/Run3_2022/processed"
+
+selections:
+
+  data_iso:
+    condition: "(idDeepTau2018v2p5VSjet_{tau_index} > 5) & (os == 0)"
+  data_aiso:
+    condition: "(idDeepTau2018v2p5VSjet_{tau_index} <= 5) & (idDeepTau2018v2p5VSjet_{tau_index} >= 0) & (os == 0)"
+
+  mc_iso:
+    condition: "(idDeepTau2018v2p5VSjet_{tau_index} > 5) & (os == 0) & (wt_sf < 0.0)"
+  mc_aiso:
+    condition: "(idDeepTau2018v2p5VSjet_{tau_index} <= 5) & (idDeepTau2018v2p5VSjet_{tau_index} >= 0) & (os == 0) & (wt_sf > 0.0)"

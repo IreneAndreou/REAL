@@ -26,7 +26,7 @@ def merge_files(filenames, dest_dir, target_file):
     files_to_merge = " ".join(
         [os.path.join(dest_dir, f"{filename}_scaled.root") for filename in filenames]
     )
-    os.system(f"hadd -f {target_file} {files_to_merge}")  #TODO: check why data throws TObjArray::At and index 13 out of bounds error
+    os.system(f"hadd -f {target_file} {files_to_merge}")  # TODO: check why data throws TObjArray::At and index 13 out of bounds error
 
 
 def main():
