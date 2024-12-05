@@ -1,0 +1,181 @@
+DYto2L_M-50_1J_madgraphMLM:
+  eff: 145286646
+  filter_efficiency: 1.0
+  xs: 6282.6
+DYto2L_M-50_2J_madgraphMLM:
+  eff: 145286646
+  filter_efficiency: 1.0
+  xs: 6282.6
+DYto2L_M-50_3J_madgraphMLM:
+  eff: 145286646
+  filter_efficiency: 1.0
+  xs: 6282.6
+DYto2L_M-50_4J_madgraphMLM:
+  eff: 145286646
+  filter_efficiency: 1.0
+  xs: 6282.6
+DYto2L_M-50_madgraphMLM:
+  eff: 145286646
+  filter_efficiency: 1.0
+  xs: 6282.6
+DYto2L_M-50_madgraphMLM_ext1:
+  eff: 145286646
+  filter_efficiency: 1.0
+  xs: 6282.6
+GluGluHTo2Tau_UncorrelatedDecay_CPodd_Filtered_ProdAndDecay:
+  eff: 7185840
+  filter_efficiency: 0.3848
+  xs: 3.2759
+GluGluHTo2Tau_UncorrelatedDecay_CPodd_UnFiltered_ProdAndDecay:
+  eff: 159712
+  filter_efficiency: 1.0
+  xs: 3.2759
+GluGluHTo2Tau_UncorrelatedDecay_MM_Filtered_ProdAndDecay:
+  eff: 6424278
+  filter_efficiency: 0.3848
+  xs: 3.2759
+GluGluHTo2Tau_UncorrelatedDecay_MM_UnFiltered_ProdAndDecay:
+  eff: 159083
+  filter_efficiency: 1.0
+  xs: 3.2759
+GluGluHTo2Tau_UncorrelatedDecay_SM_Filtered_ProdAndDecay:
+  eff: 6703604
+  filter_efficiency: 0.3847
+  xs: 3.2759
+GluGluHTo2Tau_UncorrelatedDecay_SM_UnFiltered_ProdAndDecay:
+  eff: 158678
+  filter_efficiency: 1.0
+  xs: 3.2759
+ST_t-channel_antitop_4f_InclusiveDecays:
+  eff: 1325389
+  filter_efficiency: 1.0
+  xs: 75.47
+ST_t-channel_top_4f_InclusiveDecays:
+  eff: 2737505
+  filter_efficiency: 1.0
+  xs: 123.8
+ST_tW_antitop_2L2Nu:
+  eff: 4901541
+  filter_efficiency: 1.0
+  xs: 3.8
+ST_tW_antitop_2L2Nu_ext1:
+  eff: 4901541
+  filter_efficiency: 1.0
+  xs: 3.8
+ST_tW_antitop_LNu2Q:
+  eff: 9224089
+  filter_efficiency: 1.0
+  xs: 15.9
+ST_tW_antitop_LNu2Q_ext1:
+  eff: 9224089
+  filter_efficiency: 1.0
+  xs: 15.9
+ST_tW_top_2L2Nu:
+  eff: 4886868
+  filter_efficiency: 1.0
+  xs: 3.8
+ST_tW_top_2L2Nu_ext1:
+  eff: 4886868
+  filter_efficiency: 1.0
+  xs: 3.8
+ST_tW_top_LNu2Q:
+  eff: 9643983
+  filter_efficiency: 1.0
+  xs: 15.8
+ST_tW_top_LNu2Q_ext1:
+  eff: 9643983
+  filter_efficiency: 1.0
+  xs: 15.8
+TTto2L2Nu:
+  eff: 47500385
+  filter_efficiency: 1.0
+  xs: 98.04387875606875
+TTto2L2Nu_ext1:
+  eff: 47500385
+  filter_efficiency: 1.0
+  xs: 98.04387875606875
+TTto4Q:
+  eff: 105189265
+  filter_efficiency: 1.0
+  xs: 419.8071644141188
+TTto4Q_ext1:
+  eff: 105189265
+  filter_efficiency: 1.0
+  xs: 419.8071644141188
+TTtoLNu2Q:
+  eff: 165110999
+  filter_efficiency: 1.0
+  xs: 405.74895682981236
+TTtoLNu2Q_ext1:
+  eff: 165110999
+  filter_efficiency: 1.0
+  xs: 405.74895682981236
+VBFHToTauTau_UncorrelatedDecay_Filtered:
+  eff: 5082505
+  filter_efficiency: 0.4091
+  xs: 0.2558
+VBFHToTauTau_UncorrelatedDecay_UnFiltered:
+  eff: 99878
+  filter_efficiency: 1.0
+  xs: 0.2558
+WW:
+  eff: 15405496
+  filter_efficiency: 1.0
+  xs: 122.27052
+WZ:
+  eff: 7527043
+  filter_efficiency: 1.0
+  xs: 41.1474
+WminusHToTauTau_UncorrelatedDecay_Filtered:
+  eff: 431839
+  filter_efficiency: 0.3944
+  xs: 0.03561
+WminusHToTauTau_UncorrelatedDecay_UnFiltered:
+  eff: 27789
+  filter_efficiency: 1.0
+  xs: 0.03561
+WplusHToTauTau_UncorrelatedDecay_Filtered:
+  eff: 716466
+  filter_efficiency: 0.3743
+  xs: 0.05575
+WplusHToTauTau_UncorrelatedDecay_UnFiltered:
+  eff: 28300
+  filter_efficiency: 1.0
+  xs: 0.05575
+WtoLNu_1J_madgraphMLM:
+  eff: 184695989
+  filter_efficiency: 1.0
+  xs: 63425.09999999999
+WtoLNu_2J_madgraphMLM:
+  eff: 184695989
+  filter_efficiency: 1.0
+  xs: 63425.09999999999
+WtoLNu_3J_madgraphMLM:
+  eff: 184695989
+  filter_efficiency: 1.0
+  xs: 63425.09999999999
+WtoLNu_4J_madgraphMLM:
+  eff: 184695989
+  filter_efficiency: 1.0
+  xs: 63425.09999999999
+WtoLNu_madgraphMLM:
+  eff: 184695989
+  filter_efficiency: 1.0
+  xs: 63425.09999999999
+WtoLNu_madgraphMLM_ext1:
+  eff: 184695989
+  filter_efficiency: 1.0
+  xs: 63425.09999999999
+ZHToTauTau_UncorrelatedDecay_Filtered:
+  eff: 613598
+  filter_efficiency: 0.3933
+  xs: 0.0592
+ZHToTauTau_UncorrelatedDecay_UnFiltered:
+  eff: 28992
+  filter_efficiency: 1.0
+  xs: 0.0592
+ZZ:
+  eff: 1181750
+  filter_efficiency: 1.0
+  xs: 19.431
+lumi: 7980.4
