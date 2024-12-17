@@ -1,6 +1,6 @@
 input_files:
-  - "data_all_events_Run3_2022.root"
-  - "mc_all_events_Run3_2022.root"
+  - "data/Run3_2022/data_all_events_Run3_2022.root"
+  - "data/Run3_2022/mc_all_events_Run3_2022.root"
 output_dir: "/vols/cms/ia2318/REAL/data/Run3_2022/processed"
 
 selections:

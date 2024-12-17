@@ -19,78 +19,63 @@ def load_config(config_path):
 
 
 def process_file(input_file_path, tau_index, file_suffix,
-                 output_dir, selections):
+                 output_dir, selections, is_data):
     """Process a single ROOT file to extract and save data and MC events."""
     print(f"Processing file: {input_file_path}")
     input_file = uproot.open(input_file_path)
-    tree = input_file["tree"]
+    tree = input_file["ntuple"]
 
     # Apply selections from the configuration
-    data_condition = eval(
-        selections["data"]["condition"].format(tau_index=tau_index)
-    )
-    mc_condition = eval(
-        selections["mc"]["condition"].format(tau_index=tau_index)
-    )
+    if is_data:
+        iso_condition = selections["data_iso"]["condition"].format(tau_index=tau_index)
+        aiso_condition = selections["data_aiso"]["condition"].format(tau_index=tau_index)
+    else:
+        iso_condition = selections["mc_iso"]["condition"].format(tau_index=tau_index)
+        aiso_condition = selections["mc_aiso"]["condition"].format(tau_index=tau_index)
 
     # Create dictionaries to store data and MC events
-    data_events = {
-        key: tree[key].array()[data_condition] for key in tree.keys()
-        }
-    mc_events = {
-        key: tree[key].array()[mc_condition] for key in tree.keys()
-        }
+    iso_events = tree.arrays(filter_name="*", entry_stop=None, cut=iso_condition)
+    aiso_events = tree.arrays(filter_name="*", entry_stop=None, cut=aiso_condition)
 
     # Determine event lengths and sample indices
-    data_len = len(data_events[f"idDeepTau2018v2p5VSjet_{tau_index}"])
-    mc_len = len(mc_events[f"idDeepTau2018v2p5VSjet_{tau_index}"])
-    print(f"Data length: {data_len}, MC length: {mc_len}")
+    iso_len = len(iso_events[f"idDeepTau2018v2p5VSjet_{tau_index}"])
+    aiso_len = len(aiso_events[f"idDeepTau2018v2p5VSjet_{tau_index}"])
+    print(f"ISO length: {iso_len}, AISO length: {aiso_len}")
 
     # Randomly sample all events for simplicity
-    data_indices = np.random.choice(data_len, size=data_len, replace=False)
-    mc_indices = np.random.choice(mc_len, size=mc_len, replace=False)
+    iso_indices = np.random.choice(iso_len, size=iso_len, replace=False)
+    aiso_indices = np.random.choice(aiso_len, size=aiso_len, replace=False)
 
-    sampled_data_events = {
-        key: data_events[key][data_indices] for key in data_events.keys()
-        }
-    sampled_mc_events = {
-        key: mc_events[key][mc_indices] for key in mc_events.keys()
-        }
+    sampled_iso_events = {
+        key: iso_events[key][iso_indices] for key in iso_events.fields
+    }
+    sampled_aiso_events = {
+        key: aiso_events[key][aiso_indices] for key in aiso_events.fields
+    }
 
     # Add weight scale factor and derived columns
-    sampled_data_events["wt_sf"] = sampled_data_events["weight"]
-    sampled_mc_events["wt_sf"] = sampled_mc_events["weight"]
-
-    sampled_data_events["jpt_pt_1"] = (
-        sampled_data_events["jpt_1"] / sampled_data_events["pt_1"]
-    )
-    sampled_data_events["jpt_pt_2"] = (
-        sampled_data_events["jpt_2"] / sampled_data_events["pt_2"]
-    )
-    sampled_mc_events["jpt_pt_1"] = (
-        sampled_mc_events["jpt_1"] / sampled_mc_events["pt_1"]
-    )
-    sampled_mc_events["jpt_pt_2"] = (
-        sampled_mc_events["jpt_2"] / sampled_mc_events["pt_2"]
-    )
+    for events in [sampled_iso_events, sampled_aiso_events]:
+        events["wt_sf"] = events["weight"]
+        events["jpt_pt_1"] = events["jpt_1"] / events["pt_1"]
+        events["jpt_pt_2"] = events["jpt_2"] / events["pt_2"]
 
     # Determine output file names
     base_name = os.path.basename(input_file_path).replace(".root", "")
-    output_data_file_name = os.path.join(
-        output_dir, f"{base_name}_data_{file_suffix}.root"
-        )
-    output_mc_file_name = os.path.join(
-        output_dir, f"{base_name}_mc_{file_suffix}.root"
-        )
+    output_iso_file_name = os.path.join(
+        output_dir, f"{base_name}_{'data' if is_data else 'mc'}_iso_{file_suffix}.root"
+    )
+    output_aiso_file_name = os.path.join(
+        output_dir, f"{base_name}_{'data' if is_data else 'mc'}_aiso_{file_suffix}.root"
+    )
 
     # Save to new ROOT files
-    with uproot.recreate(output_data_file_name) as data_file:
-        data_file["tree"] = sampled_data_events
+    with uproot.recreate(output_iso_file_name) as iso_file:
+        iso_file["tree"] = sampled_iso_events
 
-    with uproot.recreate(output_mc_file_name) as mc_file:
-        mc_file["tree"] = sampled_mc_events
+    with uproot.recreate(output_aiso_file_name) as aiso_file:
+        aiso_file["tree"] = sampled_aiso_events
 
-    print(f"Files saved: {output_data_file_name}, {output_mc_file_name}")
+    print(f"Files saved: {output_iso_file_name}, {output_aiso_file_name}")
 
 
 # Argument Parsing
@@ -123,6 +108,7 @@ file_suffix = "lead" if args.tau == "leading" else "sublead"
 
 # Process each input file
 for input_file_path in input_files:
+    is_data = "data" in input_file_path
     process_file(
-        input_file_path, tau_index, file_suffix, output_dir, selections
+        input_file_path, tau_index, file_suffix, output_dir, selections, is_data
     )
