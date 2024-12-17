@@ -1,0 +1,30 @@
+era:
+  Run3_2022:
+    data_iso_file: "/vols/cms/ia2318/REAL/data/Run3_2022/processed/data_all_events_Run3_2022_data_iso_{tau_suffix}.root"
+    data_aiso_file: "/vols/cms/ia2318/REAL/data/Run3_2022/processed/data_all_events_Run3_2022_data_aiso_{tau_suffix}.root"
+    mc_iso_file: "/vols/cms/ia2318/REAL/data/Run3_2022/processed/mc_all_events_Run3_2022_data_iso_{tau_suffix}.root"
+    mc_aiso_file: "/vols/cms/ia2318/REAL/data/Run3_2022/processed/mc_all_events_Run3_2022_data_aiso_{tau_suffix}.root"
+    output_dir: "/vols/cms/ia2318/REAL/outputs/best_models/Run3_2022/{tau_suffix}/no_global_bkg_sub"
+
+training:
+  branches: 
+    - "decayMode_1"
+    - "jpt_pt_1"
+    - "pt_1"
+    - "eta_1"
+    - "charge_1"
+    - "phi_1"
+    - "decayModePNet_1"
+
+hyperparameters:
+  max_depth: [3, 10]
+  learning_rate: [0.01, 0.3]
+  subsample: [0.5, 1.0]
+  colsample_bytree: [0.5, 1.0]
+  min_child_weight: [1, 10]
+  reg_alpha: [1e-8, 1.0]
+  reg_lambda: [1e-8, 1.0]
+  n_trials: 50
+  n_jobs: 8
+  early_stopping_rounds: 10
+  num_boost_round: 1000
