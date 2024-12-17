@@ -1,5 +1,6 @@
 import os
 import argparse
+import yaml
 import numpy as np
 import pandas as pd
 import uproot
@@ -10,101 +11,143 @@ from sklearn.metrics import roc_auc_score, roc_curve, log_loss
 import matplotlib.pyplot as plt
 import joblib
 import optuna
-import yaml
+from scipy.optimize import minimize_scalar
 
-# Load configuration file
-def load_config(config_file):
-    with open(config_file, "r") as file:
-        return yaml.safe_load(file)
+# ------------------------------
+# Helper Functions
+# ------------------------------
+def sigmoid(x):
+    return 1 / (1 + np.exp(-x))
 
-# Argument Parsing
-parser = argparse.ArgumentParser(description="Train a BDT model for jet->tau FFs")
-parser.add_argument("--config", required=True, help="Path to YAML configuration file")
-parser.add_argument("--era", choices=["Run3_2022", "Run3_2022EE"], required=True, help="Era to process")
-parser.add_argument("--tau", choices=["leading", "subleading"], required=True, help="Tau to process")
+def apply_temperature_scaling_binary(logits, temperature):
+    scaled_logits = logits / temperature
+    return sigmoid(scaled_logits)
+
+def load_data(file_path, tree_name, branches):
+    """Load ROOT data into a Pandas DataFrame."""
+    return uproot.open(file_path)[tree_name].arrays(branches, library="pd")
+
+def find_optimal_temperature(logits, y):
+    """Find the optimal temperature for temperature scaling."""
+    def temperature_obj(t):
+        temp_logits = logits / t
+        temp_probs = sigmoid(temp_logits)
+        return log_loss(y, temp_probs)
+    res = minimize_scalar(temperature_obj, bounds=(1e-2, 100), method='bounded')
+    return res.x
+
+# ------------------------------
+# Main Script
+# ------------------------------
+# Argument Parser
+parser = argparse.ArgumentParser(description='Train a BDT model for jet->tau FFs')
+parser.add_argument('--config', type=str, required=True, help='Path to the YAML configuration file')
+parser.add_argument('--era', type=str, required=True, help='Processing era key in the YAML file')
+parser.add_argument('--tau', type=str, choices=['leading', 'subleading'], required=True, help='Tau to process: leading or subleading')
 args = parser.parse_args()
 
-# Load config
-config = load_config(args.config)
+# Load Configuration File
+with open(args.config, "r") as f:
+    config = yaml.safe_load(f)
+
+# Retrieve Config Parameters
+era_cfg = config['era'][args.era]
+training_cfg = config['training']
+hyperparameters_cfg = config['hyperparameters']
+
 tau_suffix = "lead" if args.tau == "leading" else "sublead"
-era_config = config["era"][args.era]
-
-data_file = era_config["data_file"].format(tau_suffix=tau_suffix)
-mc_file = era_config["mc_file"].format(tau_suffix=tau_suffix)
-output_dir = era_config["output_dir"].format(tau_suffix=tau_suffix)
-training_branches = config["training"]["branches"]
-
+data_file = era_cfg['data_file'].format(tau_suffix=tau_suffix)
+mc_file = era_cfg['mc_file'].format(tau_suffix=tau_suffix)
+output_dir = era_cfg['output_dir'].format(tau_suffix=tau_suffix)
 os.makedirs(output_dir, exist_ok=True)
 
 # Load Data
 tree_name = "tree"
-data_df = uproot.open(data_file)[tree_name].arrays(library="pd")
-mc_df = uproot.open(mc_file)[tree_name].arrays(library="pd")
+branches = training_cfg['branches'] + ['label']
+data_df = load_data(data_file, tree_name, training_cfg['branches'])
+mc_df = load_data(mc_file, tree_name, training_cfg['branches'])
 
-data_df["label"] = 1
-mc_df["label"] = 0
+# Label Data
+data_df['label'] = 1
+mc_df['label'] = 0
 combined_df = pd.concat([data_df, mc_df]).sample(frac=1).reset_index(drop=True)
 
-X = combined_df[training_branches]
-y = combined_df["label"]
+# Prepare Features and Labels
+X_all = combined_df.drop(columns=['label'])
+y = combined_df['label']
+X = X_all[training_cfg['branches']]
+
+# Train-Test Split
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
 
-# Optuna Objective Function
-def objective(trial):
-    reg_alpha_range = list(map(float, config["hyperparameters"]["reg_alpha"]))
-    reg_lambda_range = list(map(float, config["hyperparameters"]["reg_lambda"]))
-    params = {
-        "max_depth": trial.suggest_int("max_depth", *config["hyperparameters"]["max_depth"]),
-        "learning_rate": trial.suggest_float("learning_rate", *config["hyperparameters"]["learning_rate"], log=True),
-        "subsample": trial.suggest_float("subsample", *config["hyperparameters"]["subsample"]),
-        "colsample_bytree": trial.suggest_float("colsample_bytree", *config["hyperparameters"]["colsample_bytree"]),
-        "min_child_weight": trial.suggest_int("min_child_weight", *config["hyperparameters"]["min_child_weight"]),
-        "reg_alpha": trial.suggest_float("reg_alpha", *reg_alpha_range, log=True),
-        "reg_lambda": trial.suggest_float("reg_lambda", *reg_lambda_range, log=True),
-        "objective": "binary:logistic",
-        "eval_metric": "logloss",
-        "nthread": 8,
-    }
+# ------------------------------
+# Hyperparameter Optimization
+# ------------------------------
 
+
+def cast_to_float_list(param_list):
+    """Helper to cast YAML list values to float if needed."""
+    return [float(param) for param in param_list]
+
+# Ensure reg_alpha and reg_lambda are floats
+hyperparameters_cfg['reg_alpha'] = cast_to_float_list(hyperparameters_cfg['reg_alpha'])
+hyperparameters_cfg['reg_lambda'] = cast_to_float_list(hyperparameters_cfg['reg_lambda'])
+
+
+def objective(trial):
+    param = {
+        'max_depth': trial.suggest_int('max_depth', *hyperparameters_cfg['max_depth']),
+        'learning_rate': trial.suggest_float('learning_rate', *hyperparameters_cfg['learning_rate'], log=True),
+        'subsample': trial.suggest_float('subsample', *hyperparameters_cfg['subsample']),
+        'colsample_bytree': trial.suggest_float('colsample_bytree', *hyperparameters_cfg['colsample_bytree']),
+        'min_child_weight': trial.suggest_int('min_child_weight', *hyperparameters_cfg['min_child_weight']),
+        'reg_alpha': trial.suggest_float('reg_alpha', *hyperparameters_cfg['reg_alpha'], log=True),
+        'reg_lambda': trial.suggest_float('reg_lambda', *hyperparameters_cfg['reg_lambda'], log=True),
+        'objective': 'binary:logistic',
+        'eval_metric': 'logloss',
+        'nthread': 8,
+    }
     dtrain = xgb.DMatrix(X_train, label=y_train)
     dtest = xgb.DMatrix(X_test, label=y_test)
-    evals = [(dtrain, "train"), (dtest, "eval")]
-
-    bst = xgb.train(
-        params, dtrain, num_boost_round=config["hyperparameters"]["num_boost_round"],
-        evals=evals, early_stopping_rounds=config["hyperparameters"]["early_stopping_rounds"], verbose_eval=False
-    )
+    evals = [(dtrain, 'train'), (dtest, 'eval')]
+    bst = xgb.train(param, dtrain, num_boost_round=hyperparameters_cfg['num_boost_round'], evals=evals,
+                    early_stopping_rounds=hyperparameters_cfg['early_stopping_rounds'], verbose_eval=False)
     y_pred_proba = bst.predict(dtest)
     return roc_auc_score(y_test, y_pred_proba)
 
-# Run Optuna
-study = optuna.create_study(direction="maximize")
-study.optimize(objective, n_trials=config["hyperparameters"]["n_trials"], n_jobs=8)
+study = optuna.create_study(direction='maximize')
+study.optimize(objective, n_trials=hyperparameters_cfg['n_trials'], n_jobs=hyperparameters_cfg['n_jobs'])
 best_params = study.best_params
+best_params['eval_metric'] = 'logloss'
+best_params['objective'] = 'binary:logistic'
 
-# K-Fold Cross Validation
-kf = KFold(n_splits=5, shuffle=True, random_state=42)
-roc_aucs = []
+# ------------------------------
+# Train Final Model
+# ------------------------------
+dtrain = xgb.DMatrix(X_train, label=y_train)
+dtest = xgb.DMatrix(X_test, label=y_test)
+bst = xgb.train(best_params, dtrain, num_boost_round=hyperparameters_cfg['num_boost_round'], evals=[(dtrain, 'train'), (dtest, 'eval')],
+                early_stopping_rounds=hyperparameters_cfg['early_stopping_rounds'], verbose_eval=True)
 
-for train_index, test_index in kf.split(X):
-    X_train_kf, X_test_kf = X.iloc[train_index], X.iloc[test_index]
-    y_train_kf, y_test_kf = y.iloc[train_index], y.iloc[test_index]
+# Save the Model
+bst.save_model(f"{output_dir}/best_model.json")
+joblib.dump(bst, f"{output_dir}/best_model.pkl")
 
-    dtrain = xgb.DMatrix(X_train_kf, label=y_train_kf)
-    dtest = xgb.DMatrix(X_test_kf, label=y_test_kf)
+# ------------------------------
+# Evaluate the Model
+# ------------------------------
+y_pred_proba = bst.predict(dtest)
+roc_auc = roc_auc_score(y_test, y_pred_proba)
+print(f"Original ROC AUC: {roc_auc:.4f}")
 
-    bst = xgb.train(best_params, dtrain, num_boost_round=config["hyperparameters"]["num_boost_round"])
-    y_pred_proba_kf = bst.predict(dtest)
-    roc_aucs.append(roc_auc_score(y_test_kf, y_pred_proba_kf))
+logits = bst.predict(dtest, output_margin=True)
+optimal_temperature = find_optimal_temperature(logits, y_test)
+y_pred_probs_temp_scaled = apply_temperature_scaling_binary(logits, optimal_temperature)
+roc_auc_temp_scaled = roc_auc_score(y_test, y_pred_probs_temp_scaled)
+print(f"Temperature Scaled ROC AUC: {roc_auc_temp_scaled:.4f}")
 
-print("Average ROC AUC from K-Folds:", np.mean(roc_aucs))
-
-# Save the Best Model
-final_model = xgb.train(best_params, xgb.DMatrix(X_train, label=y_train))
-final_model.save_model(f"{output_dir}/best_model.json")
-joblib.dump(final_model, f"{output_dir}/best_model.pkl")
-
-# Plot Feature Importance
-plot_importance(final_model)
+# Save Plots
+plt.figure()
+xgb.plot_importance(bst)
 plt.title("Feature Importance")
 plt.savefig(f"{output_dir}/feature_importance.pdf")

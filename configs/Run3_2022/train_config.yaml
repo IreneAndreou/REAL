@@ -20,8 +20,9 @@ hyperparameters:
   subsample: [0.5, 1.0]
   colsample_bytree: [0.5, 1.0]
   min_child_weight: [1, 10]
-  reg_alpha: ["1e-8", 1.0]
-  reg_lambda: ["1e-8", 1.0]
+  reg_alpha: [1e-8, 1.0]
+  reg_lambda: [1e-8, 1.0]
   n_trials: 50
+  n_jobs: 8
   early_stopping_rounds: 10
   num_boost_round: 1000
