@@ -1,0 +1,60 @@
+era:
+  Run3_2022:
+    model_path: "/vols/cms/ia2318/REAL/outputs/best_models/Run3_2022/lead/no_global/best_model.pkl"
+    mc_path: "/vols/cms/ia2318/REAL/data/Run3_2022/processed/data_all_events_Run3_2022_data_aiso_lead.root"
+    data_path: "/vols/cms/ia2318/REAL/data/Run3_2022/processed/data_all_events_Run3_2022_data_iso_lead.root"
+    output_dir: "/vols/cms/ia2318/REAL/outputs/plots/Run3_2022/lead/no_global"
+
+features:
+  main: ['decayMode_1', 'jpt_pt_1', 'pt_1', 'eta_1', 'charge_1', 'phi_1', 'decayModePNet_1']
+  plot: ['decayMode_1', 'decayMode_2', 'jpt_pt_1', 'jpt_pt_2', 'pt_1', 'pt_2', 'eta_1', 'eta_2',
+         'charge_1', 'charge_2', 'phi_1', 'phi_2', 'n_jets', 'n_prebjets', 'n_bjets',
+         'met_pt', 'met_phi', 'met_dphi_1', 'met_dphi_2', 'decayModePNet_1', 'decayModePNet_2']
+
+plot_params:
+  bins:
+    'decayMode_1': 4  # Discrete bins: 0, 1, 10, 11
+    'decayMode_2': 4  # Discrete bins: 0, 1, 10, 11
+    'jpt_pt_1': 15
+    'jpt_pt_2': 15
+    'pt_1': 100
+    'pt_2': 100
+    'eta_1': 30
+    'eta_2': 30
+    'phi_1': 30
+    'phi_2': 30
+    'charge_1': 4
+    'charge_2': 4
+    'n_jets': 10
+    'n_prebjets': 10
+    'n_bjets': 4
+    'met_pt': 40
+    'met_phi': 30
+    'met_dphi_1': 30
+    'met_dphi_2': 30
+    'decayModePNet_1': 5  # Discrete bins: 0, 1, 2, 10, 11
+    'decayModePNet_2': 5  # Discrete bins: 0, 1, 2, 10, 11
+
+  ranges:
+    'decayMode_1': [0, 12]
+    'decayMode_2': [0, 12]
+    'jpt_pt_1': [0, 15]
+    'jpt_pt_2': [0, 15]
+    'pt_1': [35, 800]
+    'pt_2': [35, 800]
+    'eta_1': [-3, 3]
+    'eta_2': [-3, 3]
+    'phi_1': [-3.2, 3.2]
+    'phi_2': [-3.2, 3.2]
+    'charge_1': [-2, 2]
+    'charge_2': [-2, 2]
+    'n_jets': [0, 10]
+    'n_prebjets': [0, 10]
+    'n_bjets': [0, 4]
+    'met_pt': [0, 200]
+    'met_phi': [-3.2, 3.2]
+    'met_dphi_1': [-3.2, 3.2]
+    'met_dphi_2': [-3.2, 3.2]
+    'decayModePNet_1': [0, 12]
+    'decayModePNet_2': [0, 12]
+
