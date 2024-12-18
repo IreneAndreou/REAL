@@ -54,86 +54,267 @@ df_mc_aiso = load_data(mc_aiso_path, branches)
 df_data_iso = load_data(data_iso_path, branches)
 df_data_aiso = load_data(data_aiso_path, branches)
 
+import matplotlib.pyplot as plt
+
+import matplotlib.pyplot as plt
+import numpy as np
+
+def plot_all_features(df1, df2, df3, df4, feature, label1, label2, label3, label4, output_path):
+    plt.figure(figsize=(10, 8))
+    
+    # Calculate bins using the data from the first DataFrame
+    data = df1[feature]
+    _, bins = np.histogram(data, bins=50)
+    
+    plt.hist(df1[feature], bins=bins, alpha=0.5, label=label1, histtype="step")
+    plt.hist(df2[feature], bins=bins, alpha=0.5, label=label2, histtype="step")
+    plt.hist(df3[feature], bins=bins, alpha=0.5, label=label3, histtype="step")
+    plt.hist(df4[feature], bins=bins, alpha=0.5, label=label4, histtype="step")
+    
+    plt.xlabel(feature)
+    plt.ylabel("Density")
+    plt.legend()
+    plt.title(f"Distribution of {feature}")
+    plt.savefig(output_path)
+    plt.close()
+
+# Plot all distributions on a single plot
+for feature in main_features:
+    plot_all_features(
+        df_data_iso, df_data_aiso, df_mc_iso, df_mc_aiso,
+        feature, "Data ISO", "Data AISO", "MC ISO", "MC AISO",
+        f"{output_dir}/all_{feature}.pdf"
+    )
+
 # BDT predictions and reweighting
-def process_reweighting(df, model, features, original_class, target_class):
-    """Reweighting function for a specific class."""
-    num_batches = len(df) // 10000 + 1  # Batch processing
+def process_reweighting(df_target, model, features, original_class, target_class):
+    """
+    Compute weights for reweighting df_target predictions to a specific class.
+    
+    Parameters:
+        df_target: DataFrame to reweight
+        model: Trained XGBoost model
+        features: List of features
+        target_class: Class to reweight to (e.g., 1 for iso, 0 for aiso)
+    Returns:
+        Weights for reweighting df_target
+    """
+    num_batches = len(df_target) // 10000 + 1  # Batch processing
     weights = []
+
     for i in range(num_batches):
-        batch = df.iloc[i * 10000: (i + 1) * 10000]
+        batch = df_target.iloc[i * 10000: (i + 1) * 10000]
         dmatrix = xgb.DMatrix(batch[features])
-        probabilities = model.predict(dmatrix, output_margin=False)
-        if probabilities.ndim == 1:  # Binary classification
-            weights.append(probabilities)  # Only one class
-        else:  # Multi-class case
-            reweight_num = probabilities[:, original_class]
-            reweighted_denom = probabilities[:, target_class]
-            weights.append(reweight_num / reweighted_denom)
+        probabilities = model.predict(dmatrix)
+        print(f"Shape of probabilities: {probabilities.shape}")
+
+        
+        if probabilities.ndim == 1:
+            raise ValueError("The model output is binary, not multi-class.")
+        
+        # Normalize weights: target_class / sum of probabilities
+        reweight = probabilities[:, target_class] / probabilities[:, original_class]
+        weights.append(reweight)
+
     return np.concatenate(weights)
 
 
-# Get weights for MC
-weights_data_aiso = process_reweighting(df_data_aiso, model, main_features, original_class=0, target_class=1)
-weights_mc_aiso = process_reweighting(df_mc_aiso, model, main_features, original_class=2, target_class=3)
 
-# Combine with original weights
-reweighted_data = df_data_aiso["wt_sf"] * weights_data_aiso
-reweighted_mc = df_mc_aiso["wt_sf"] * weights_mc_aiso
+# Reweight data_aiso to data_iso
+weights_data_aiso = process_reweighting(df_data_aiso, model, main_features, original_class=1, target_class=0)
+print(f"Shape of weights_data_aiso: {weights_data_aiso.shape}")
+print(f"Shape of df_data_aiso: {df_data_aiso.shape}")
+reweighted_data_aiso = df_data_aiso["wt_sf"] * weights_data_aiso
+
+# Reweight mc_aiso to mc_iso
+weights_mc_aiso = process_reweighting(df_mc_aiso, model, main_features, original_class=3, target_class=2)
+reweighted_mc_aiso = df_mc_aiso["wt_sf"] * weights_mc_aiso
+
 
 # Plot features with reweighted distributions
 hep.style.use("CMS")
 
-def plot_feature_with_reweighting(feature, bins, ranges, output_path):
-    bin_edges = np.linspace(ranges[0], ranges[1], bins + 1)
+def rebin_histogram_errors(hist_counts, hist_errors, bin_edges, uncertainty_threshold=0.35):
+    """
+    Dynamically rebin histogram to ensure uncertainty in each bin is below a threshold.
+    
+    Parameters:
+        hist_counts: Counts in each bin.
+        hist_errors: Variance (sum of squared weights) in each bin.
+        bin_edges: Edges of the histogram bins.
+        uncertainty_threshold: Maximum allowed uncertainty as a fraction of the bin count.
+    
+    Returns:
+        New bin edges after rebinning.
+    """
+    new_bin_edges = [bin_edges[0]]
+    cumulative_count = 0
+    cumulative_error_sum = 0
+
+    for i in range(len(hist_counts)):
+        cumulative_count += hist_counts[i]
+        cumulative_error_sum += hist_errors[i]
+
+        if cumulative_count > 0 and np.sqrt(cumulative_error_sum) < uncertainty_threshold * cumulative_count:
+            new_bin_edges.append(bin_edges[i + 1])
+            cumulative_count = 0
+            cumulative_error_sum = 0
+
+    if new_bin_edges[-1] != bin_edges[-1]:
+        new_bin_edges.append(bin_edges[-1])
+
+    return np.array(new_bin_edges)
+
+def plot_feature_with_reweighting_with_rebinning_and_ratio_errors(feature, bins, ranges, output_path):
+    """
+    Plot reweighted feature distributions with dynamic rebinning and ratio error bars.
+
+    Parameters:
+        feature: Feature to plot.
+        bins: Number of bins for the initial histogram.
+        ranges: Range of the feature.
+        output_path: Path to save the plot.
+    """
+    # Check if the feature is in discrete bins
+    discrete_bins = config["plot_params"].get("discrete_bins", {})
+    if feature in discrete_bins:
+        bin_edges = np.array(discrete_bins[feature])
+        rebinning_needed = False
+    else:
+        bin_edges = np.linspace(ranges[0], ranges[1], bins + 1)
+        rebinning_needed = True
+
+    # Histograms BEFORE Reweighting
+    data_aiso_hist_before, _ = np.histogram(df_data_aiso[feature], bins=bin_edges, weights=df_data_aiso["wt_sf"])
+    mc_aiso_hist_before, _ = np.histogram(df_mc_aiso[feature], bins=bin_edges, weights=df_mc_aiso["wt_sf"])
 
     # Histograms: Reweighted Anti-Iso
-    data_aiso_hist, _ = np.histogram(df_data_aiso[feature], bins=bin_edges, weights=reweighted_data)
-    mc_aiso_hist, _ = np.histogram(df_mc_aiso[feature], bins=bin_edges, weights=reweighted_mc)
+    data_aiso_hist, _ = np.histogram(df_data_aiso[feature], bins=bin_edges, weights=reweighted_data_aiso)
+    mc_aiso_hist, _ = np.histogram(df_mc_aiso[feature], bins=bin_edges, weights=reweighted_mc_aiso)
 
     # Histograms: Iso
     data_iso_hist, _ = np.histogram(df_data_iso[feature], bins=bin_edges, weights=df_data_iso["wt_sf"])
     mc_iso_hist, _ = np.histogram(df_mc_iso[feature], bins=bin_edges, weights=df_mc_iso["wt_sf"])
 
-    # Ratios
-    ratio_aiso = np.divide(data_aiso_hist, mc_aiso_hist, out=np.zeros_like(data_aiso_hist), where=mc_aiso_hist != 0)
-    ratio_iso = np.divide(data_iso_hist, mc_iso_hist, out=np.zeros_like(data_iso_hist), where=mc_iso_hist != 0)
+    # Errors BEFORE Reweighting
+    data_aiso_errors_before = np.sqrt(np.histogram(df_data_aiso[feature], bins=bin_edges, weights=df_data_aiso["wt_sf"]**2)[0])
+    mc_aiso_errors_before = np.sqrt(np.histogram(df_mc_aiso[feature], bins=bin_edges, weights=df_mc_aiso["wt_sf"]**2)[0])
+
+    # Errors for histograms
+    data_iso_errors = np.sqrt(np.histogram(df_data_iso[feature], bins=bin_edges, weights=df_data_iso["wt_sf"]**2)[0])
+    mc_iso_errors = np.sqrt(np.histogram(df_mc_iso[feature], bins=bin_edges, weights=df_mc_iso["wt_sf"]**2)[0])
+
+    # Only rebin for continuous features
+    if rebinning_needed:
+        bin_edges = rebin_histogram_errors(data_aiso_hist, np.sqrt(data_aiso_hist), bin_edges)
+        data_aiso_hist, _ = np.histogram(df_data_aiso[feature], bins=bin_edges, weights=reweighted_data_aiso)
+        mc_aiso_hist, _ = np.histogram(df_mc_aiso[feature], bins=bin_edges, weights=reweighted_mc_aiso)
+        data_iso_hist, _ = np.histogram(df_data_iso[feature], bins=bin_edges, weights=df_data_iso["wt_sf"])
+        mc_iso_hist, _ = np.histogram(df_mc_iso[feature], bins=bin_edges, weights=df_mc_iso["wt_sf"])
+
+    # Mask bins with zero counts
+    masked_data_aiso_hist_before = np.ma.masked_where(data_aiso_hist_before == 0, data_aiso_hist_before)
+    masked_mc_aiso_hist_before = np.ma.masked_where(mc_aiso_hist_before == 0, mc_aiso_hist_before)
+    masked_data_aiso_hist = np.ma.masked_where(data_aiso_hist == 0, data_aiso_hist)
+    masked_mc_aiso_hist = np.ma.masked_where(mc_aiso_hist == 0, mc_aiso_hist)
+    masked_data_iso_hist = np.ma.masked_where(data_iso_hist == 0, data_iso_hist)
+    masked_mc_iso_hist = np.ma.masked_where(mc_iso_hist == 0, mc_iso_hist)
+
+    # Recompute errors for rebinned histograms
+    data_iso_errors = np.sqrt(np.histogram(df_data_iso[feature], bins=bin_edges, weights=df_data_iso["wt_sf"]**2)[0])
+    mc_iso_errors = np.sqrt(np.histogram(df_mc_iso[feature], bins=bin_edges, weights=df_mc_iso["wt_sf"]**2)[0])
+    data_aiso_errors = np.sqrt(np.histogram(df_data_aiso[feature], bins=bin_edges, weights=reweighted_data_aiso**2)[0])
+    mc_aiso_errors = np.sqrt(np.histogram(df_mc_aiso[feature], bins=bin_edges, weights=reweighted_mc_aiso**2)[0])
+
+    # Ratios and Errors: BEFORE Reweighting
+    ratio_data_before = np.divide(data_iso_hist, data_aiso_hist_before, out=np.zeros_like(data_iso_hist), where=data_aiso_hist_before != 0)
+    ratio_data_errors_before = ratio_data_before * np.sqrt(
+        (data_iso_errors / data_iso_hist) ** 2 + (data_aiso_errors_before / data_aiso_hist_before) ** 2
+    )
+    ratio_mc_before = np.divide(mc_iso_hist, mc_aiso_hist_before, out=np.zeros_like(mc_iso_hist), where=mc_aiso_hist_before != 0)
+    ratio_mc_errors_before = ratio_mc_before * np.sqrt(
+        (mc_iso_errors / mc_iso_hist) ** 2 + (mc_aiso_errors_before / mc_aiso_hist_before) ** 2
+    )
+
+    # Errors for ratios
+    ratio_data = np.divide(data_iso_hist, data_aiso_hist, out=np.zeros_like(data_iso_hist), where=data_aiso_hist != 0)
+    ratio_mc = np.divide(mc_iso_hist, mc_aiso_hist, out=np.zeros_like(mc_iso_hist), where=mc_aiso_hist != 0)
+
+    ratio_data_errors = ratio_data * np.sqrt(
+        (data_iso_errors / data_iso_hist)**2 + (np.sqrt(data_aiso_hist) / data_aiso_hist)**2
+    )
+    ratio_mc_errors = ratio_mc * np.sqrt(
+        (mc_iso_errors / mc_iso_hist)**2 + (np.sqrt(mc_aiso_hist) / mc_aiso_hist)**2
+    )
+
+    # Calculate bin centers
+    bin_centers = (bin_edges[:-1] + bin_edges[1:]) / 2
 
     # Plotting
-    fig, axs = plt.subplots(2, 2, figsize=(12, 10), gridspec_kw={'height_ratios': [3, 1]}, sharex=True)
+    fig, axs = plt.subplots(4, 2, figsize=(26, 20), gridspec_kw={'height_ratios': [3, 1, 3, 1]}, sharex='col')
 
-    # Data vs MC: Anti-Iso
-    axs[0, 0].hist(bin_edges[:-1], bins=bin_edges, weights=mc_aiso_hist, histtype="step", label="Reweighted MC Anti-Iso", linewidth=2)
-    axs[0, 0].scatter(bin_edges[:-1], data_aiso_hist, label="Data Anti-Iso", color="red")
+    # Data AISO and ISO Before Reweighting
+    axs[0, 0].hist(bin_edges[:-1], bins=bin_edges, weights=masked_data_aiso_hist_before, histtype="step", label="Data AISO Before", linewidth=2)
+    axs[0, 0].scatter(bin_centers, masked_data_iso_hist, label="Data ISO", color="blue")
     axs[0, 0].set_ylabel("Counts")
     axs[0, 0].legend()
+    axs[0, 0].set_title(f"{feature} (Data Before Reweighting)")
 
-    # Ratio: Anti-Iso
-    axs[1, 0].errorbar(bin_edges[:-1], ratio_aiso, fmt="o", color="black")
-    axs[1, 0].axhline(1, color="red", linestyle="--")
-    axs[1, 0].set_xlabel(feature)
-    axs[1, 0].set_ylabel("Data / MC")
-
-    # Data vs MC: Iso
-    axs[0, 1].hist(bin_edges[:-1], bins=bin_edges, weights=mc_iso_hist, histtype="step", label="MC Iso", linewidth=2)
-    axs[0, 1].scatter(bin_edges[:-1], data_iso_hist, label="Data Iso", color="blue")
+    # MC AISO and ISO Before Reweighting
+    axs[0, 1].hist(bin_edges[:-1], bins=bin_edges, weights=masked_mc_aiso_hist_before, histtype="step", label="MC AISO Before", linewidth=2)
+    axs[0, 1].scatter(bin_centers, masked_mc_iso_hist, label="MC ISO", color="red")
     axs[0, 1].set_ylabel("Counts")
     axs[0, 1].legend()
+    axs[0, 1].set_title(f"{feature} (MC Before Reweighting)")
 
-    # Ratio: Iso
-    axs[1, 1].errorbar(bin_edges[:-1], ratio_iso, fmt="o", color="black")
-    axs[1, 1].axhline(1, color="red", linestyle="--")
-    axs[1, 1].set_xlabel(feature)
-    axs[1, 1].set_ylabel("Data / MC")
+    # Ratio: Data Before Reweighting
+    axs[1, 0].errorbar(bin_centers, ratio_data_before, yerr=ratio_data_errors_before, fmt="o", color="blue", label="Data Ratio Before")
+    axs[1, 0].axhline(1, color="black", linestyle="--")
+    axs[1, 0].set_ylabel("ISO / AISO")
+    axs[1, 0].legend()
+
+    # Ratio: MC Before Reweighting
+    axs[1, 1].errorbar(bin_centers, ratio_mc_before, yerr=ratio_mc_errors_before, fmt="o", color="red", label="MC Ratio Before")
+    axs[1, 1].axhline(1, color="black", linestyle="--")
+    axs[1, 1].set_ylabel("ISO / AISO")
+    axs[1, 1].legend()
+
+    # Data AISO and ISO After Reweighting
+    axs[2, 0].hist(bin_edges[:-1], bins=bin_edges, weights=masked_data_aiso_hist, histtype="step", label="Data AISO", linewidth=2)
+    axs[2, 0].scatter(bin_centers, masked_data_iso_hist, label="Data ISO", color="blue")
+    axs[2, 0].set_ylabel("Counts")
+    axs[2, 0].legend()
+    axs[2, 0].set_title(f"{feature} (Data After Reweighting)")
+
+    # MC AISO and ISO After Reweighting
+    axs[2, 1].hist(bin_edges[:-1], bins=bin_edges, weights=masked_mc_aiso_hist, histtype="step", label="MC AISO", linewidth=2)
+    axs[2, 1].scatter(bin_centers, masked_mc_iso_hist, label="MC ISO", color="red")
+    axs[2, 1].set_ylabel("Counts")
+    axs[2, 1].legend()
+    axs[2, 1].set_title(f"{feature} (MC After Reweighting)")
+
+    # Ratio: Data After Reweighting
+    axs[3, 0].errorbar(bin_centers, ratio_data, yerr=ratio_data_errors, fmt="o", color="blue")
+    axs[3, 0].axhline(1, color="black", linestyle="--")
+    axs[3, 0].set_xlabel(feature)
+    axs[3, 0].set_ylabel("ISO / AISO")
+    axs[3, 0].set_ylim(0, 3)
+
+    # Ratio: MC After Reweighting
+    axs[3, 1].errorbar(bin_centers, ratio_mc, yerr=ratio_mc_errors, fmt="o", color="red")
+    axs[3, 1].axhline(1, color="black", linestyle="--")
+    axs[3, 1].set_xlabel(feature)
+    axs[3, 1].set_ylabel("ISO / AISO")
+    axs[3, 1].set_ylim(0, 3)
 
     plt.tight_layout()
     plt.savefig(output_path)
     plt.close()
 
-
 # Loop through features to plot
 for feature in plot_bins.keys():
     bins = plot_bins[feature]
     ranges = plot_ranges[feature]
-    output_path = os.path.join(output_dir, f"{feature}_reweighted.pdf")
-    plot_feature_with_reweighting(feature, bins, ranges, output_path)
-    print(f"Plotted {feature} with reweighting.")
+    output_path = os.path.join(output_dir, f"{feature}_reweighted_with_ratio_errors.pdf")
+    plot_feature_with_reweighting_with_rebinning_and_ratio_errors(feature, bins, ranges, output_path)
+    print(f"Plotted {feature} with reweighting and ratio error bars.")

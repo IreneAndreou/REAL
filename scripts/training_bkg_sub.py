@@ -83,9 +83,14 @@ combined_df = pd.concat([data_iso_df, data_aiso_df, mc_iso_df, mc_aiso_df]).samp
 X_all = combined_df.drop(columns=['label'])
 y = combined_df['label'].astype(int)
 X = X_all[training_cfg['branches']]
+print("Feature columns:", X.columns)
+print("Sample data:", X.head())
+
 
 # Train-Test Split
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42, stratify=y)
+print("Train label distribution:", y_train.value_counts())
+print("Test label distribution:", y_test.value_counts())
 
 # ------------------------------
 # Hyperparameter Optimization
@@ -130,13 +135,14 @@ def objective(trial):
     
     # Predict probabilities for all classes
     preds = bst.predict(dtest)  # Shape: (num_samples, num_classes)
+    print("Predictions shape:", preds.shape)  # Should be (num_samples, 4)
     return log_loss(y_test, preds, labels=[0, 1, 2, 3])
 
 
 study = optuna.create_study(direction='minimize')
 study.optimize(objective, n_trials=hyperparameters_cfg['n_trials'], n_jobs=hyperparameters_cfg['n_jobs'])
 best_params = study.best_params
-best_params.update({'objective': 'multi:softmax', 'num_class': 4, 'eval_metric': 'mlogloss'})
+best_params.update({'objective': 'multi:softprob', 'num_class': 4, 'eval_metric': 'mlogloss'})
 
 # ------------------------------
 # Train Final Model
