@@ -76,7 +76,7 @@ def scaling(input_file, params, tree_name="ntuple"):
                                 logging.warning(f"Missing parameters for {base_name}. Skipping {input_file}...")
                                 return
                             wt_sf = lumi * xs / evt
-                            logging.info(f"Base: {base_name}, Cross-section: {xs}, Efficiency: {evt}, Weight SF: {wt_sf}")
+                            logging.info(f"Base: {base_name}, Cross-section: {xs}, Effective Events: {evt}, Weight SF: {wt_sf}")
                             chunk["wt_sf"] = wt_sf * chunk["weight"]
                         else:
                             chunk["wt_sf"] = chunk["weight"]
