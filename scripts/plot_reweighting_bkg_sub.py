@@ -10,6 +10,9 @@ import matplotlib.pyplot as plt
 import mplhep as hep
 from matplotlib.gridspec import GridSpec
 from scipy.stats import ks_2samp
+from scipy.special import softmax
+from sklearn.metrics import log_loss
+from scipy.optimize import minimize_scalar
 import os
 
 # Argument parser
@@ -37,6 +40,7 @@ main_features = config["features"]["main"]
 plot_features = config["features"]["plot"]
 plot_bins = config["plot_params"]["bins"]
 plot_ranges = config["plot_params"]["ranges"]
+optimal_temperature = config["optimal_temperature"]["leading"]
 
 # Load the BDT model
 with open(model_path, "rb") as file:
@@ -55,10 +59,12 @@ df_mc_aiso = load_data(mc_aiso_path, branches)
 df_data_iso = load_data(data_iso_path, branches)
 df_data_aiso = load_data(data_aiso_path, branches)
 
-import matplotlib.pyplot as plt
 
-import matplotlib.pyplot as plt
-import numpy as np
+def softmax_temperature_scaling(logits, temperature):
+    """Apply temperature scaling for multi-class classification."""
+    scaled_logits = logits / temperature
+    return softmax(scaled_logits, axis=1)
+
 
 def plot_all_features(df1, df2, df3, df4, feature, label1, label2, label3, label4, output_path):
     plt.figure(figsize=(10, 8))
@@ -107,6 +113,8 @@ def process_reweighting(df_target, model, features, original_class, target_class
         batch = df_target.iloc[i * 10000: (i + 1) * 10000]
         dmatrix = xgb.DMatrix(batch[features])
         probabilities = model.predict(dmatrix)
+        logits = model.predict(dmatrix, output_margin=True)
+        scaled_probs = softmax_temperature_scaling(logits, optimal_temperature)
         print(f"Shape of probabilities: {probabilities.shape}")
 
         
@@ -115,6 +123,7 @@ def process_reweighting(df_target, model, features, original_class, target_class
         
         # Normalize weights: target_class / sum of probabilities
         reweight = probabilities[:, target_class] / probabilities[:, original_class]
+        reweight = scaled_probs[:, target_class] / scaled_probs[:, original_class]
         # # Normalize each term to the sum of each class
         # class_0 = probabilities[:, 0] / np.sum(probabilities[:, 0])
         # class_1 = probabilities[:, 1] / np.sum(probabilities[:, 1])

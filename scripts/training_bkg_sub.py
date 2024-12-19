@@ -162,6 +162,35 @@ joblib.dump(bst, f"{output_dir}/best_model.pkl")
 # ------------------------------
 logits = bst.predict(dtest, output_margin=True)
 optimal_temperature = find_optimal_temperature(logits, y_test)
+optimal_temperature = float(optimal_temperature)
+
+# Path to the YAML file
+file_path = '/vols/cms/ia2318/REAL/configs/Run3_2022/plot_config_bkg_sub.yaml'
+
+# Read the file contents
+with open(file_path, 'r') as file:
+    content = file.read()
+
+# Check if "optimal_temperature:\n  leading:" exists
+if "optimal_temperature:\n  leading:" in content:
+    # Update the value after "leading:"
+    updated_content = []
+    for line in content.splitlines():
+        if line.strip().startswith("leading:"):
+            updated_content.append(f"  leading: {optimal_temperature}")
+        else:
+            updated_content.append(line)
+    content = "\n".join(updated_content)
+else:
+    # Append the "optimal_temperature" block
+    content += f"\noptimal_temperature:\n  leading: {optimal_temperature}\n"
+
+# Write the updated content back to the file
+with open(file_path, 'w') as file:
+    file.write(content)
+
+print(f"Optimal temperature: {optimal_temperature} updated successfully.")
+
 y_pred_probs_temp_scaled = softmax_temperature_scaling(logits, optimal_temperature)
 log_loss_temp_scaled = log_loss(y_test, y_pred_probs_temp_scaled)
 
