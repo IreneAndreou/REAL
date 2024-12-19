@@ -223,12 +223,12 @@ def plot_feature_with_reweighting_with_rebinning_and_ratio_errors(feature, bins,
         mc_aiso_hist_before, _ = np.histogram(df_mc_aiso[feature], bins=bin_edges, weights=df_mc_aiso["wt_sf"])
 
     # Mask bins with zero counts
-    masked_data_aiso_hist_before = np.ma.masked_where(data_aiso_hist_before == 0, data_aiso_hist_before)
-    masked_mc_aiso_hist_before = np.ma.masked_where(mc_aiso_hist_before == 0, mc_aiso_hist_before)
-    masked_data_aiso_hist = np.ma.masked_where(data_aiso_hist == 0, data_aiso_hist)
-    masked_mc_aiso_hist = np.ma.masked_where(mc_aiso_hist == 0, mc_aiso_hist)
-    masked_data_iso_hist = np.ma.masked_where(data_iso_hist == 0, data_iso_hist)
-    masked_mc_iso_hist = np.ma.masked_where(mc_iso_hist == 0, mc_iso_hist)
+    data_aiso_hist_before = np.ma.masked_where(data_aiso_hist_before == 0, data_aiso_hist_before)
+    mc_aiso_hist_before = np.ma.masked_where(mc_aiso_hist_before == 0, mc_aiso_hist_before)
+    data_aiso_hist = np.ma.masked_where(data_aiso_hist == 0, data_aiso_hist)
+    mc_aiso_hist = np.ma.masked_where(mc_aiso_hist == 0, mc_aiso_hist)
+    data_iso_hist = np.ma.masked_where(data_iso_hist == 0, data_iso_hist)
+    mc_iso_hist = np.ma.masked_where(mc_iso_hist == 0, mc_iso_hist)
 
     # Recompute errors for rebinned histograms
     data_iso_errors = np.sqrt(np.histogram(df_data_iso[feature], bins=bin_edges, weights=df_data_iso["wt_sf"]**2)[0])
@@ -240,6 +240,7 @@ def plot_feature_with_reweighting_with_rebinning_and_ratio_errors(feature, bins,
 
     # Ratios and Errors: BEFORE Reweighting
     ratio_data_before = np.divide(data_iso_hist, data_aiso_hist_before, out=np.zeros_like(data_iso_hist), where=data_aiso_hist_before != 0)
+
     ratio_data_errors_before = ratio_data_before * np.sqrt(
         (data_iso_errors / data_iso_hist) ** 2 + (data_aiso_errors_before / data_aiso_hist_before) ** 2
     )
@@ -282,15 +283,15 @@ def plot_feature_with_reweighting_with_rebinning_and_ratio_errors(feature, bins,
     fig, axs = plt.subplots(6, 2, figsize=(52, 40), gridspec_kw={'height_ratios': [3, 1, 3, 1, 3, 1]}, sharex='col')
 
     # Data AISO and ISO Before Reweighting
-    axs[0, 0].hist(bin_edges[:-1], bins=bin_edges, weights=masked_data_aiso_hist_before, histtype="step", label="Data AISO Before", linewidth=2)
-    axs[0, 0].scatter(bin_centers, masked_data_iso_hist, label="Data ISO", color="blue")
+    axs[0, 0].hist(bin_edges[:-1], bins=bin_edges, weights=data_aiso_hist_before, histtype="step", label="Data AISO Before", linewidth=2)
+    axs[0, 0].scatter(bin_centers, data_iso_hist, label="Data ISO", color="blue")
     axs[0, 0].set_ylabel("Counts")
     axs[0, 0].legend()
     axs[0, 0].set_title(f"{feature} (Data Before Reweighting)")
 
     # MC AISO and ISO Before Reweighting
-    axs[0, 1].hist(bin_edges[:-1], bins=bin_edges, weights=masked_mc_aiso_hist_before, histtype="step", label="MC AISO Before", linewidth=2)
-    axs[0, 1].scatter(bin_centers, masked_mc_iso_hist, label="MC ISO", color="red")
+    axs[0, 1].hist(bin_edges[:-1], bins=bin_edges, weights=mc_aiso_hist_before, histtype="step", label="MC AISO Before", linewidth=2)
+    axs[0, 1].scatter(bin_centers, mc_iso_hist, label="MC ISO", color="red")
     axs[0, 1].set_ylabel("Counts")
     axs[0, 1].legend()
     axs[0, 1].set_title(f"{feature} (MC Before Reweighting)")
@@ -308,15 +309,15 @@ def plot_feature_with_reweighting_with_rebinning_and_ratio_errors(feature, bins,
     axs[1, 1].set_ylim(0, 3)
 
     # Data AISO and ISO After Reweighting
-    axs[2, 0].hist(bin_edges[:-1], bins=bin_edges, weights=masked_data_aiso_hist, histtype="step", label="Data AISO", linewidth=2)
-    axs[2, 0].scatter(bin_centers, masked_data_iso_hist, label="Data ISO", color="blue")
+    axs[2, 0].hist(bin_edges[:-1], bins=bin_edges, weights=data_aiso_hist, histtype="step", label="Data AISO", linewidth=2)
+    axs[2, 0].scatter(bin_centers, data_iso_hist, label="Data ISO", color="blue")
     axs[2, 0].set_ylabel("Counts")
     axs[2, 0].legend()
     axs[2, 0].set_title(f"{feature} (Data After Reweighting)")
 
     # MC AISO and ISO After Reweighting
-    axs[2, 1].hist(bin_edges[:-1], bins=bin_edges, weights=masked_mc_aiso_hist, histtype="step", label="MC AISO", linewidth=2)
-    axs[2, 1].scatter(bin_centers, masked_mc_iso_hist, label="MC ISO", color="red")
+    axs[2, 1].hist(bin_edges[:-1], bins=bin_edges, weights=mc_aiso_hist, histtype="step", label="MC AISO", linewidth=2)
+    axs[2, 1].scatter(bin_centers, mc_iso_hist, label="MC ISO", color="red")
     axs[2, 1].set_ylabel("Counts")
     axs[2, 1].legend()
     axs[2, 1].set_title(f"{feature} (MC After Reweighting)")
@@ -336,15 +337,15 @@ def plot_feature_with_reweighting_with_rebinning_and_ratio_errors(feature, bins,
     axs[3, 1].set_ylim(0, 3)
 
     # Subtraction Before Reweighting
-    axs[4, 0].scatter(bin_centers, masked_data_iso_hist - masked_mc_iso_hist, label="ISO", color="black")
-    axs[4, 0].hist(bin_edges[:-1], bins=bin_edges, weights=masked_data_aiso_hist_before - masked_mc_aiso_hist_before, histtype="step", label="AISO", linewidth=2)
+    axs[4, 0].scatter(bin_centers, data_iso_hist - mc_iso_hist, label="ISO", color="black")
+    axs[4, 0].hist(bin_edges[:-1], bins=bin_edges, weights=data_aiso_hist_before - mc_aiso_hist_before, histtype="step", label="AISO", linewidth=2)
     axs[4, 0].set_ylabel("Counts")
     axs[4, 0].legend()
     axs[4, 0].set_title(f"{feature} (Subtraction Before Reweighting)")
 
     # Subtraction After Reweighting
-    axs[4, 1].scatter(bin_centers, masked_data_iso_hist - masked_mc_iso_hist, label="ISO", color="black")
-    axs[4, 1].hist(bin_edges[:-1], bins=bin_edges, weights=masked_data_aiso_hist - masked_mc_aiso_hist, histtype="step", label="AISO", linewidth=2)
+    axs[4, 1].scatter(bin_centers, data_iso_hist - mc_iso_hist, label="ISO", color="black")
+    axs[4, 1].hist(bin_edges[:-1], bins=bin_edges, weights=data_aiso_hist - mc_aiso_hist, histtype="step", label="AISO", linewidth=2)
     axs[4, 1].set_ylabel("Counts")
     axs[4, 1].legend()
     axs[4, 1].set_title(f"{feature} (Subtraction After Reweighting)")
