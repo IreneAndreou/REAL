@@ -9,6 +9,7 @@ import uproot
 import matplotlib.pyplot as plt
 import mplhep as hep
 from matplotlib.gridspec import GridSpec
+from scipy.stats import ks_2samp
 import os
 
 # Argument parser
@@ -114,6 +115,13 @@ def process_reweighting(df_target, model, features, original_class, target_class
         
         # Normalize weights: target_class / sum of probabilities
         reweight = probabilities[:, target_class] / probabilities[:, original_class]
+        # # Normalize each term to the sum of each class
+        # class_0 = probabilities[:, 0] / np.sum(probabilities[:, 0])
+        # class_1 = probabilities[:, 1] / np.sum(probabilities[:, 1])
+        # class_2 = probabilities[:, 2] / np.sum(probabilities[:, 2])
+        # class_3 = probabilities[:, 3] / np.sum(probabilities[:, 3])
+
+        # reweight = (class_0 - class_1) / (class_2 - class_3)
         weights.append(reweight)
 
     return np.concatenate(weights)
@@ -251,6 +259,22 @@ def plot_feature_with_reweighting_with_rebinning_and_ratio_errors(feature, bins,
         (mc_iso_errors / mc_iso_hist)**2 + (np.sqrt(mc_aiso_hist) / mc_aiso_hist)**2
     )
 
+    # Calculate chi-square and KS-test for before and after histograms
+    # Before Reweighting
+    chi2_data_before = np.sum(((data_iso_hist - data_aiso_hist_before)**2) / (data_iso_errors**2 + 1e-10))
+    chi2_mc_before = np.sum(((mc_iso_hist - mc_aiso_hist_before)**2) / (mc_iso_errors**2 + 1e-10))
+
+    ks_stat_data_before, ks_pval_data_before = ks_2samp(data_iso_hist, data_aiso_hist_before)
+    ks_stat_mc_before, ks_pval_mc_before = ks_2samp(mc_iso_hist, mc_aiso_hist_before)
+
+    # After Reweighting
+    chi2_data = np.sum(((data_iso_hist - data_aiso_hist)**2) / (data_iso_errors**2 + 1e-10))
+    chi2_mc = np.sum(((mc_iso_hist - mc_aiso_hist)**2) / (mc_iso_errors**2 + 1e-10))
+
+    ks_stat_data, ks_pval_data = ks_2samp(data_iso_hist, data_aiso_hist)
+    ks_stat_mc, ks_pval_mc = ks_2samp(mc_iso_hist, mc_aiso_hist)
+
+
     # Calculate bin centers
     bin_centers = (bin_edges[:-1] + bin_edges[1:]) / 2
 
@@ -353,6 +377,22 @@ def plot_feature_with_reweighting_with_rebinning_and_ratio_errors(feature, bins,
     axs[5, 1].set_xlabel(feature)
     axs[5, 1].set_ylabel("ISO / AISO")
     axs[5, 1].set_ylim(-3, 3)
+
+    # Annotate chi-square and KS-test results
+    # Before Reweighting
+    axs[5, 0].text(0.05, -2.5, f"Chi2 Data (Before): {chi2_data_before:.2f}\nChi2 MC (Before): {chi2_mc_before:.2f}",
+                    transform=axs[5, 0].transAxes, fontsize=10, verticalalignment='top')
+    axs[5, 0].text(0.05, -2.8, f"KS Data (Before): {ks_stat_data_before:.2f}, p={ks_pval_data_before:.2g}\n"
+                            f"KS MC (Before): {ks_stat_mc_before:.2f}, p={ks_pval_mc_before:.2g}",
+                    transform=axs[5, 0].transAxes, fontsize=10, verticalalignment='top')
+
+    # After Reweighting
+    axs[5, 1].text(0.05, -2.5, f"Chi2 Data (After): {chi2_data:.2f}\nChi2 MC (After): {chi2_mc:.2f}",
+                    transform=axs[5, 1].transAxes, fontsize=10, verticalalignment='top')
+    axs[5, 1].text(0.05, -2.8, f"KS Data (After): {ks_stat_data:.2f}, p={ks_pval_data:.2g}\n"
+                            f"KS MC (After): {ks_stat_mc:.2f}, p={ks_pval_mc:.2g}",
+                    transform=axs[5, 1].transAxes, fontsize=10, verticalalignment='top')
+
 
     plt.tight_layout()
     plt.savefig(output_path)
