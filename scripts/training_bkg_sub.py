@@ -170,6 +170,16 @@ print(f"Temperature Scaled Log Loss: {log_loss_temp_scaled:.4f}")
 
 # Save Feature Importance
 plt.figure()
-xgb.plot_importance(bst)
+xgb.plot_importance(bst, importance_type='weight')
 plt.title("Feature Importance")
-plt.savefig(f"{output_dir}/feature_importance.pdf")
+plt.savefig(f"{output_dir}/feature_importance_weight.pdf")
+
+plt.figure()
+xgb.plot_importance(bst, importance_type='gain')
+plt.title("Feature Importance")
+plt.savefig(f"{output_dir}/feature_importance_gain.pdf")
+
+plt.figure()
+xgb.plot_importance(bst, importance_type='cover')
+plt.title("Feature Importance")
+plt.savefig(f"{output_dir}/feature_importance_cover.pdf")
