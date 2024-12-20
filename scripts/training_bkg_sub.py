@@ -42,6 +42,7 @@ parser = argparse.ArgumentParser(description='Train a 4-class BDT model for jet-
 parser.add_argument('--config', type=str, required=True, help='Path to the YAML configuration file')
 parser.add_argument('--era', type=str, required=True, help='Processing era key in the YAML file')
 parser.add_argument('--tau', type=str, choices=['leading', 'subleading'], required=True, help='Tau to process: leading or subleading')
+parser.add_argument('--global_variables', type=str, required=True, default='True', help='Training with global features: True or False')
 args = parser.parse_args()
 
 # Load Configuration File
@@ -54,16 +55,19 @@ training_cfg = config['training']
 hyperparameters_cfg = config['hyperparameters']
 
 tau_suffix = "lead" if args.tau == "leading" else "sublead"
-data_iso_file = era_cfg['data_iso_file'].format(tau_suffix=tau_suffix)
-data_aiso_file = era_cfg['data_aiso_file'].format(tau_suffix=tau_suffix)
-mc_iso_file = era_cfg['mc_iso_file'].format(tau_suffix=tau_suffix)
-mc_aiso_file = era_cfg['mc_aiso_file'].format(tau_suffix=tau_suffix)
-output_dir = era_cfg['output_dir'].format(tau_suffix=tau_suffix)
+global_prefix = "global_" if args.global_variables == "True" else "no_global_"
+data_iso_file = era_cfg['data_iso_file'].format(tau_suffix=tau_suffix, global_prefix=global_prefix)
+data_aiso_file = era_cfg['data_aiso_file'].format(tau_suffix=tau_suffix, global_prefix=global_prefix)
+mc_iso_file = era_cfg['mc_iso_file'].format(tau_suffix=tau_suffix, global_prefix=global_prefix)
+mc_aiso_file = era_cfg['mc_aiso_file'].format(tau_suffix=tau_suffix, global_prefix=global_prefix)
+output_dir = era_cfg['output_dir'].format(tau_suffix=tau_suffix, global_prefix=global_prefix)
 os.makedirs(output_dir, exist_ok=True)
 
 # Load Data
 tree_name = "tree"
-branches = training_cfg['branches']
+branches = training_cfg[f'{args.tau}_tau']
+if args.global_variables == 'True':
+    branches += training_cfg['global_variables']
 
 data_iso_df = load_data(data_iso_file, tree_name, branches)
 data_aiso_df = load_data(data_aiso_file, tree_name, branches)
@@ -82,7 +86,7 @@ combined_df = pd.concat([data_iso_df, data_aiso_df, mc_iso_df, mc_aiso_df]).samp
 # Prepare Features and Labels
 X_all = combined_df.drop(columns=['label'])
 y = combined_df['label'].astype(int)
-X = X_all[training_cfg['branches']]
+X = X_all[branches]
 print("Feature columns:", X.columns)
 print("Sample data:", X.head())
 
@@ -178,31 +182,51 @@ optimal_temperature = find_optimal_temperature(logits, y_test)
 optimal_temperature = float(optimal_temperature)
 
 # Path to the YAML file
-file_path = '/vols/cms/ia2318/REAL/configs/Run3_2022/plot_config_bkg_sub.yaml'
+file_path = f'/vols/cms/ia2318/REAL/configs/{args.era}/plot_config_bkg_sub.yaml'
 
-# Read the file contents
+# Read the file line by line
 with open(file_path, 'r') as file:
-    content = file.read()
+    lines = file.readlines()
 
-# Check if "optimal_temperature:\n  leading:" exists
-if "optimal_temperature:\n  leading:" in content:
-    # Update the value after "leading:"
-    updated_content = []
-    for line in content.splitlines():
-        if line.strip().startswith("leading:"):
-            updated_content.append(f"  leading: {optimal_temperature}")
-        else:
-            updated_content.append(line)
-    content = "\n".join(updated_content)
-else:
-    # Append the "optimal_temperature" block
-    content += f"\noptimal_temperature:\n  leading: {optimal_temperature}\n"
+# Variables for updating
+tau_key = f"{args.tau}_tau"  # E.g., "leading_tau" or "subleading_tau"
+global_string = global_prefix + "variables"  # E.g., "global_variables" or "no_global_variables"
+optimal_temperature_value = optimal_temperature  # The value to update or append
+
+# Flags and storage for the new content
+within_tau_key = False
+key_updated = False
+new_lines = []
+
+for idx, line in enumerate(lines):
+    stripped_line = line.strip()
+
+    # Detect the start of the tau_key block
+    if stripped_line.startswith(f"{tau_key}:"):
+        within_tau_key = True
+        new_lines.append(line)
+        print(f"Detected start of block for {tau_key}.")
+        continue
+
+    # Handle lines within the tau_key block
+    if within_tau_key:
+        # Check if the target key exists
+        if stripped_line.startswith(global_string + ":"):
+            indent = ' ' * (len(line) - len(line.lstrip()))
+            new_lines.append(f"{indent}{global_string}: {optimal_temperature_value}\n")
+            key_updated = True
+            print(f"Updated {global_string} in block {tau_key}.")
+            continue
+        
+    # Add all lines as-is
+    new_lines.append(line)
 
 # Write the updated content back to the file
 with open(file_path, 'w') as file:
-    file.write(content)
+    file.writelines(new_lines)
 
-print(f"Optimal temperature: {optimal_temperature} updated successfully.")
+print(f"Successfully updated {global_string} in {tau_key} with value {optimal_temperature_value}.")
+
 
 y_pred_probs_temp_scaled = softmax_temperature_scaling(logits, optimal_temperature)
 log_loss_temp_scaled = log_loss(y_test, y_pred_probs_temp_scaled)

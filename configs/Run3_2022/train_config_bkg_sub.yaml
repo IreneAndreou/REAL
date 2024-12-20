@@ -4,10 +4,10 @@ era:
     data_aiso_file: "/vols/cms/ia2318/REAL/data/Run3_2022/processed/data_all_events_Run3_2022_data_aiso_{tau_suffix}.root"
     mc_iso_file: "/vols/cms/ia2318/REAL/data/Run3_2022/processed/mc_all_events_Run3_2022_data_iso_{tau_suffix}.root"
     mc_aiso_file: "/vols/cms/ia2318/REAL/data/Run3_2022/processed/mc_all_events_Run3_2022_data_aiso_{tau_suffix}.root"
-    output_dir: "/vols/cms/ia2318/REAL/outputs/best_models/Run3_2022/{tau_suffix}/no_global_bkg_sub"
+    output_dir: "/vols/cms/ia2318/REAL/outputs/best_models/Run3_2022/{tau_suffix}/{global_prefix}bkg_sub"
 
 training:
-  branches: 
+  leading_tau: 
     - "decayMode_1"
     - "jpt_pt_1"
     - "pt_1"
@@ -15,6 +15,18 @@ training:
     - "charge_1"
     - "phi_1"
     - "decayModePNet_1"
+  subleading_tau: 
+    - "decayMode_2"
+    - "jpt_pt_2"
+    - "pt_2"
+    - "eta_2"
+    - "charge_2"
+    - "phi_2"
+    - "decayModePNet_2"
+  global_variables:
+    - "n_jets"
+    - "n_bjets"
+
 
 hyperparameters:
   max_depth: [3, 10]
@@ -25,6 +37,6 @@ hyperparameters:
   reg_alpha: [1e-8, 1.0]
   reg_lambda: [1e-8, 1.0]
   n_trials: 50
-  n_jobs: 8
+  n_jobs: 10
   early_stopping_rounds: 10
   num_boost_round: 1000
