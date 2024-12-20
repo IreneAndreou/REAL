@@ -75,5 +75,5 @@ optimal_temperature:
     global_variables: 1.0
     no_global_variables: 1.0
   subleading_tau:
-    global_variables: 1.001435111127794
+    global_variables: 1.0
     no_global_variables: 1.0
