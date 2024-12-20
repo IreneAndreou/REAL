@@ -1,14 +1,25 @@
 era:
   Run3_2022:
-    model_path: "/vols/cms/ia2318/REAL/outputs/best_models/Run3_2022/sublead/global_bkg_sub/best_model.pkl"
-    data_iso_path: "/vols/cms/ia2318/REAL/data/Run3_2022/processed/data_all_events_Run3_2022_data_iso_sublead.root"
-    data_aiso_path: "/vols/cms/ia2318/REAL/data/Run3_2022/processed/data_all_events_Run3_2022_data_aiso_sublead.root"
-    mc_iso_path: "/vols/cms/ia2318/REAL/data/Run3_2022/processed/mc_all_events_Run3_2022_mc_iso_sublead.root"
-    mc_aiso_path: "/vols/cms/ia2318/REAL/data/Run3_2022/processed/mc_all_events_Run3_2022_mc_aiso_sublead.root"
-    output_dir: "/vols/cms/ia2318/REAL/outputs/plots/Run3_2022/sublead/global_bkg_sub_test"
+    model_path: "/vols/cms/ia2318/REAL/outputs/best_models/Run3_2022/{tau}/{global_tag}bkg_sub/best_model.pkl"
+    data_iso_path: "/vols/cms/ia2318/REAL/data/Run3_2022/processed/data_all_events_Run3_2022_data_iso_{tau}.root"
+    data_aiso_path: "/vols/cms/ia2318/REAL/data/Run3_2022/processed/data_all_events_Run3_2022_data_aiso_{tau}.root"
+    mc_iso_path: "/vols/cms/ia2318/REAL/data/Run3_2022/processed/mc_all_events_Run3_2022_mc_iso_{tau}.root"
+    mc_aiso_path: "/vols/cms/ia2318/REAL/data/Run3_2022/processed/mc_all_events_Run3_2022_mc_aiso_{tau}.root"
+    output_dir: "/vols/cms/ia2318/REAL/outputs/plots/Run3_2022/{tau}/{global_tag}bkg_sub_test"
 
 features:
-  main: ['decayMode_2', 'jpt_pt_2', 'pt_2', 'eta_2', 'charge_2', 'phi_2', 'decayModePNet_2', 'n_jets', 'n_bjets', 'met_var_qcd_2']
+  global: 
+    - 'n_jets'
+    - 'n_bjets'
+    - 'met_var_qcd_{tau_suffix}'
+  no_global: 
+    - 'decayMode_{tau_suffix}'
+    - 'jpt_pt_{tau_suffix}'
+    - 'pt_{tau_suffix}'
+    - 'eta_{tau_suffix}'
+    - 'charge_{tau_suffix}'
+    - 'phi_{tau_suffix}'
+    - 'decayModePNet_{tau_suffix}'
   plot: ['decayMode_1', 'decayMode_2', 'jpt_pt_1', 'jpt_pt_2', 'pt_1', 'pt_2', 'eta_1', 'eta_2',
          'charge_1', 'charge_2', 'phi_1', 'phi_2', 'n_jets', 'n_prebjets', 'n_bjets',
          'met_pt', 'met_phi', 'met_dphi_1', 'met_dphi_2', 'met_var_qcd_2', 'decayModePNet_1', 'decayModePNet_2']

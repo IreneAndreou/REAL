@@ -19,28 +19,41 @@ import os
 parser = argparse.ArgumentParser(description="Plot BDT reweighting results.")
 parser.add_argument("--config", type=str, required=True, help="Path to the YAML configuration file")
 parser.add_argument("--era", type=str, required=True, help="Processing era key in the YAML file")
+parser.add_argument('--tau', type=str, choices=['lead', 'sublead'], required=True, help='Tau to process: leading or subleading')
+parser.add_argument('--global_variables', type=str, required=True, default='True', help='Training with global features: True or False')
 args = parser.parse_args()
 
 # Load configuration file
 with open(args.config, "r") as f:
     config = yaml.safe_load(f)
 
+if args.global_variables == 'True':
+    global_tag = 'global_'
+else:
+    global_tag = 'no_global_'
+
 # Retrieve era-specific paths and settings
 era_config = config["era"][args.era]
-model_path = era_config["model_path"]
-mc_iso_path = era_config["mc_iso_path"]
-mc_aiso_path = era_config["mc_aiso_path"]
-data_iso_path = era_config["data_iso_path"]
-data_aiso_path = era_config["data_aiso_path"]
-output_dir = era_config["output_dir"]
+model_path = era_config["model_path"].format(tau=args.tau, global_tag=global_tag)
+mc_iso_path = era_config["mc_iso_path"].format(tau=args.tau)
+mc_aiso_path = era_config["mc_aiso_path"].format(tau=args.tau)
+data_iso_path = era_config["data_iso_path"].format(tau=args.tau)
+data_aiso_path = era_config["data_aiso_path"].format(tau=args.tau)
+output_dir = era_config["output_dir"].format(tau=args.tau, global_tag=global_tag)
 os.makedirs(output_dir, exist_ok=True)
 
 # Features and plotting configuration
-main_features = config["features"]["main"]
+if args.tau == "lead":
+    tau_suffix = "1"
+if args.tau == "sublead":
+    tau_suffix = "2"
+main_features = [feature.format(tau_suffix=tau_suffix) for feature in config["features"]["no_global"]]
+if args.global_variables == 'True':
+    main_features += [feature.format(tau_suffix=tau_suffix) for feature in config["features"]["global"]]
 plot_features = config["features"]["plot"]
 plot_bins = config["plot_params"]["bins"]
 plot_ranges = config["plot_params"]["ranges"]
-optimal_temperature = config["optimal_temperature"]["subleading_tau"]["global_variables"]
+optimal_temperature = config["optimal_temperature"][f"{args.tau}ing_tau"][f"{global_tag}variables"]
 
 # Load the BDT model
 with open(model_path, "rb") as file:
