@@ -107,11 +107,11 @@ def process_file_in_batches(input_file_path, tau_index, file_suffix,
         sampled_iso_events["jpt_pt_2"] = sampled_iso_events["jpt_2"] / sampled_iso_events["pt_2"]
         sampled_aiso_events["jpt_pt_2"] = sampled_aiso_events["jpt_2"] / sampled_aiso_events["pt_2"]
     if "met_pt" in sampled_iso_events and "pt_1" in sampled_iso_events and "met_dphi_1" in sampled_iso_events:
-        sampled_iso_events["met_pt_cos_dphi_1"] = (sampled_iso_events["met_pt"] / sampled_iso_events["pt_1"]) * np.cos(sampled_iso_events["met_dphi_1"])
-        sampled_aiso_events["met_pt_cos_dphi_1"] = (sampled_aiso_events["met_pt"] / sampled_aiso_events["pt_1"]) * np.cos(sampled_aiso_events["met_dphi_1"])
+        sampled_iso_events["met_var_qcd_1"] = (sampled_iso_events["met_pt"] / sampled_iso_events["pt_1"]) * np.cos(sampled_iso_events["met_dphi_1"])
+        sampled_aiso_events["met_var_qcd_1"] = (sampled_aiso_events["met_pt"] / sampled_aiso_events["pt_1"]) * np.cos(sampled_aiso_events["met_dphi_1"])
     if "met_pt" in sampled_iso_events and "pt_2" in sampled_iso_events and "met_dphi_2" in sampled_iso_events:
-        sampled_iso_events["met_pt_cos_dphi_2"] = (sampled_iso_events["met_pt"] / sampled_iso_events["pt_2"]) * np.cos(sampled_iso_events["met_dphi_2"])
-        sampled_aiso_events["met_pt_cos_dphi_2"] = (sampled_aiso_events["met_pt"] / sampled_aiso_events["pt_2"]) * np.cos(sampled_aiso_events["met_dphi_2"])
+        sampled_iso_events["met_var_qcd_2"] = (sampled_iso_events["met_pt"] / sampled_iso_events["pt_2"]) * np.cos(sampled_iso_events["met_dphi_2"])
+        sampled_aiso_events["met_var_qcd_2"] = (sampled_aiso_events["met_pt"] / sampled_aiso_events["pt_2"]) * np.cos(sampled_aiso_events["met_dphi_2"])
 
     # Ensure all branches have the same length
     for dataset_name, dataset in zip([
