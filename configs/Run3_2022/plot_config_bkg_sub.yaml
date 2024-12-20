@@ -1,17 +1,17 @@
 era:
   Run3_2022:
-    model_path: "/vols/cms/ia2318/REAL/outputs/best_models/Run3_2022/lead/no_global_bkg_sub/best_model.pkl"
-    data_iso_path: "/vols/cms/ia2318/REAL/data/Run3_2022/processed/data_all_events_Run3_2022_data_iso_lead.root"
-    data_aiso_path: "/vols/cms/ia2318/REAL/data/Run3_2022/processed/data_all_events_Run3_2022_data_aiso_lead.root"
-    mc_iso_path: "/vols/cms/ia2318/REAL/data/Run3_2022/processed/mc_all_events_Run3_2022_data_iso_lead.root"
-    mc_aiso_path: "/vols/cms/ia2318/REAL/data/Run3_2022/processed/mc_all_events_Run3_2022_data_aiso_lead.root"
-    output_dir: "/vols/cms/ia2318/REAL/outputs/plots/Run3_2022/lead/no_global_bkg_sub"
+    model_path: "/vols/cms/ia2318/REAL/outputs/best_models/Run3_2022/sublead/global_bkg_sub/best_model.pkl"
+    data_iso_path: "/vols/cms/ia2318/REAL/data/Run3_2022/processed/data_all_events_Run3_2022_data_iso_sublead.root"
+    data_aiso_path: "/vols/cms/ia2318/REAL/data/Run3_2022/processed/data_all_events_Run3_2022_data_aiso_sublead.root"
+    mc_iso_path: "/vols/cms/ia2318/REAL/data/Run3_2022/processed/mc_all_events_Run3_2022_mc_iso_sublead.root"
+    mc_aiso_path: "/vols/cms/ia2318/REAL/data/Run3_2022/processed/mc_all_events_Run3_2022_mc_aiso_sublead.root"
+    output_dir: "/vols/cms/ia2318/REAL/outputs/plots/Run3_2022/sublead/global_bkg_sub_test"
 
 features:
-  main: ['decayMode_1', 'jpt_pt_1', 'pt_1', 'eta_1', 'charge_1', 'phi_1', 'decayModePNet_1']
+  main: ['decayMode_2', 'jpt_pt_2', 'pt_2', 'eta_2', 'charge_2', 'phi_2', 'decayModePNet_2', 'n_jets', 'n_bjets', 'met_var_qcd_2']
   plot: ['decayMode_1', 'decayMode_2', 'jpt_pt_1', 'jpt_pt_2', 'pt_1', 'pt_2', 'eta_1', 'eta_2',
          'charge_1', 'charge_2', 'phi_1', 'phi_2', 'n_jets', 'n_prebjets', 'n_bjets',
-         'met_pt', 'met_phi', 'met_dphi_1', 'met_dphi_2', 'decayModePNet_1', 'decayModePNet_2']
+         'met_pt', 'met_phi', 'met_dphi_1', 'met_dphi_2', 'met_var_qcd_2', 'decayModePNet_1', 'decayModePNet_2']
 
 plot_params:
   bins:
@@ -34,6 +34,7 @@ plot_params:
     'met_phi': 30
     'met_dphi_1': 30
     'met_dphi_2': 30
+    'met_var_qcd_2': 50
     'decayModePNet_1': 12  # Discrete bins: 0, 1, 2, 10, 11
     'decayModePNet_2': 12  # Discrete bins: 0, 1, 2, 10, 11
 
@@ -57,6 +58,7 @@ plot_params:
     'met_phi': [-3.2, 3.2]
     'met_dphi_1': [-3.2, 3.2]
     'met_dphi_2': [-3.2, 3.2]
+    'met_var_qcd_2': [-10, 10]
     'decayModePNet_1': [0, 12]
     'decayModePNet_2': [0, 12]
   
@@ -68,3 +70,10 @@ plot_params:
     'decayModePNet_1': [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
     'decayModePNet_2': [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
 
+optimal_temperature:
+  leading_tau: 
+    global_variables: 1.0
+    no_global_variables: 1.0
+  subleading_tau:
+    global_variables: 1.001435111127794
+    no_global_variables: 1.0

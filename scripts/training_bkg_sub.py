@@ -67,7 +67,14 @@ os.makedirs(output_dir, exist_ok=True)
 tree_name = "tree"
 branches = training_cfg[f'{args.tau}_tau']
 if args.global_variables == 'True':
-    branches += training_cfg['global_variables']
+    for var in training_cfg['global_variables']:
+        if '{tau_suffix}' in var:
+            if tau_suffix == 'lead':
+                branches.append(var.format(tau_suffix='1'))
+            elif tau_suffix == 'sublead':
+                branches.append(var.format(tau_suffix='2'))
+        else:
+            branches.append(var)
 
 data_iso_df = load_data(data_iso_file, tree_name, branches)
 data_aiso_df = load_data(data_aiso_file, tree_name, branches)
@@ -217,7 +224,7 @@ for idx, line in enumerate(lines):
             key_updated = True
             print(f"Updated {global_string} in block {tau_key}.")
             continue
-        
+
     # Add all lines as-is
     new_lines.append(line)
 

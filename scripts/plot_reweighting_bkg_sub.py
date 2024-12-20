@@ -40,7 +40,7 @@ main_features = config["features"]["main"]
 plot_features = config["features"]["plot"]
 plot_bins = config["plot_params"]["bins"]
 plot_ranges = config["plot_params"]["ranges"]
-optimal_temperature = config["optimal_temperature"]["leading"]
+optimal_temperature = config["optimal_temperature"]["subleading_tau"]["global_variables"]
 
 # Load the BDT model
 with open(model_path, "rb") as file:

@@ -2,8 +2,8 @@ era:
   Run3_2022:
     data_iso_file: "/vols/cms/ia2318/REAL/data/Run3_2022/processed/data_all_events_Run3_2022_data_iso_{tau_suffix}.root"
     data_aiso_file: "/vols/cms/ia2318/REAL/data/Run3_2022/processed/data_all_events_Run3_2022_data_aiso_{tau_suffix}.root"
-    mc_iso_file: "/vols/cms/ia2318/REAL/data/Run3_2022/processed/mc_all_events_Run3_2022_data_iso_{tau_suffix}.root"
-    mc_aiso_file: "/vols/cms/ia2318/REAL/data/Run3_2022/processed/mc_all_events_Run3_2022_data_aiso_{tau_suffix}.root"
+    mc_iso_file: "/vols/cms/ia2318/REAL/data/Run3_2022/processed/mc_all_events_Run3_2022_mc_iso_{tau_suffix}.root"
+    mc_aiso_file: "/vols/cms/ia2318/REAL/data/Run3_2022/processed/mc_all_events_Run3_2022_mc_aiso_{tau_suffix}.root"
     output_dir: "/vols/cms/ia2318/REAL/outputs/best_models/Run3_2022/{tau_suffix}/{global_prefix}bkg_sub"
 
 training:
