@@ -26,7 +26,7 @@ training:
   global_variables:
     - "n_jets"
     - "n_bjets"
-
+    - "met_var_qcd_{tau_suffix}"
 
 hyperparameters:
   max_depth: [3, 10]
