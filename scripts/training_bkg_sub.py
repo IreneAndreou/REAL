@@ -7,7 +7,7 @@ import uproot
 import xgboost as xgb
 from xgboost import plot_importance
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import log_loss
+from sklearn.metrics import log_loss, roc_auc_score, roc_curve
 import matplotlib.pyplot as plt
 import joblib
 import optuna
@@ -147,15 +147,28 @@ best_params.update({'objective': 'multi:softprob', 'num_class': 4, 'eval_metric'
 # ------------------------------
 # Train Final Model
 # ------------------------------
+eval_results = {}
+
 dtrain = xgb.DMatrix(X_train, label=y_train)
 dtest = xgb.DMatrix(X_test, label=y_test)
 bst = xgb.train(best_params, dtrain, num_boost_round=hyperparameters_cfg['num_boost_round'],
-                evals=[(dtrain, 'train'), (dtest, 'eval')],
+                evals=[(dtrain, 'train'), (dtest, 'eval')], evals_result=eval_results,
                 early_stopping_rounds=hyperparameters_cfg['early_stopping_rounds'], verbose_eval=True)
 
 # Save the Model
 bst.save_model(f"{output_dir}/best_model.json")
 joblib.dump(bst, f"{output_dir}/best_model.pkl")
+
+# Save Loss Curve Plot
+plt.figure(figsize=(10, 6))
+plt.plot(eval_results['train']['mlogloss'], label='Training Loss')
+plt.plot(eval_results['eval']['mlogloss'], label='Validation Loss')
+plt.xlabel('Boosting Round')
+plt.ylabel('Log Loss')
+plt.legend()
+plt.grid()
+plt.savefig(f"{output_dir}/loss_curve.pdf")
+plt.close()
 
 # ------------------------------
 # Evaluate the Model
@@ -197,7 +210,42 @@ log_loss_temp_scaled = log_loss(y_test, y_pred_probs_temp_scaled)
 print(f"Original Log Loss: {log_loss(y_test, softmax(logits, axis=1)):.4f}")
 print(f"Temperature Scaled Log Loss: {log_loss_temp_scaled:.4f}")
 
-# Save Feature Importance
+# ------------------------------
+# Calculate AUC for Each Class
+# ------------------------------
+# Get predicted probabilities for the test set
+y_pred_probs = softmax(logits, axis=1)  # Convert logits to probabilities
+
+# Calculate AUC for each class (one-vs-rest)
+auc_scores = {}
+for class_idx in range(best_params['num_class']):
+    y_true_binary = (y_test == class_idx).astype(int)  # One-vs-rest binary labels
+    auc_scores[f"Class {class_idx}"] = roc_auc_score(y_true_binary, y_pred_probs[:, class_idx])
+
+# Save AUC Scores
+with open(f"{output_dir}/auc_scores.txt", 'w') as file:
+    for class_label, auc in auc_scores.items():
+        file.write(f"{class_label}: {auc:.4f}\n")
+print("AUC scores saved.")
+
+# Plot ROC Curves
+plt.figure(figsize=(10, 8))
+for class_idx in range(best_params['num_class']):
+    y_true_binary = (y_test == class_idx).astype(int)
+    fpr, tpr, _ = roc_curve(y_true_binary, y_pred_probs[:, class_idx])
+    plt.plot(fpr, tpr, label=f'Class {class_idx} AUC = {auc_scores[f"Class {class_idx}"]:.4f}')
+
+plt.xlabel('False Positive Rate')
+plt.ylabel('True Positive Rate')
+plt.title('ROC Curves for Each Class')
+plt.legend()
+plt.grid()
+plt.savefig(f"{output_dir}/roc_curves.pdf")
+plt.close()
+
+# ------------------------------
+# Feature Importance Plots
+# ------------------------------
 plt.figure()
 xgb.plot_importance(bst, importance_type='weight')
 plt.title("Feature Importance")
