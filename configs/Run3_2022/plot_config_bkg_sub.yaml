@@ -5,7 +5,7 @@ era:
     data_aiso_path: "/vols/cms/ia2318/REAL/data/Run3_2022/processed/data_all_events_Run3_2022_data_aiso_{tau}.root"
     mc_iso_path: "/vols/cms/ia2318/REAL/data/Run3_2022/processed/mc_all_events_Run3_2022_mc_iso_{tau}.root"
     mc_aiso_path: "/vols/cms/ia2318/REAL/data/Run3_2022/processed/mc_all_events_Run3_2022_mc_aiso_{tau}.root"
-    output_dir: "/vols/cms/ia2318/REAL/outputs/plots/Run3_2022/{tau}/{global_tag}bkg_sub_test"
+    output_dir: "/vols/cms/ia2318/REAL/outputs/plots/Run3_2022/{tau}/{global_tag}bkg_sub"
 
 features:
   global: 
@@ -20,9 +20,33 @@ features:
     - 'charge_{tau_suffix}'
     - 'phi_{tau_suffix}'
     - 'decayModePNet_{tau_suffix}'
-  plot: ['decayMode_1', 'decayMode_2', 'jpt_pt_1', 'jpt_pt_2', 'pt_1', 'pt_2', 'eta_1', 'eta_2',
-         'charge_1', 'charge_2', 'phi_1', 'phi_2', 'n_jets', 'n_prebjets', 'n_bjets',
-         'met_pt', 'met_phi', 'met_dphi_1', 'met_dphi_2', 'met_var_qcd_2', 'decayModePNet_1', 'decayModePNet_2']
+  plot:
+    - 'decayMode_1'
+    - 'decayMode_2'
+    - 'jpt_pt_1'
+    - 'jpt_pt_2'
+    - 'pt_1'
+    - 'pt_2'
+    - 'pt_tt'
+    - 'eta_1'
+    - 'eta_2'
+    - 'charge_1'
+    - 'charge_2'
+    - 'phi_1'
+    - 'phi_2'
+    - 'dR'
+    - 'n_jets'
+    - 'n_bjets'
+    - 'm_vis'
+    - 'mt_tot'
+    - 'met_pt'
+    - 'met_phi'
+    - 'met_dphi_1'
+    - 'met_dphi_2'
+    - 'met_var_qcd_1'
+    - 'met_var_qcd_2'
+    - 'decayModePNet_1'
+    - 'decayModePNet_2'
 
 plot_params:
   bins:
@@ -32,19 +56,23 @@ plot_params:
     'jpt_pt_2': 15
     'pt_1': 100
     'pt_2': 100
+    'pt_tt': 100
     'eta_1': 30
     'eta_2': 30
     'phi_1': 30
     'phi_2': 30
+    'dR': 30
     'charge_1': 4
     'charge_2': 4
     'n_jets': 10
-    'n_prebjets': 10
     'n_bjets': 4
+    'm_vis': 100
+    'mt_tot': 100
     'met_pt': 40
     'met_phi': 30
     'met_dphi_1': 30
     'met_dphi_2': 30
+    'met_var_qcd_1': 50
     'met_var_qcd_2': 50
     'decayModePNet_1': 12  # Discrete bins: 0, 1, 2, 10, 11
     'decayModePNet_2': 12  # Discrete bins: 0, 1, 2, 10, 11
@@ -56,19 +84,23 @@ plot_params:
     'jpt_pt_2': [0, 15]
     'pt_1': [35, 800]
     'pt_2': [35, 800]
+    'pt_tt': [0, 800]
     'eta_1': [-3, 3]
     'eta_2': [-3, 3]
     'phi_1': [-3.2, 3.2]
     'phi_2': [-3.2, 3.2]
+    'dR': [0, 6]
     'charge_1': [-2, 2]
     'charge_2': [-2, 2]
     'n_jets': [0, 10]
-    'n_prebjets': [0, 10]
     'n_bjets': [0, 4]
+    'm_vis': [0, 200]
+    'mt_tot': [0, 200]
     'met_pt': [0, 200]
     'met_phi': [-3.2, 3.2]
     'met_dphi_1': [-3.2, 3.2]
     'met_dphi_2': [-3.2, 3.2]
+    'met_var_qcd_1': [-10, 10]
     'met_var_qcd_2': [-10, 10]
     'decayModePNet_1': [0, 12]
     'decayModePNet_2': [0, 12]

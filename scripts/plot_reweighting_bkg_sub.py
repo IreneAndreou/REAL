@@ -65,6 +65,23 @@ def load_data(root_file, branches):
         tree = file["tree"]
         return tree.arrays(branches, library="pd")
 
+
+def safe_divide(numerator, denominator):
+    """
+    Safely divide two arrays, avoiding division by zero and invalid values.
+
+    Parameters:
+        numerator: Array of numerators
+        denominator: Array of denominators
+
+    Returns:
+        Masked array with division results.
+    """
+    valid_mask = (denominator != 0) & (~denominator.mask)
+    result = np.zeros_like(numerator, dtype=float)
+    result[valid_mask] = numerator[valid_mask] / denominator[valid_mask]
+    return np.ma.masked_where(~valid_mask, result)
+
 # Load data and MC
 branches = plot_features + ["wt_sf"]
 df_mc_iso = load_data(mc_iso_path, branches)
@@ -261,19 +278,19 @@ def plot_feature_with_reweighting_with_rebinning_and_ratio_errors(feature, bins,
     mc_aiso_errors_before = np.sqrt(np.histogram(df_mc_aiso[feature], bins=bin_edges, weights=df_mc_aiso["wt_sf"]**2)[0])
 
     # Ratios and Errors: BEFORE Reweighting
-    ratio_data_before = np.divide(data_iso_hist, data_aiso_hist_before, out=np.zeros_like(data_iso_hist), where=data_aiso_hist_before != 0)
+    ratio_data_before = safe_divide(data_iso_hist, data_aiso_hist_before)
 
     ratio_data_errors_before = ratio_data_before * np.sqrt(
         (data_iso_errors / data_iso_hist) ** 2 + (data_aiso_errors_before / data_aiso_hist_before) ** 2
     )
-    ratio_mc_before = np.divide(mc_iso_hist, mc_aiso_hist_before, out=np.zeros_like(mc_iso_hist), where=mc_aiso_hist_before != 0)
+    ratio_mc_before = safe_divide(mc_iso_hist, mc_aiso_hist_before)
     ratio_mc_errors_before = ratio_mc_before * np.sqrt(
         (mc_iso_errors / mc_iso_hist) ** 2 + (mc_aiso_errors_before / mc_aiso_hist_before) ** 2
     )
 
     # Errors for ratios
-    ratio_data = np.divide(data_iso_hist, data_aiso_hist, out=np.zeros_like(data_iso_hist), where=data_aiso_hist != 0)
-    ratio_mc = np.divide(mc_iso_hist, mc_aiso_hist, out=np.zeros_like(mc_iso_hist), where=mc_aiso_hist != 0)
+    ratio_data = safe_divide(data_iso_hist, data_aiso_hist)
+    ratio_mc = safe_divide(mc_iso_hist, mc_aiso_hist)
 
     ratio_data_errors = ratio_data * np.sqrt(
         (data_iso_errors / data_iso_hist)**2 + (np.sqrt(data_aiso_hist) / data_aiso_hist)**2
@@ -373,7 +390,7 @@ def plot_feature_with_reweighting_with_rebinning_and_ratio_errors(feature, bins,
     axs[4, 1].set_title(f"{feature} (Subtraction After Reweighting)")
 
     # Subtraction Errors Before Reweighting
-    ratio_subtraction_before = np.divide(data_iso_hist - mc_iso_hist, data_aiso_hist_before - mc_aiso_hist_before, out=np.zeros_like(data_iso_hist), where=data_aiso_hist_before != 0)
+    ratio_subtraction_before = safe_divide(data_iso_hist - mc_iso_hist, data_aiso_hist_before - mc_aiso_hist_before)
     diff_data_iso_mc_iso_before_errors = np.sqrt(data_iso_errors**2 + mc_iso_errors**2)
     diff_data_aiso_mc_aiso_before_errors = np.sqrt(data_aiso_errors_before**2 + mc_aiso_errors_before**2)
     ratio_subtraction_errors_before = ratio_subtraction_before * np.sqrt(
@@ -387,7 +404,7 @@ def plot_feature_with_reweighting_with_rebinning_and_ratio_errors(feature, bins,
     axs[5, 0].set_ylim(-3, 3)
 
     # Subtraction Errors After Reweighting
-    ratio_subtraction = np.divide(data_iso_hist - mc_iso_hist, data_aiso_hist - mc_aiso_hist, out=np.zeros_like(data_iso_hist), where=data_aiso_hist != 0)
+    ratio_subtraction = safe_divide(data_iso_hist - mc_iso_hist, data_aiso_hist - mc_aiso_hist)
     diff_data_iso_mc_iso_before_errors = np.sqrt(data_iso_errors**2 + mc_iso_errors**2)
     diff_data_aiso_mc_aiso_before_errors = np.sqrt(data_aiso_errors_before**2 + mc_aiso_errors_before**2)
     ratio_subtraction_error = ratio_subtraction * np.sqrt(
