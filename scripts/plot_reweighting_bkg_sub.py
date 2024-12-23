@@ -145,7 +145,7 @@ def process_reweighting(df_target, model, features, original_class, target_class
         probabilities = model.predict(dmatrix)
         logits = model.predict(dmatrix, output_margin=True)
         scaled_probs = softmax_temperature_scaling(logits, optimal_temperature)
-        print(f"Shape of probabilities: {probabilities.shape}")
+        # print(f"Shape of probabilities: {probabilities.shape}")
 
         
         if probabilities.ndim == 1:
@@ -169,8 +169,8 @@ def process_reweighting(df_target, model, features, original_class, target_class
 
 # Reweight data_aiso to data_iso
 weights_data_aiso = process_reweighting(df_data_aiso, model, main_features, original_class=1, target_class=0)
-print(f"Shape of weights_data_aiso: {weights_data_aiso.shape}")
-print(f"Shape of df_data_aiso: {df_data_aiso.shape}")
+# print(f"Shape of weights_data_aiso: {weights_data_aiso.shape}")
+# print(f"Shape of df_data_aiso: {df_data_aiso.shape}")
 reweighted_data_aiso = df_data_aiso["wt_sf"] * weights_data_aiso
 
 # Reweight mc_aiso to mc_iso
@@ -304,15 +304,15 @@ def plot_feature_with_reweighting_with_rebinning_and_ratio_errors(feature, bins,
     chi2_data_before = np.sum(((data_iso_hist - data_aiso_hist_before)**2) / (data_iso_errors**2 + 1e-10))
     chi2_mc_before = np.sum(((mc_iso_hist - mc_aiso_hist_before)**2) / (mc_iso_errors**2 + 1e-10))
 
-    ks_stat_data_before, ks_pval_data_before = ks_2samp(data_iso_hist, data_aiso_hist_before)
-    ks_stat_mc_before, ks_pval_mc_before = ks_2samp(mc_iso_hist, mc_aiso_hist_before)
+    ks_stat_data_before, ks_pval_data_before = ks_2samp(data_iso_hist, data_aiso_hist_before, method='asymp')
+    ks_stat_mc_before, ks_pval_mc_before = ks_2samp(mc_iso_hist, mc_aiso_hist_before, method='asymp')
 
     # After Reweighting
     chi2_data = np.sum(((data_iso_hist - data_aiso_hist)**2) / (data_iso_errors**2 + 1e-10))
     chi2_mc = np.sum(((mc_iso_hist - mc_aiso_hist)**2) / (mc_iso_errors**2 + 1e-10))
 
-    ks_stat_data, ks_pval_data = ks_2samp(data_iso_hist, data_aiso_hist)
-    ks_stat_mc, ks_pval_mc = ks_2samp(mc_iso_hist, mc_aiso_hist)
+    ks_stat_data, ks_pval_data = ks_2samp(data_iso_hist, data_aiso_hist, method='asymp')
+    ks_stat_mc, ks_pval_mc = ks_2samp(mc_iso_hist, mc_aiso_hist, method='asymp')
 
 
     # Calculate bin centers
@@ -420,18 +420,41 @@ def plot_feature_with_reweighting_with_rebinning_and_ratio_errors(feature, bins,
 
     # Annotate chi-square and KS-test results
     # Before Reweighting
-    axs[5, 0].text(0.05, -2.5, f"Chi2 Data (Before): {chi2_data_before:.2f}\nChi2 MC (Before): {chi2_mc_before:.2f}",
-                    transform=axs[5, 0].transAxes, fontsize=10, verticalalignment='top')
-    axs[5, 0].text(0.05, -2.8, f"KS Data (Before): {ks_stat_data_before:.2f}, p={ks_pval_data_before:.2g}\n"
-                            f"KS MC (Before): {ks_stat_mc_before:.2f}, p={ks_pval_mc_before:.2g}",
-                    transform=axs[5, 0].transAxes, fontsize=10, verticalalignment='top')
+    axs[5, 0].annotate(
+    f"$\\chi^2$ Data (Before): {format(chi2_data_before, '.3g')}\n"
+    f"$\\chi^2$ MC (Before): {format(chi2_mc_before, '.3g')}",
+    xy=(0.05, -0.5), xycoords="axes fraction",
+    fontsize=25, ha="left", va="top",
+    multialignment="left"
+    )
+    axs[5, 0].text(
+    0.05, -1.0,
+    f"KS Data (Before): {ks_stat_data_before:.3g}, p={ks_pval_data_before:.2g}\n"
+    f"KS MC (Before): {ks_stat_mc_before:.3g}, p={ks_pval_mc_before:.2g}",
+    transform=axs[5, 0].transAxes,
+    fontsize=25,
+    verticalalignment='top',
+    multialignment='left'
+    )
+
 
     # After Reweighting
-    axs[5, 1].text(0.05, -2.5, f"Chi2 Data (After): {chi2_data:.2f}\nChi2 MC (After): {chi2_mc:.2f}",
-                    transform=axs[5, 1].transAxes, fontsize=10, verticalalignment='top')
-    axs[5, 1].text(0.05, -2.8, f"KS Data (After): {ks_stat_data:.2f}, p={ks_pval_data:.2g}\n"
-                            f"KS MC (After): {ks_stat_mc:.2f}, p={ks_pval_mc:.2g}",
-                    transform=axs[5, 1].transAxes, fontsize=10, verticalalignment='top')
+    axs[5, 1].annotate(
+    f"$\\chi^2$ Data (After): {format(chi2_data, '.3g')}\n"
+    f"$\\chi^2$ MC (After): {format(chi2_mc, '.3g')}",
+    xy=(0.05, -0.5), xycoords="axes fraction",
+    fontsize=25, ha="left", va="top",
+    multialignment="left"
+    )
+    axs[5, 1].text(
+    0.05, -1.0,
+    f"KS Data (After): {ks_stat_data:.3g}, p={ks_pval_data:.2g}\n"
+    f"KS MC (After): {ks_stat_mc:.3g}, p={ks_pval_mc:.2g}",
+    transform=axs[5, 1].transAxes,
+    fontsize=25,
+    verticalalignment='top',
+    multialignment='left'
+    )
 
 
     plt.tight_layout()
