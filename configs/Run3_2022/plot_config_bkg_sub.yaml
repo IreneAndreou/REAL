@@ -115,8 +115,8 @@ plot_params:
 
 optimal_temperature:
   leading_tau: 
-    global_variables: 1.0
-    no_global_variables: 1.0
+    global_variables: 0.9980200556285487
+    no_global_variables: 1.004161912105512
   subleading_tau:
-    global_variables: 1.0
-    no_global_variables: 1.0
+    global_variables: 1.0004100731600163
+    no_global_variables: 0.9993226203098047

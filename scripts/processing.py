@@ -153,8 +153,9 @@ parser.add_argument(
 parser.add_argument(
     "--tau",
     choices=["leading", "subleading"],
-    default="leading",
-    help="Tau selection: leading or subleading."
+    nargs="+",
+    default=["leading", "subleading"],
+    help="Tau selection: leading, subleading or both (default)."
 )
 parser.add_argument(
     "--batch_size",
@@ -173,15 +174,17 @@ selections = config["selections"]
 baseline = config["categories"]["baseline"]
 os.makedirs(output_dir, exist_ok=True)
 
-# Determine tau index and file suffix
-tau_index = "1" if args.tau == "leading" else "2"
-file_suffix = "lead" if args.tau == "leading" else "sublead"
+# Process each tau selection
+for tau_option in args.tau:
+    # Determine tau index and file suffix
+    tau_index = "1" if tau_option == "leading" else "2"
+    file_suffix = "lead" if tau_option == "leading" else "sublead"
 
-# Process each input file
-for input_file in input_files:
-    input_file_path = os.path.join(input_folder, input_file)
-    is_data = "data" in input_file
-    print(f"Processing {input_file_path}, is_data: {is_data}")
-    process_file_in_batches(
-        input_file_path, tau_index, file_suffix, output_dir, baseline, selections, is_data, args.batch_size
-    )
+    # Process each input file
+    for input_file in input_files:
+        input_file_path = os.path.join(input_folder, input_file)
+        is_data = "data" in input_file
+        print(f"Processing {input_file_path}, is_data: {is_data}")
+        process_file_in_batches(
+            input_file_path, tau_index, file_suffix, output_dir, baseline, selections, is_data, args.batch_size
+        )
