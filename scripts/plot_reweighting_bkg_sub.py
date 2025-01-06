@@ -14,6 +14,7 @@ from scipy.special import softmax
 from sklearn.metrics import log_loss
 from scipy.optimize import minimize_scalar
 import os
+import gc
 
 # Argument parser
 parser = argparse.ArgumentParser(description="Plot BDT reweighting results.")
@@ -467,6 +468,7 @@ for tau_option in args.tau:
             plt.savefig(output_path)
             plt.close()
 
+
         # Loop through features to plot
         for feature in plot_bins.keys():
             bins = plot_bins[feature]
@@ -474,3 +476,4 @@ for tau_option in args.tau:
             output_path = os.path.join(output_dir, f"{feature}_reweighted_with_ratio_errors.pdf")
             plot_feature_with_reweighting_with_rebinning_and_ratio_errors(feature, bins, ranges, output_path)
             print(f"Plotted {feature} with reweighting and ratio error bars.")
+            gc.collect()
