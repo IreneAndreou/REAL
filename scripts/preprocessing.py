@@ -12,7 +12,7 @@ import pyarrow.parquet as pq
 parser = argparse.ArgumentParser(description="Preprocess and merge files.")
 parser.add_argument("--eras", required=True, type=str, help="Comma-separated list of eras (e.g. Run3_2022,Run3_2023).")
 parser.add_argument("--channels", required=True, default="all", choices=["all", "et", "mt", "tt"], help="Select the channel to run (default: all).")
-parser.add_argument("--process", required=True, default="QCD", choices=["QCD", "Wjets", "WjetsMC", "ttbarMC"], help="Select the FF process to run (default: QCD).")
+parser.add_argument("--process", required=True, default="all", choices=["all", "QCD", "Wjets", "WjetsMC", "ttbarMC"], help="Select the FF process to run (default: QCD).")
 parser.add_argument("--workers", type=int, default=4, help="Parallel workers for preprocessing.")
 
 args = parser.parse_args()
@@ -20,10 +20,32 @@ eras = [e.strip() for e in args.eras.split(",") if e.strip()]
 channels = ["et", "mt", "tt"] if args.channels == "all" else [args.channels]
 ff_process = args.process
 
+ALLOWED = {
+    "tt": {"QCD"},
+    "mt": {"QCD", "Wjets", "WjetsMC", "ttbarMC"},
+    "et": {"QCD", "Wjets", "WjetsMC", "ttbarMC"},
+}
+
 # ----------------------- Logging ----------------------
 logging.basicConfig(level=logging.INFO, format="%(asctime)s | %(levelname)s | %(message)s", datefmt="%H:%M:%S")
 
 # -------------------- Helpers -------------------------
+
+
+def build_channel_processes(channels, requested_process):
+    ch_procs = {}
+    for ch in channels:
+        if requested_process == "all":
+            ch_procs[ch] = sorted(ALLOWED[ch])
+        elif requested_process in ALLOWED[ch]:
+            ch_procs[ch] = [requested_process]
+        else:
+            # skip invalid combo for this channel
+            logging.warning(
+                f"Requested process '{requested_process}' is not valid for channel '{ch}'. Skipping '{ch}'."
+            )
+            ch_procs[ch] = []
+    return ch_procs
 
 
 def row_count(file_path):
@@ -92,7 +114,57 @@ def merge_files(files, target_file):
             writer.close()
 
 
+def parallel_preprocess(era, category, source_dir, dest_dir, filenames, workers):
+    """Preprocess all files in a category, merge and cleanup."""
+    # Preprocessing (parallel)
+    jobs = []
+    with ThreadPoolExecutor(max_workers=max(1, workers)) as ex:
+        for name in filenames:
+            src = source_dir / name / "nominal" / "merged.parquet"
+            dst = dest_dir / f"{name}_scaled.parquet"
+            if not src.exists():
+                logging.error(f"Missing input: {src}")
+                continue
+            jobs.append(ex.submit(preprocessing, src, dst, era))
+
+        ok = True
+        for fut in as_completed(jobs):
+            ok = ok and fut.result()
+
+    if not ok:
+        logging.warning("Some preprocessing jobs failed; continuing to merge the successful ones.")
+
+    # Collect scaled outputs
+    scaled_files = []
+    for name in filenames:
+        p = dest_dir / f"{name}_scaled.parquet"
+        if p.exists():
+            scaled_files.append(p)
+        else:
+            logging.warning(f"Missing scaled output (skipped): {p}")
+
+    # Merge
+    # Use "data" for data category, otherwise keep category name
+    out_cat = "data" if category.endswith("_data") else category
+    target  = dest_dir / f"{out_cat}_all_events_{era}.parquet"
+    total_before, total_after = merge_files(scaled_files, target)
+    if total_before != total_after:
+        logging.warning(f"Row mismatch after merge: before={total_before}, after={total_after}")
+    else:
+        logging.info("Row counts match !")
+
+    # Cleanup intermediates
+    for f in scaled_files:
+        try:
+            f.unlink()
+            logging.info(f"Deleted intermediate file: {f.name}")
+        except Exception as e:
+            logging.error(f"Failed to delete {f}: {e}")
+
+
 # -------------------- Main ----------------------------
+channel_processes = build_channel_processes(channels, ff_process)
+
 for era in eras:
     logging.info(f"\n==== Processing {era} ====")
     cfg_path = Path(f"configs/{era}/input_files.yaml")
@@ -116,63 +188,26 @@ for era in eras:
 
     # Process each channel / category independently
     for channel in channels:
-        logging.info(f"\n---- Channel: {channel} ----")
         source_dir = Path(config["source_dir"].format(channel=channel))
-        dest_dir = Path(config["destination_dir"].format(channel=channel, ff_process=ff_process))
-        dest_dir.mkdir(parents=True, exist_ok=True)
-        # Only process "{channel}_data" and "mc" categories
-        categories = [f"{channel}_data", "mc"]
-        for category in categories:
-            if category not in config["source_files"]:
-                logging.warning(f"Category '{category}' not found in config; skipping.")
-                continue
-            filenames = config["source_files"][category]
-            logging.info(f"\n-- Category: {category} ({len(filenames)} files) --")
-            # Preprocessing (parallel)
-            jobs = []
-            with ThreadPoolExecutor(max_workers=max(1, args.workers)) as ex:
-                for name in filenames:
-                    src = source_dir / name / "nominal" / "merged.parquet"
-                    out_name = f"{name}_scaled.parquet"
-                    dst = dest_dir / out_name
-                    if not src.exists():
-                        logging.error(f"Missing input: {src}")
+        for ff_process in channel_processes[channel]:
+            logging.info(f"\n---- Channel: {channel} | Process: {ff_process} ----")
+            dest_dir = Path(config["destination_dir"].format(channel=channel, ff_process=ff_process))
+            dest_dir.mkdir(parents=True, exist_ok=True)
+            # Only process "{channel}_data" and "mc" categories
+            if ff_process == "QCD" or ff_process == "Wjets":
+                categories = [f"{channel}_data", "mc"]
+                for category in categories:
+                    if category not in config["source_files"]:
+                        logging.warning(f"Category '{category}' not found in config; skipping.")
                         continue
-                    jobs.append(ex.submit(preprocessing, src, dst, era))
-
-                ok = True
-                for fut in as_completed(jobs):
-                    ok = ok and fut.result()
-
-            if not ok:
-                logging.warning("Some preprocessing jobs failed; continuing to merge the successful ones.")
-
-            # Gather scaled outputs that exist
-            scaled_files = []
-            for name in filenames:
-                out_name = f"{name}_scaled.parquet"
-                p = dest_dir / out_name
-                if p.exists():
-                    scaled_files.append(p)
-                else:
-                    logging.warning(f"Missing scaled output (skipped): {p}")
-
-            # Merge
-            # Use "data" for data category, otherwise keep category name
-            out_cat = "data" if category.endswith("_data") else category
-            target = dest_dir / f"{out_cat}_all_events_{era}.parquet"
-
-            total_before, total_after = merge_files(scaled_files, target)
-
-            if total_before != total_after:
-                logging.warning(f"Row mismatch after merge: before={total_before}, after={total_after}")
-            else:
-                logging.info("Row counts match !")
-
-            # Delete scaled intermediate files
-            for f in scaled_files:
-                try:
-                    f.unlink()
-                    logging.info(f"Deleted intermediate file: {f.name}")
-                except Exception as e:
-                    logging.error(f"Failed to delete {f}: {e}")
+                    filenames = config["source_files"][category]
+                    if ff_process == "Wjets" and category == "mc":
+                        filenames = [fn for fn in filenames if "WtoLNu" not in fn]
+                    # Preprocessing (parallel)
+                    parallel_preprocess(era, category, source_dir, dest_dir, filenames, args.workers)
+            if ff_process in {"WjetsMC", "ttbarMC"}:
+                filenames = config["source_files"].get("mc", [])
+                if ff_process == "WjetsMC": filenames = [fn for fn in filenames if fn.startswith("WtoLNu")]
+                if ff_process == "ttbarMC": filenames = [fn for fn in filenames if fn.startswith("TT")]
+                # Preprocessing (parallel)
+                parallel_preprocess(era, category, source_dir, dest_dir, filenames, args.workers)
