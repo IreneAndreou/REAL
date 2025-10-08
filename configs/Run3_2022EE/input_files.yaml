@@ -1,19 +1,20 @@
-source_dir: "/vols/cms/ia2318/HiggsDNA/output/production_070525_EarlyRun3SyncMSSM/Run3_2022/{channel}"
+source_dir: "/vols/cms/ia2318/HiggsDNA/output/production_070525_EarlyRun3SyncMSSM/Run3_2022EE/{channel}"
 
-destination_dir: "/vols/cms/ia2318/REAL/data_production_071025/Run3_2022/{channel}_{ff_process}"
+destination_dir: "/vols/cms/ia2318/REAL/data_production_071025/Run3_2022EE/{channel}_{ff_process}"
 
 source_files:
   tt_data:
-    - "Tau_Run2022C"
-    - "Tau_Run2022D"
+    - "Tau_Run2022E"
+    - "Tau_Run2022F"
+    - "Tau_Run2022G"
   mt_data:
-    - "SingleMuon_Run2022C"
-    - "Muon_Run2022C"
-    - "Muon_Run2022D"
+    - "Muon_Run2022E"
+    - "Muon_Run2022F"
+    - "Muon_Run2022G"
   et_data:
-    - "EGamma_Run2022C"
-    - "EGamma_Run2022D" 
-
+    - "EGamma_Run2022E"
+    - "EGamma_Run2022F"
+    - "EGamma_Run2022G"
   mc:
     - "DYto2L_M_10to50_madgraphMLM"
     - "DYto2L_M_50_1J_madgraphMLM"
@@ -36,8 +37,6 @@ source_files:
     - "ST_tW_top_4Q_ext1"
     - "ST_tW_top_LNu2Q"
     - "ST_tW_top_LNu2Q_ext1"
-    - "TT"
-    - "TT_ext1"
     - "TTto2L2Nu"
     - "TTto2L2Nu_ext1"
     - "TTto4Q"
