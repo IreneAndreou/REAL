@@ -1,18 +1,18 @@
 import argparse
 import logging
-from concurrent.futures import ThreadPoolExecutor, as_completed
-from pathlib import Path
-import subprocess
-import sys
-import yaml
 import pandas as pd
 import pyarrow.parquet as pq
+import subprocess
+import sys
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from pathlib import Path
+import yaml
 
 # Set up argument parser
 parser = argparse.ArgumentParser(description="Preprocess and merge files.")
 parser.add_argument("--eras", required=True, type=str, help="Comma-separated list of eras (e.g. Run3_2022,Run3_2023).")
-parser.add_argument("--channels", required=True, default="all", choices=["all", "et", "mt", "tt"], help="Select the channel to run (default: all).")
-parser.add_argument("--process", required=True, default="all", choices=["all", "QCD", "Wjets", "WjetsMC", "ttbarMC"], help="Select the FF process to run (default: QCD).")
+parser.add_argument("--channels", required=False, default="all", choices=["all", "et", "mt", "tt"], help="Select the channel to run (default: all).")
+parser.add_argument("--process", required=False, default="all", choices=["all", "QCD", "Wjets", "WjetsMC", "ttbarMC"], help="Select the FF process to run (default: all).")
 parser.add_argument("--workers", type=int, default=4, help="Parallel workers for preprocessing.")
 
 args = parser.parse_args()
@@ -33,6 +33,7 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s | %(levelname)s | %(
 
 
 def build_channel_processes(channels, requested_process):
+    """Build a dictionary mapping channels to their valid processes."""
     ch_procs = {}
     for ch in channels:
         if requested_process == "all":
@@ -146,7 +147,7 @@ def parallel_preprocess(era, category, source_dir, dest_dir, filenames, workers)
     # Merge
     # Use "data" for data category, otherwise keep category name
     out_cat = "data" if category.endswith("_data") else category
-    target  = dest_dir / f"{out_cat}_all_events_{era}.parquet"
+    target = dest_dir / f"{out_cat}_all_events_{era}.parquet"
     total_before, total_after = merge_files(scaled_files, target)
     if total_before != total_after:
         logging.warning(f"Row mismatch after merge: before={total_before}, after={total_after}")
@@ -166,7 +167,7 @@ def parallel_preprocess(era, category, source_dir, dest_dir, filenames, workers)
 channel_processes = build_channel_processes(channels, ff_process)
 
 for era in eras:
-    logging.info(f"\n==== Processing {era} ====")
+    logging.info(f"==== Processing {era} ====")
     cfg_path = Path(f"configs/{era}/input_files.yaml")
     if not cfg_path.exists():
         logging.error(f"Missing config file: {cfg_path}")
@@ -190,11 +191,11 @@ for era in eras:
     for channel in channels:
         source_dir = Path(config["source_dir"].format(channel=channel))
         for ff_process in channel_processes[channel]:
-            logging.info(f"\n---- Channel: {channel} | Process: {ff_process} ----")
+            logging.info(f"---- Channel: {channel} | Process: {ff_process} ----")
             dest_dir = Path(config["destination_dir"].format(channel=channel, ff_process=ff_process))
             dest_dir.mkdir(parents=True, exist_ok=True)
             # Only process "{channel}_data" and "mc" categories
-            if ff_process == "QCD" or ff_process == "Wjets":
+            if ff_process in {"QCD", "Wjets"}:
                 categories = [f"{channel}_data", "mc"]
                 for category in categories:
                     if category not in config["source_files"]:
@@ -207,7 +208,9 @@ for era in eras:
                     parallel_preprocess(era, category, source_dir, dest_dir, filenames, args.workers)
             if ff_process in {"WjetsMC", "ttbarMC"}:
                 filenames = config["source_files"].get("mc", [])
-                if ff_process == "WjetsMC": filenames = [fn for fn in filenames if fn.startswith("WtoLNu")]
-                if ff_process == "ttbarMC": filenames = [fn for fn in filenames if fn.startswith("TT")]
+                if ff_process == "WjetsMC":
+                    filenames = [fn for fn in filenames if fn.startswith("WtoLNu")]
+                if ff_process == "ttbarMC":
+                    filenames = [fn for fn in filenames if fn.startswith("TT")]
                 # Preprocessing (parallel)
                 parallel_preprocess(era, category, source_dir, dest_dir, filenames, args.workers)
