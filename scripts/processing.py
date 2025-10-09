@@ -265,6 +265,9 @@ for era in eras:
                     if ff_process == "Wjets" and region == "validation":
                         logging.warning("Wjets process FF: no suitable validation region defined, skipping.")
                         continue
+                    if ff_process == "ttbarMC" and region == "validation":
+                        logging.warning("ttbar process FF: no validation region needed, skipping.")
+                        continue
                     output_dir = Path(config["output_dir"].format(era=era, region=region))
                     output_dir.mkdir(parents=True, exist_ok=True)
 
