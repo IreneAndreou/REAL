@@ -262,6 +262,9 @@ for era in eras:
                             continue
                     input_folder = config["input_folder"].format(era=era, channel=channel)
                     input_files = config["input_files"]
+                    if ff_process == "Wjets" and region == "validation":
+                        logging.warning("Wjets process FF: no suitable validation region defined, skipping.")
+                        continue
                     output_dir = Path(config["output_dir"].format(era=era, region=region))
                     output_dir.mkdir(parents=True, exist_ok=True)
 
@@ -283,13 +286,10 @@ for era in eras:
                     file_suffix = "lead" if tau == "leading" else "sublead"
 
                     # Process region conditions
-                    if ff_process == "Wjets" and region == "validation":
-                        logging.warning("Wjets process FF: no suitable validation region defined, skipping.")
-                        continue
                     #TODO: waiting for ntuples to run et
                     # Temporary skip for et channel
-                    if channel == "et" and region == "validation":
-                        logging.warning("et channel FF: validation region not yet implemented, skipping.")
+                    if channel == "et" and ff_process == "QCD" and region == "validation":
+                        logging.warning("et channel QCD FF: validation region not yet implemented, skipping.")
                         continue
                     baseline = config["categories"][f"{region}"][f"{channel}_baseline"].format(tau_other_index=tau_other_index)
                     stats = process_selection(
