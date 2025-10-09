@@ -224,7 +224,7 @@ for era in eras:
                             continue
                     input_folder = config["input_folder"].format(era=era, channel=channel)
                     input_files = config["input_files"]
-                    output_dir = Path(config["output_dir"].format(era=era))
+                    output_dir = Path(config["output_dir"].format(era=era, region=region))
                     output_dir.mkdir(parents=True, exist_ok=True)
 
                     # Data input file (skip for WjetsMC and ttbarMC)
