@@ -84,7 +84,7 @@ def select(df, condition, format_dict):
 
 
 def feature_engineering(df, name, process):
-    """Add derived columns to the DataFrame based on existing columns."""
+    """Add derived columns to the DataFrame based on existing columns and remove negative values."""
     if {"seeding_jpt_1", "pt_1"}.issubset(df.columns):
         df.loc[:, "jpt_pt_1"] = df["seeding_jpt_1"] / df["pt_1"]
     if {"seeding_jpt_2", "pt_2"}.issubset(df.columns):
@@ -100,8 +100,33 @@ def feature_engineering(df, name, process):
     # W+jets-style MET var
     elif process in {"Wjets", "WjetsMC"}:
         if {"met_pt", "pt_1", "pt_2", "met_dphi_1"}.issubset(df.columns):
-            df.loc[:, "met_var_w"] = ((df["met_pt"] + df["pt_1"]) / df["pt_2"]) * np.cos(df["met_dphi_1"])
+            # Calculate the vector sum of MET + lepton
+            met_plus_lep_px = df["met_pt"] * np.cos(df["met_phi"]) + df["pt_1"] * np.cos(df["phi_1"])
+            met_plus_lep_py = df["met_pt"] * np.sin(df["met_phi"]) + df["pt_1"] * np.sin(df["phi_1"])
+            met_plus_lep_pt = np.sqrt(met_plus_lep_px**2 + met_plus_lep_py**2)
+            met_plus_lep_phi = np.arctan2(met_plus_lep_py, met_plus_lep_px)
 
+            # Calculate angle between (MET+lepton) vector and tau
+            dphi_met_lep_tau = calculate_delta_phi(met_plus_lep_phi, df["phi_2"])
+
+            # Calculate the W+jets-style MET variable
+            df.loc[:, "met_var_w"] = (met_plus_lep_pt / df["pt_2"]) * np.cos(dphi_met_lep_tau)
+    # Remove events with negative values in derived columns
+    negative_cols = []
+    if "jpt_pt_1" in df.columns:
+        negative_cols.append("jpt_pt_1")
+    if "jpt_pt_2" in df.columns:
+        negative_cols.append("jpt_pt_2")
+    if "met_var_qcd_1" in df.columns:
+        negative_cols.append("met_var_qcd_1")
+    if "met_var_qcd_2" in df.columns:
+        negative_cols.append("met_var_qcd_2")
+    if "met_var_w" in df.columns:
+        negative_cols.append("met_var_w")
+    if negative_cols:
+        for col in negative_cols:
+            df = df[df[col] >= 0]
+            logging.info(f"Removed events with negative values in '{col}'. Removed {len(df[df[col] < 0])} events.")
     return df
 
 
