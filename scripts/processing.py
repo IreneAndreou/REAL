@@ -1,190 +1,237 @@
-import os
 import argparse
-import uproot
+import logging
 import numpy as np
+import pandas as pd
+from pathlib import Path
 import yaml
 
-def load_config(config_path):
-    """Load configuration from a YAML file."""
-    try:
-        with open(config_path, "r") as file:
-            return yaml.safe_load(file)
-    except FileNotFoundError:
-        print(f"Error: Configuration file '{config_path}' not found.")
-        raise
-    except yaml.YAMLError as e:
-        print(f"Error parsing configuration file: {e}")
-        raise
+# Set up argument parser
+parser = argparse.ArgumentParser(description="Process files with tau selection.")
+parser.add_argument("--eras", required=True, type=str, help="Comma-separated list of eras (e.g. Run3_2022,Run3_2023).")
+parser.add_argument("--channels", required=False, default="all", choices=["all", "et", "mt", "tt"], help="Select the channel to run (default: all).")
+parser.add_argument("--process", required=False, default="all", choices=["all", "QCD", "Wjets", "WjetsMC", "ttbarMC"], help="Select the FF process to run (default: all).")
+parser.add_argument("--region", required=False, default="all", choices=["all", "determination", "validation"], help="Select the FF region to run (default: all).")
 
-def process_file_in_batches(input_file_path, tau_index, file_suffix,
-                            output_dir, baseline, selections, is_data, batch_size=100000):
-    """Process a single ROOT file in batches to extract and save data and MC events."""
-    print(f"Processing file: {input_file_path}")
-    print(f"is_data: {is_data}")
-    input_file = uproot.open(input_file_path)
-    tree = input_file["ntuple"]
-
-    # Define branches to load for processing
-    all_branches = tree.keys()
-
-    # Apply selections from the configuration
-    if is_data:
-        iso_condition = selections["data_iso"]["condition"].format(tau_index=tau_index, baseline=baseline)
-        aiso_condition = selections["data_aiso"]["condition"].format(tau_index=tau_index, baseline=baseline)
-    else:
-        iso_condition = selections["mc_iso"]["condition"].format(tau_index=tau_index, baseline=baseline)
-        aiso_condition = selections["mc_aiso"]["condition"].format(tau_index=tau_index, baseline=baseline)
-        iso_neg_condition = selections["mc_iso_neg"]["condition"].format(tau_index=tau_index, baseline=baseline)
-        aiso_neg_condition = selections["mc_aiso_neg"]["condition"].format(tau_index=tau_index, baseline=baseline)
-
-    total_entries = tree.num_entries
-    print(f"Total entries in the file: {total_entries}")
-
-    # Containers for concatenated results
-    sampled_iso_events = {}
-    sampled_aiso_events = {}
-    if not is_data:
-        sampled_iso_neg_events = {}
-        sampled_aiso_neg_events = {}
-
-    for start in range(0, total_entries, batch_size):
-        end = min(start + batch_size, total_entries)
-        print(f"Processing entries {start} to {end}")
-
-        # Load events for the current batch
-        iso_events = tree.arrays(
-            all_branches, cut=iso_condition, entry_start=start, entry_stop=end, library="np"
-        )
-        aiso_events = tree.arrays(
-            all_branches, cut=aiso_condition, entry_start=start, entry_stop=end, library="np"
-        )
-
-        if not is_data:
-            iso_neg_events = tree.arrays(
-                all_branches, cut=iso_neg_condition, entry_start=start, entry_stop=end, library="np"
-            )
-            aiso_neg_events = tree.arrays(
-                all_branches, cut=aiso_neg_condition, entry_start=start, entry_stop=end, library="np"
-            )
-
-        # Merge batch data into the full sampled events
-        for key in iso_events.keys():
-            sampled_iso_events[key] = np.concatenate([sampled_iso_events.get(key, np.array([])), iso_events[key]])
-            sampled_aiso_events[key] = np.concatenate([sampled_aiso_events.get(key, np.array([])), aiso_events[key]])
-
-        if not is_data:
-            for key in iso_neg_events.keys():
-                sampled_iso_neg_events[key] = np.concatenate([sampled_iso_neg_events.get(key, np.array([])), iso_neg_events[key]])
-                sampled_aiso_neg_events[key] = np.concatenate([sampled_aiso_neg_events.get(key, np.array([])), aiso_neg_events[key]])
-
-    # Combine positive and negative weights for MC
-    if not is_data:
-        iso_combined_events = {key: np.concatenate([sampled_iso_events[key], sampled_iso_neg_events[key]]) for key in sampled_iso_events.keys()}
-        aiso_combined_events = {key: np.concatenate([sampled_aiso_events[key], sampled_aiso_neg_events[key]]) for key in sampled_aiso_events.keys()}
-
-        sampled_iso_events = iso_combined_events
-        sampled_aiso_events = aiso_combined_events
-
-        # Perform size checks and combine events if MC
-        iso_len = len(sampled_iso_events[f"idDeepTau2018v2p5VSjet_{tau_index}"])
-        iso_neg_len = len(sampled_iso_neg_events[f"idDeepTau2018v2p5VSjet_{tau_index}"])
-        aiso_len = len(sampled_aiso_events[f"idDeepTau2018v2p5VSjet_{tau_index}"])
-        aiso_neg_len = len(sampled_aiso_neg_events[f"idDeepTau2018v2p5VSjet_{tau_index}"])
-        print(f"ISO: {iso_len}, AISO: {aiso_len}, ISO Neg: {iso_neg_len}, AISO Neg: {aiso_neg_len}")
-
-        assert len(sampled_iso_events[f"idDeepTau2018v2p5VSjet_{tau_index}"]) == iso_len + iso_neg_len, (
-            f"Mismatch in ISO event sizes: {len(sampled_iso_events[f'idDeepTau2018v2p5VSjet_{tau_index}'])} != {iso_len} + {iso_neg_len}"
-        )
-        assert len(sampled_aiso_events[f"idDeepTau2018v2p5VSjet_{tau_index}"]) == aiso_len + aiso_neg_len, (
-            f"Mismatch in AISO event sizes: {len(sampled_aiso_events[f'idDeepTau2018v2p5VSjet_{tau_index}'])} != {aiso_len} + {aiso_neg_len}"
-        )
-
-    # Add derived columns
-    if "jpt_1" in sampled_iso_events and "pt_1" in sampled_iso_events:
-        sampled_iso_events["jpt_pt_1"] = sampled_iso_events["jpt_1"] / sampled_iso_events["pt_1"]
-        sampled_aiso_events["jpt_pt_1"] = sampled_aiso_events["jpt_1"] / sampled_aiso_events["pt_1"]
-    if "jpt_2" in sampled_iso_events and "pt_2" in sampled_iso_events:
-        sampled_iso_events["jpt_pt_2"] = sampled_iso_events["jpt_2"] / sampled_iso_events["pt_2"]
-        sampled_aiso_events["jpt_pt_2"] = sampled_aiso_events["jpt_2"] / sampled_aiso_events["pt_2"]
-    if "met_pt" in sampled_iso_events and "pt_1" in sampled_iso_events and "met_dphi_1" in sampled_iso_events:
-        sampled_iso_events["met_var_qcd_1"] = (sampled_iso_events["met_pt"] / sampled_iso_events["pt_1"]) * np.cos(sampled_iso_events["met_dphi_1"])
-        sampled_aiso_events["met_var_qcd_1"] = (sampled_aiso_events["met_pt"] / sampled_aiso_events["pt_1"]) * np.cos(sampled_aiso_events["met_dphi_1"])
-    if "met_pt" in sampled_iso_events and "pt_2" in sampled_iso_events and "met_dphi_2" in sampled_iso_events:
-        sampled_iso_events["met_var_qcd_2"] = (sampled_iso_events["met_pt"] / sampled_iso_events["pt_2"]) * np.cos(sampled_iso_events["met_dphi_2"])
-        sampled_aiso_events["met_var_qcd_2"] = (sampled_aiso_events["met_pt"] / sampled_aiso_events["pt_2"]) * np.cos(sampled_aiso_events["met_dphi_2"])
-
-    # Ensure all branches have the same length
-    for dataset_name, dataset in zip([
-        "sampled_iso_events", "sampled_aiso_events"],
-        [sampled_iso_events, sampled_aiso_events],
-    ):
-        length = len(next(iter(dataset.values())))
-        for key in dataset.keys():
-            assert len(dataset[key]) == length, f"Branch {key} in {dataset_name} has inconsistent length."
-
-    # Determine output file names
-    base_name = os.path.basename(input_file_path).replace(".root", "")
-    output_iso_file_name = os.path.join(
-        output_dir, f"{base_name}_{'data' if is_data else 'mc'}_iso_{file_suffix}.root"
-    )
-    output_aiso_file_name = os.path.join(
-        output_dir, f"{base_name}_{'data' if is_data else 'mc'}_aiso_{file_suffix}.root"
-    )
-
-    # Save to new ROOT files
-    with uproot.recreate(output_iso_file_name) as iso_file:
-        iso_file["tree"] = sampled_iso_events
-
-    with uproot.recreate(output_aiso_file_name) as aiso_file:
-        aiso_file["tree"] = sampled_aiso_events
-
-    print(f"Files saved: {output_iso_file_name}, {output_aiso_file_name}")
-
-
-# Argument Parsing
-parser = argparse.ArgumentParser(
-    description="Process files with tau selection (leading / subleading)."
-)
-parser.add_argument(
-    "--config",
-    required=True,
-    help="Path to the configuration YAML file."
-)
-parser.add_argument(
-    "--tau",
-    choices=["leading", "subleading"],
-    nargs="+",
-    default=["leading", "subleading"],
-    help="Tau selection: leading, subleading or both (default)."
-)
-parser.add_argument(
-    "--batch_size",
-    type=int,
-    default=100000,
-    help="Batch size for processing entries."
-)
 args = parser.parse_args()
 
-# Load configuration
-config = load_config(args.config)
-input_folder = config["input_folder"]
-input_files = config["input_files"]
-output_dir = config["output_dir"]
-selections = config["selections"]
-baseline = config["categories"]["baseline"]
-os.makedirs(output_dir, exist_ok=True)
+eras = [e.strip() for e in args.eras.split(",") if e.strip()]
+channels = ["et", "mt", "tt"] if args.channels == "all" else [args.channels]
+ff_process = args.process
+regions = ["determination", "validation"] if args.region == "all" else [args.region]
 
-# Process each tau selection
-for tau_option in args.tau:
-    # Determine tau index and file suffix
-    tau_index = "1" if tau_option == "leading" else "2"
-    file_suffix = "lead" if tau_option == "leading" else "sublead"
+ALLOWED = {
+    "tt": {"QCD"},
+    "mt": {"QCD", "Wjets", "WjetsMC", "ttbarMC"},
+    "et": {"QCD", "Wjets", "WjetsMC", "ttbarMC"},
+}
 
-    # Process each input file
-    for input_file in input_files:
-        input_file_path = os.path.join(input_folder, input_file)
-        is_data = "data" in input_file
-        print(f"Processing {input_file_path}, is_data: {is_data}")
-        process_file_in_batches(
-            input_file_path, tau_index, file_suffix, output_dir, baseline, selections, is_data, args.batch_size
-        )
+TAUS_PER_CHANNEL = {
+    "tt": {"leading", "subleading"},
+    "mt": {"subleading"},
+    "et": {"subleading"},
+}
+
+
+# ----------------------- Logging ----------------------
+logging.basicConfig(level=logging.INFO, format="%(asctime)s | %(levelname)s | %(message)s", datefmt="%H:%M:%S")
+
+# -------------------- Helpers -------------------------
+
+
+def build_channel_processes(channels, requested_process):
+    """Build a dictionary mapping channels to their valid processes."""
+    ch_procs = {}
+    for ch in channels:
+        if requested_process == "all":
+            ch_procs[ch] = sorted(ALLOWED[ch])
+        elif requested_process in ALLOWED[ch]:
+            ch_procs[ch] = [requested_process]
+        else:
+            # skip invalid combo for this channel
+            logging.warning(
+                f"Requested process '{requested_process}' is not valid for channel '{ch}'. Skipping '{ch}'."
+            )
+            ch_procs[ch] = []
+    return ch_procs
+
+
+def get_taus_for_channel(channel):
+    """Get the tau selections for a given channel."""
+    return TAUS_PER_CHANNEL.get(channel, set())
+
+
+def calculate_delta_phi(phi1, phi2):
+    """
+    Calculate the difference in azimuthal angles while handling angle wrapping.
+
+    Parameters:
+        phi1 (array-like): Azimuthal angles of the first object.
+        phi2 (array-like): Azimuthal angles of the second object.
+
+    Returns:
+        array: Array of calculated delta_phi values.
+    """
+
+    delta_phi = phi1 - phi2
+    delta_phi = (delta_phi + np.pi) % (2 * np.pi) - np.pi
+    return delta_phi
+
+
+def select(df, condition, format_dict):
+    """Apply a query condition to a DataFrame with formatted strings."""
+    formatted_condition = condition.format(**format_dict)
+    return df.query(formatted_condition).copy()
+
+
+def feature_engineering(df, name, process):
+    """Add derived columns to the DataFrame based on existing columns."""
+    if {"seeding_jpt_1", "pt_1"}.issubset(df.columns):
+        df.loc[:, "jpt_pt_1"] = df["seeding_jpt_1"] / df["pt_1"]
+    if {"seeding_jpt_2", "pt_2"}.issubset(df.columns):
+        df.loc[:, "jpt_pt_2"] = df["seeding_jpt_2"] / df["pt_2"]
+
+    # QCD-style MET vars
+    if process == "QCD":
+        if {"met_pt", "pt_1", "met_dphi_1"}.issubset(df.columns):
+            df.loc[:, "met_var_qcd_1"] = (df["met_pt"] / df["pt_1"]) * np.cos(df["met_dphi_1"])
+        if {"met_pt", "pt_2", "met_dphi_2"}.issubset(df.columns):
+            df.loc[:, "met_var_qcd_2"] = (df["met_pt"] / df["pt_2"]) * np.cos(df["met_dphi_2"])
+
+    # W+jets-style MET var
+    elif process in {"Wjets", "WjetsMC"}:
+        if {"met_pt", "pt_1", "pt_2", "met_dphi_1"}.issubset(df.columns):
+            df.loc[:, "met_var_w"] = ((df["met_pt"] + df["pt_1"]) / df["pt_2"]) * np.cos(df["met_dphi_1"])
+
+    return df
+
+
+def process_selection(data_input_file, mc_input_file, tau_index, file_suffix, output_dir, baseline, selections, ff_process):
+    """Process Data and MC Parquet files with tau-specific selections."""
+    fmt = {
+        "tau_index": tau_index,
+        "baseline": baseline
+    }
+
+    output_dir = Path(output_dir)
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    # Read input files
+    data_df = pd.DataFrame()
+    if ff_process not in ["WjetsMC", "ttbarMC"]:
+        data_df = pd.read_parquet(data_input_file)
+    mc_df = pd.read_parquet(mc_input_file)
+
+    # Data selections
+    if not data_df.empty:
+        iso_data_df = select(data_df, selections["data_iso"]["condition"], fmt)
+        aiso_data_df = select(data_df, selections["data_aiso"]["condition"], fmt)
+    else:
+        iso_data_df = pd.DataFrame()
+        aiso_data_df = pd.DataFrame()
+
+    # MC selections
+    iso_mc_df = select(mc_df, selections["mc_iso"]["condition"], fmt)
+    aiso_mc_df = select(mc_df, selections["mc_aiso"]["condition"], fmt)
+    iso_mc_neg_df = select(mc_df, selections["mc_iso_neg"]["condition"], fmt)
+    aiso_mc_neg_df = select(mc_df, selections["mc_aiso_neg"]["condition"], fmt)
+
+    logging.info(f" Events before migration: "
+                 f"data_iso={len(iso_data_df)}  data_aiso={len(aiso_data_df)}  "
+                 f"mc_iso={len(iso_mc_df)}  mc_aiso={len(aiso_mc_df)}  "
+                 f"mc_iso_neg={len(iso_mc_neg_df)}  mc_aiso_neg={len(aiso_mc_neg_df)}"
+                 )
+
+    # Negative MC event migration to data-like categories
+    if not iso_mc_neg_df.empty:
+        iso_mc_neg_df.loc[:, "wt_sf"] = np.abs(iso_mc_neg_df["wt_sf"])
+        iso_data_df = pd.concat([iso_data_df, iso_mc_neg_df], ignore_index=True)
+    if not aiso_mc_neg_df.empty:
+        aiso_mc_neg_df.loc[:, "wt_sf"] = np.abs(aiso_mc_neg_df["wt_sf"])
+        aiso_data_df = pd.concat([aiso_data_df, aiso_mc_neg_df], ignore_index=True)
+
+    # Add derived features
+    for name, df in [
+        ("iso_data", iso_data_df),
+        ("aiso_data", aiso_data_df),
+        ("iso_mc", iso_mc_df),
+        ("aiso_mc", aiso_mc_df)
+    ]:
+        if not df.empty:
+            feature_engineering(df, name, ff_process)
+
+    # Write output files
+    if not iso_data_df.empty:
+        iso_data_df.to_parquet(output_dir / f"data_iso_{channel}_{file_suffix}.parquet")
+    if not aiso_data_df.empty:
+        aiso_data_df.to_parquet(output_dir / f"data_aiso_{channel}_{file_suffix}.parquet")
+    if not iso_mc_df.empty:
+        iso_mc_df.to_parquet(output_dir / f"mc_iso_{channel}_{file_suffix}.parquet")
+    if not aiso_mc_df.empty:
+        aiso_mc_df.to_parquet(output_dir / f"mc_aiso_{channel}_{file_suffix}.parquet")
+
+    return {
+        "n_data_iso": len(iso_data_df),
+        "n_data_aiso": len(aiso_data_df),
+        "n_mc_iso": len(iso_mc_df),
+        "n_mc_aiso": len(aiso_mc_df),
+    }
+
+
+# -------------------- Main ----------------------------
+channel_processes = build_channel_processes(channels, ff_process)
+taus = {ch: sorted(get_taus_for_channel(ch)) for ch in channels}
+for era in eras:
+    for channel in channels:
+        for ff_process in channel_processes[channel]:
+            for tau in taus[channel]:
+                for region in regions:
+                    logging.info(f"==== Processing era: {era} | channel: {channel} | process: {ff_process} | tau: {tau} | region: {region} ====")
+                    cfg_path = Path(f"configs/{region}_region/{ff_process}.yaml")
+                    if not cfg_path.exists():
+                        logging.error(f"Missing config file: {cfg_path}")
+                        continue
+                    with cfg_path.open("r") as f:
+                        try:
+                            config = yaml.safe_load(f)
+                            logging.info(f"Loaded config: {cfg_path}")
+                        except Exception as e:
+                            logging.error(f"YAML load failed {cfg_path}: {e}")
+                            continue
+                    input_folder = config["input_folder"].format(era=era, channel=channel)
+                    input_files = config["input_files"]
+                    output_dir = Path(config["output_dir"].format(era=era))
+                    output_dir.mkdir(parents=True, exist_ok=True)
+
+                    # Data input file (skip for WjetsMC and ttbarMC)
+                    data_input_file = None
+                    if ff_process not in ["WjetsMC", "ttbarMC"]:
+                        data_input_file = Path(input_folder) / input_files["data"]
+
+                    # MC input file
+                    mc_input_file = Path(input_folder) / input_files["mc"]
+
+                    logging.info(f"Data input file: {data_input_file}")
+                    logging.info(f"MC input file: {mc_input_file}")
+                    logging.info(f"Output directory: {output_dir}")
+
+                    # Tau index and file suffix
+                    tau_index = "1" if tau == "leading" else "2"
+                    tau_other_index = "2" if tau == "leading" else "1"
+                    file_suffix = "lead" if tau == "leading" else "sublead"
+
+                    # Process region conditions
+                    baseline = config["categories"][f"{region}"][f"{channel}_baseline"].format(tau_other_index=tau_other_index)
+                    stats = process_selection(
+                        data_input_file,
+                        mc_input_file,
+                        tau_index,
+                        file_suffix,
+                        output_dir,
+                        baseline,
+                        config["selections"],
+                        ff_process
+                    )
+                    logging.info(f"Events after migration: "
+                                 f"data_iso={stats['n_data_iso']}  data_aiso={stats['n_data_aiso']}  "
+                                 f"mc_iso={stats['n_mc_iso']}  mc_aiso={stats['n_mc_aiso']}"
+                                 )
