@@ -26,12 +26,51 @@ ALLOWED = {
     "et": {"QCD", "Wjets", "WjetsMC", "ttbarMC"},
 }
 
+
 # ----------------------- Logging ----------------------
-logging.basicConfig(level=logging.INFO, format="%(asctime)s | %(levelname)s | %(message)s", datefmt="%H:%M:%S")
+class ColoredFormatter(logging.Formatter):
+    """Custom formatter to add colors to log levels."""
+
+    # ANSI color codes
+    COLORS = {
+        'DEBUG': '\033[36m',    # Cyan
+        'INFO': '\033[32m',     # Green
+        'WARNING': '\033[33m',  # Yellow
+        'ERROR': '\033[31m',    # Red
+        'CRITICAL': '\033[35m',  # Magenta
+    }
+    RESET = '\033[0m'  # Reset to default color
+
+    def format(self, record):
+        # Get the color for this log level
+        color = self.COLORS.get(record.levelname, self.RESET)
+
+        # Format the message
+        formatted = super().format(record)
+
+        # Add color to the entire message
+        return f"{color}{formatted}{self.RESET}"
+
+
+# Set up colored logging
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
+
+# Remove any existing handlers
+for handler in logger.handlers[:]:
+    logger.removeHandler(handler)
+
+# Create console handler with colored formatter
+console_handler = logging.StreamHandler()
+colored_formatter = ColoredFormatter(
+    "%(asctime)s | %(levelname)s | %(message)s",
+    datefmt="%H:%M:%S"
+)
+console_handler.setFormatter(colored_formatter)
+logger.addHandler(console_handler)
+
 
 # -------------------- Helpers -------------------------
-
-
 def build_channel_processes(channels, requested_process):
     """Build a dictionary mapping channels to their valid processes."""
     ch_procs = {}

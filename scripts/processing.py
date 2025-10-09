@@ -33,11 +33,49 @@ TAUS_PER_CHANNEL = {
 
 
 # ----------------------- Logging ----------------------
-logging.basicConfig(level=logging.INFO, format="%(asctime)s | %(levelname)s | %(message)s", datefmt="%H:%M:%S")
+class ColoredFormatter(logging.Formatter):
+    """Custom formatter to add colors to log levels."""
+
+    # ANSI color codes
+    COLORS = {
+        'DEBUG': '\033[36m',    # Cyan
+        'INFO': '\033[32m',     # Green
+        'WARNING': '\033[33m',  # Yellow
+        'ERROR': '\033[31m',    # Red
+        'CRITICAL': '\033[35m',  # Magenta
+    }
+    RESET = '\033[0m'  # Reset to default color
+
+    def format(self, record):
+        # Get the color for this log level
+        color = self.COLORS.get(record.levelname, self.RESET)
+
+        # Format the message
+        formatted = super().format(record)
+
+        # Add color to the entire message
+        return f"{color}{formatted}{self.RESET}"
+
+
+# Set up colored logging
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
+
+# Remove any existing handlers
+for handler in logger.handlers[:]:
+    logger.removeHandler(handler)
+
+# Create console handler with colored formatter
+console_handler = logging.StreamHandler()
+colored_formatter = ColoredFormatter(
+    "%(asctime)s | %(levelname)s | %(message)s",
+    datefmt="%H:%M:%S"
+)
+console_handler.setFormatter(colored_formatter)
+logger.addHandler(console_handler)
+
 
 # -------------------- Helpers -------------------------
-
-
 def build_channel_processes(channels, requested_process):
     """Build a dictionary mapping channels to their valid processes."""
     ch_procs = {}
@@ -211,7 +249,7 @@ for era in eras:
             for tau in taus[channel]:
                 for region in regions:
                     logging.info(f"==== Processing era: {era} | channel: {channel} | process: {ff_process} | tau: {tau} | region: {region} ====")
-                    cfg_path = Path(f"configs/{region}_region/{ff_process}.yaml")
+                    cfg_path = Path(f"configs/{ff_process}.yaml")
                     if not cfg_path.exists():
                         logging.error(f"Missing config file: {cfg_path}")
                         continue
@@ -245,6 +283,14 @@ for era in eras:
                     file_suffix = "lead" if tau == "leading" else "sublead"
 
                     # Process region conditions
+                    if ff_process == "Wjets" and region == "validation":
+                        logging.warning("Wjets process FF: no suitable validation region defined, skipping.")
+                        continue
+                    #TODO: waiting for ntuples to run et
+                    # Temporary skip for et channel
+                    if channel == "et" and region == "validation":
+                        logging.warning("et channel FF: validation region not yet implemented, skipping.")
+                        continue
                     baseline = config["categories"][f"{region}"][f"{channel}_baseline"].format(tau_other_index=tau_other_index)
                     stats = process_selection(
                         data_input_file,
