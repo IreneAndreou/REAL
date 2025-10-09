@@ -1,0 +1,29 @@
+input_folder: "/vols/cms/ia2318/REAL/data_production_071025/{era}/{channel}_Wjets/"
+input_files:
+  mc: "mc_all_events_Run3_2022.parquet"
+  data: "data_all_events_Run3_2022.parquet"
+output_dir: "/vols/cms/ia2318/REAL/data_production_071025/{era}/{region}_region/Wjets/"
+
+categories:
+  determination:
+    mt_baseline: "(os == 1) & (mt_1 >65) & (n_bjets == 0) & (iso_1 < 0.15) & (idDeepTau2018v2p5VSe_2 >= 2) & (idDeepTau2018v2p5VSmu_2 >= 4) & ((((trg_mt_cross) & (pt_1 > 21) & (pt_1 <= 26) & (abs(eta_1) < 2.1) & (pt_2 > 32) & (abs(eta_2) < 2.1)) | ((trg_singlemuon) & (pt_1 > 26) & (abs(eta_1) < 2.4))) | ((trg_singletau) & (pt_2 > 190)))"
+    et_baseline: "(os == 1) & (mt_1 >65) & (n_bjets == 0) & (iso_1 < 0.15) & (idDeepTau2018v2p5VSe_2 >= 6) & (idDeepTau2018v2p5VSmu_2 >= 4) & (((trg_singleelectron) & (pt_1 > 31) & (abs(eta_1) < 2.1)) | ((trg_singletau) & (pt_2 > 190)))"
+
+selections:
+  data_iso:
+    condition: "(idDeepTau2018v2p5VSjet_{tau_index} > 4) & {baseline}"
+
+  data_aiso:
+    condition: "(idDeepTau2018v2p5VSjet_{tau_index} <= 4) & (idDeepTau2018v2p5VSjet_{tau_index} >= 0) & {baseline}"
+
+  mc_iso:
+    condition: "(idDeepTau2018v2p5VSjet_{tau_index} > 4) & (wt_sf > 0.0) & (genPartFlav_{tau_index} != 0) & {baseline}"
+
+  mc_aiso:
+    condition: "(idDeepTau2018v2p5VSjet_{tau_index} <= 4) & (idDeepTau2018v2p5VSjet_{tau_index} >= 0) & (wt_sf > 0.0) & (genPartFlav_{tau_index} != 0) & {baseline}"
+
+  mc_iso_neg:
+    condition: "(idDeepTau2018v2p5VSjet_{tau_index} > 4) & (wt_sf < 0.0) & (genPartFlav_{tau_index} != 0) & {baseline}"
+
+  mc_aiso_neg:
+    condition: "(idDeepTau2018v2p5VSjet_{tau_index} <= 4) & (idDeepTau2018v2p5VSjet_{tau_index} >= 0) & (wt_sf < 0.0) & (genPartFlav_{tau_index} != 0) & {baseline}"
