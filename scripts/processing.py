@@ -274,10 +274,10 @@ for era in eras:
                     # Data input file (skip for WjetsMC and ttbarMC)
                     data_input_file = None
                     if ff_process not in ["WjetsMC", "ttbarMC"]:
-                        data_input_file = Path(input_folder) / input_files["data"]
+                        data_input_file = Path(input_folder) / input_files["data"].format(era=era)
 
                     # MC input file
-                    mc_input_file = Path(input_folder) / input_files["mc"]
+                    mc_input_file = Path(input_folder) / input_files["mc"].format(era=era)
 
                     logging.info(f"Data input file: {data_input_file}")
                     logging.info(f"MC input file: {mc_input_file}")

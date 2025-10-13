@@ -1,7 +1,7 @@
 input_folder: "/vols/cms/ia2318/REAL/data_production_071025/{era}/{channel}_Wjets/"
 input_files:
-  mc: "mc_all_events_Run3_2022.parquet"
-  data: "data_all_events_Run3_2022.parquet"
+  mc: "mc_all_events_{era}.parquet"
+  data: "data_all_events_{era}.parquet"
 output_dir: "/vols/cms/ia2318/REAL/data_production_071025/{era}/{region}_region/Wjets/"
 
 categories:
