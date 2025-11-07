@@ -16,6 +16,7 @@ from scipy.special import softmax, expit
 from scipy.optimize import minimize_scalar
 import json
 import logging
+import uproot
 from types import SimpleNamespace
 import mplhep as hep
 hep.style.use("CMS")
@@ -36,6 +37,8 @@ parser.add_argument("--channel", required=False, default="tt", choices=["et", "m
 parser.add_argument("--process", required=False, default="QCD", choices=["QCD", "Wjets", "WjetsMC", "ttbarMC"], help="Select the FF process to run (default: QCD).")
 parser.add_argument('--global_variables', type=str, choices=['True', 'False'], default='True', help='Training with global features: True or False (default: True)')
 parser.add_argument('--binary', action='store_true', help='If set, trains a binary classifier (MC ISO vs MC AISO)')
+parser.add_argument('--file_format', type=str, choices=['parquet', 'root'], default='parquet', help='Input file format (default: parquet)')
+parser.add_argument('--tree_name', type=str, default='ntuple', help='Name of the ROOT tree to read (default: ntuple)')
 
 args = parser.parse_args()
 
@@ -89,9 +92,9 @@ logger.addHandler(console_handler)
 
 
 # -------------------- Helpers -------------------------
-def load_data(file_paths, branches, which_tau):
+def load_data(file_paths, branches, which_tau, file_format='parquet', tree_name='ntuple'):
     """
-    Load parquet files from multiple eras into a single DataFrame; add era_label.
+    Load files (Parquet or ROOT) from multiple eras into a single DataFrame; add era_label.
     Returns empty DF if file_map is None/empty.
     After loading, map a raw tau-indexed column to normalised names for joint training:
       - for lead pass:  *_1 -> <base>,       *_2 -> <base>_other
@@ -104,7 +107,12 @@ def load_data(file_paths, branches, which_tau):
     era_to_label = {era: i for i, era in enumerate(file_paths.keys())}
     dfs = []
     for era, file_path in file_paths.items():
-        df = pd.read_parquet(file_path, columns=branches)
+        if file_format == 'parquet':
+                    df = pd.read_parquet(file_path, columns=branches)
+                elif file_format == 'root':
+                    with uproot.open(file_path) as f:
+                        tree = f[tree_name]
+                        df = tree.arrays(branches, library='pd')
         df["era_label"] = era_to_label.get(era, KeyError)
 
         # Build a rename map from raw columns to normalised names
@@ -545,10 +553,10 @@ for tau_suffix in tau_suffix:
     branches += ['wt_sf']  # Always include weight
 
     # Load data with normalised column names
-    data_iso = load_data(data_iso_map, branches, which_tau=tau_suffix) if data_iso_map is not None else None
-    data_aiso = load_data(data_aiso_map, branches, which_tau=tau_suffix) if data_aiso_map is not None else None
-    mc_iso = load_data(mc_iso_map, branches, which_tau=tau_suffix)
-    mc_aiso = load_data(mc_aiso_map, branches, which_tau=tau_suffix)
+    data_iso = load_data(data_iso_map, branches, which_tau=tau_suffix, file_format=args.file_format, tree_name=args.tree_name) if data_iso_map is not None else None
+    data_aiso = load_data(data_aiso_map, branches, which_tau=tau_suffix, file_format=args.file_format, tree_name=args.tree_name) if data_aiso_map is not None else None
+    mc_iso = load_data(mc_iso_map, branches, which_tau=tau_suffix, file_format=args.file_format, tree_name=args.tree_name)
+    mc_aiso = load_data(mc_aiso_map, branches, which_tau=tau_suffix, file_format=args.file_format, tree_name=args.tree_name)
 
     # Label data and mc dataframes
     if args.binary:
