@@ -1,0 +1,73 @@
+era:
+  Run3_2022:
+    data_iso_file: "/vols/cms/ia2318/REAL/data_production_070525/Run3_2022/processed_new/data_iso_{tau_suffix}.parquet"
+    data_aiso_file: "/vols/cms/ia2318/REAL/data_production_070525/Run3_2022/processed_new/data_aiso_{tau_suffix}.parquet"
+    mc_iso_file: "/vols/cms/ia2318/REAL/data_production_070525/Run3_2022/processed_new/mc_iso_{tau_suffix}.parquet"
+    mc_aiso_file: "/vols/cms/ia2318/REAL/data_production_070525/Run3_2022/processed_new/mc_aiso_{tau_suffix}.parquet"
+  Run3_2022EE:
+    data_iso_file: "/vols/cms/ia2318/REAL/data_production_070525/Run3_2022EE/processed_new/data_iso_{tau_suffix}.parquet"
+    data_aiso_file: "/vols/cms/ia2318/REAL/data_production_070525/Run3_2022EE/processed_new/data_aiso_{tau_suffix}.parquet"
+    mc_iso_file: "/vols/cms/ia2318/REAL/data_production_070525/Run3_2022EE/processed_new/mc_iso_{tau_suffix}.parquet"
+    mc_aiso_file: "/vols/cms/ia2318/REAL/data_production_070525/Run3_2022EE/processed_new/mc_aiso_{tau_suffix}.parquet"
+  Run3_2023:
+    data_iso_file: "/vols/cms/ia2318/REAL/data_production_070525/Run3_2023/processed_new/data_iso_{tau_suffix}.parquet"
+    data_aiso_file: "/vols/cms/ia2318/REAL/data_production_070525/Run3_2023/processed_new/data_aiso_{tau_suffix}.parquet"
+    mc_iso_file: "/vols/cms/ia2318/REAL/data_production_070525/Run3_2023/processed_new/mc_iso_{tau_suffix}.parquet"
+    mc_aiso_file: "/vols/cms/ia2318/REAL/data_production_070525/Run3_2023/processed_new/mc_aiso_{tau_suffix}.parquet"
+  Run3_2023BPix:
+    data_iso_file: "/vols/cms/ia2318/REAL/data_production_070525/Run3_2023BPix/processed_new/data_iso_{tau_suffix}.parquet"
+    data_aiso_file: "/vols/cms/ia2318/REAL/data_production_070525/Run3_2023BPix/processed_new/data_aiso_{tau_suffix}.parquet"
+    mc_iso_file: "/vols/cms/ia2318/REAL/data_production_070525/Run3_2023BPix/processed_new/mc_iso_{tau_suffix}.parquet"
+    mc_aiso_file: "/vols/cms/ia2318/REAL/data_production_070525/Run3_2023BPix/processed_new/mc_aiso_{tau_suffix}.parquet"
+output_dir: "/vols/cms/ia2318/REAL/outputs/best_models/EarlyRun3MSSM_070525_nprebjets/{global_prefix}"
+
+training:
+  leading_tau: 
+    - "decayMode_1"
+    - "jpt_pt_1"
+    - "pt_1"
+    - "eta_1"
+    - "charge_1"
+    - "phi_1"
+    - "decayModePNet_1"
+  subleading_tau: 
+    - "decayMode_2"
+    - "jpt_pt_2"
+    - "pt_2"
+    - "eta_2"
+    - "charge_2"
+    - "phi_2"
+    - "decayModePNet_2"
+  global_variables:
+    - "n_jets"
+    - "n_bjets"
+    - "met_var_qcd_{tau_suffix}"
+  joint_training_no_global:
+    - "decayMode"
+    - "jpt_pt"
+    - "pt"
+    - "eta"
+    - "charge"
+    - "phi"
+    - "decayModePNet"
+    - "is_lead_tau"
+    - "wt_sf"
+  joint_training_global:
+    - "n_jets"
+    - "n_bjets"
+    - "met_var_qcd"
+    - "pt_other"
+
+
+hyperparameters:
+  max_depth: [3, 10]
+  learning_rate: [0.01, 0.3]
+  subsample: [0.5, 1.0]
+  colsample_bytree: [0.5, 1.0]
+  min_child_weight: [1, 10]
+  reg_alpha: [1e-8, 1.0]
+  reg_lambda: [1e-8, 1.0]
+  n_trials: 50
+  n_jobs: 3
+  early_stopping_rounds: 20
+  num_boost_round: 10000

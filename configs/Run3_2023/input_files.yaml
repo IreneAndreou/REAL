@@ -1,6 +1,6 @@
-source_dir: "/vols/cms/ia2318/HiggsDNA/output/production_070525_EarlyRun3SyncMSSM/Run3_2023/{channel}"
+source_dir: "/vols/cms/ia2318/HiggsDNA-powheg/output/production_191125/Run3_2023/{channel}"
 
-destination_dir: "/vols/cms/ia2318/REAL/data_production_071025/Run3_2023/{channel}_{ff_process}"
+destination_dir: "/vols/cms/ia2318/REAL/data_November25/Run3_2023/{channel}_{ff_process}"
 
 source_files:
   tt_data:
@@ -27,22 +27,21 @@ source_files:
     - "EGamma1_Run2023C_v3"
     - "EGamma1_Run2023C_v4"
   mc:
-    - "DYto2L_M_10to50_madgraphMLM"
-    - "DYto2L_M_50_1J_madgraphMLM"
-    - "DYto2L_M_50_2J_madgraphMLM"
-    - "DYto2L_M_50_3J_madgraphMLM"
-    - "DYto2L_M_50_4J_madgraphMLM"
-    - "DYto2L_M_50_madgraphMLM"
+    - "DYto2L_M_50_amcatnloFXFX"
+    - "DYto2L_M_50_amcatnloFXFX_ext1"
+    - "DYto2L_M_50_0J_amcatnloFXFX"
+    - "DYto2L_M_50_1J_amcatnloFXFX"
+    - "DYto2L_M_50_2J_amcatnloFXFX"
+    - "DYto2Tau_MLL_50_0J_amcatnloFXFX"
+    - "DYto2Tau_MLL_50_1J_amcatnloFXFX"
+    - "DYto2Tau_MLL_50_2J_amcatnloFXFX"
     - "ST_t_channel_antitop_4f_InclusiveDecays"
     - "ST_t_channel_top_4f_InclusiveDecays"
     - "ST_tW_antitop_2L2Nu"
-    - "ST_tW_antitop_4Q"
-    # - "ST_tW_antitop_LNu2Q" hashed in pre-processing/samples.yaml
+    - "ST_tW_antitop_LNu2Q"
     - "ST_tW_top_2L2Nu"
-    - "ST_tW_top_4Q"
     - "ST_tW_top_LNu2Q"
     - "TTto2L2Nu"
-    - "TTto4Q"
     - "TTtoLNu2Q"
     - "WtoLNu_1J_madgraphMLM"
     - "WtoLNu_2J_madgraphMLM"

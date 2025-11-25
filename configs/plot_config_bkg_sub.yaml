@@ -1,0 +1,201 @@
+era:
+  Run3_2022:
+    data_iso_path: "/vols/cms/ia2318/REAL/data_production_070525/Run3_2022/processed_new_os/data_iso_{apply_tau}.parquet"
+    data_aiso_path: "/vols/cms/ia2318/REAL/data_production_070525/Run3_2022/processed_new_os/data_aiso_{apply_tau}.parquet"
+    mc_iso_path: "/vols/cms/ia2318/REAL/data_production_070525/Run3_2022/processed_new_os/mc_iso_{apply_tau}.parquet"
+    mc_aiso_path: "/vols/cms/ia2318/REAL/data_production_070525/Run3_2022/processed_new_os/mc_aiso_{apply_tau}.parquet"
+  Run3_2022EE:
+    data_iso_path: "/vols/cms/ia2318/REAL/data_production_070525/Run3_2022EE/processed_new_os/data_iso_{apply_tau}.parquet"
+    data_aiso_path: "/vols/cms/ia2318/REAL/data_production_070525/Run3_2022EE/processed_new_os/data_aiso_{apply_tau}.parquet"
+    mc_iso_path: "/vols/cms/ia2318/REAL/data_production_070525/Run3_2022EE/processed_new_os/mc_iso_{apply_tau}.parquet"
+    mc_aiso_path: "/vols/cms/ia2318/REAL/data_production_070525/Run3_2022EE/processed_new_os/mc_aiso_{apply_tau}.parquet"
+  Run3_2023:
+    data_iso_path: "/vols/cms/ia2318/REAL/data_production_070525/Run3_2023/processed_new_os/data_iso_{apply_tau}.parquet"
+    data_aiso_path: "/vols/cms/ia2318/REAL/data_production_070525/Run3_2023/processed_new_os/data_aiso_{apply_tau}.parquet"
+    mc_iso_path: "/vols/cms/ia2318/REAL/data_production_070525/Run3_2023/processed_new_os/mc_iso_{apply_tau}.parquet"
+    mc_aiso_path: "/vols/cms/ia2318/REAL/data_production_070525/Run3_2023/processed_new_os/mc_aiso_{apply_tau}.parquet"
+  Run3_2023BPix:
+    data_iso_path: "/vols/cms/ia2318/REAL/data_production_070525/Run3_2023BPix/processed_new_os/data_iso_{apply_tau}.parquet"
+    data_aiso_path: "/vols/cms/ia2318/REAL/data_production_070525/Run3_2023BPix/processed_new_os/data_aiso_{apply_tau}.parquet"
+    mc_iso_path: "/vols/cms/ia2318/REAL/data_production_070525/Run3_2023BPix/processed_new_os/mc_iso_{apply_tau}.parquet"
+    mc_aiso_path: "/vols/cms/ia2318/REAL/data_production_070525/Run3_2023BPix/processed_new_os/mc_aiso_{apply_tau}.parquet"
+
+model_path: "/vols/cms/ia2318/REAL/outputs/best_models/EarlyRun3MSSM_070525/{global_tag}/best_model.pkl"
+output_dir: "/vols/cms/ia2318/REAL/outputs/plots/EarlyRun3MSSM_070525/{tau}/{global_tag}_{apply_tau}/os/"
+
+
+    # ## Opposite sign plots - new ntuples
+    # model_path: "/vols/cms/ia2318/REAL/outputs/best_models/Run3_2022/joint_training_production_180225/{global_tag}bkg_sub_with_weights_new/best_model.pkl"
+    # data_iso_path: "/vols/cms/ia2318/REAL/data_production_180225/Run3_2022/processed_new_os/data_all_events_Run3_2022_iso_{apply_tau}.root"
+    # data_aiso_path: "/vols/cms/ia2318/REAL/data_production_180225/Run3_2022/processed_new_os/data_all_events_Run3_2022_aiso_{apply_tau}.root"
+    # mc_iso_path: "/vols/cms/ia2318/REAL/data_production_180225/Run3_2022/processed_new_os/mc_all_events_Run3_2022_iso_{apply_tau}.root"
+    # mc_aiso_path: "/vols/cms/ia2318/REAL/data_production_180225/Run3_2022/processed_new_os/mc_all_events_Run3_2022_aiso_{apply_tau}.root"
+    # output_dir: "/vols/cms/ia2318/REAL/outputs/plots/Run3_2022_testing/joint_training_production_180225/os/{tau}/{global_tag}bkg_sub_with_weights_new_{apply_tau}FFs_yieldsinsubtraction"
+
+    
+    # ## Same sign plots - new ntuples
+    # model_path: "/vols/cms/ia2318/REAL/outputs/best_models/Run3_2022/joint_training_production_180225/{global_tag}bkg_sub_with_weights_new/best_model.pkl"
+    # data_iso_path: "/vols/cms/ia2318/REAL/data_production_180225/Run3_2022/processed_new/data_all_events_Run3_2022_iso_{apply_tau}.root"
+    # data_aiso_path: "/vols/cms/ia2318/REAL/data_production_180225/Run3_2022/processed_new/data_all_events_Run3_2022_aiso_{apply_tau}.root"
+    # mc_iso_path: "/vols/cms/ia2318/REAL/data_production_180225/Run3_2022/processed_new/mc_all_events_Run3_2022_iso_{apply_tau}.root"
+    # mc_aiso_path: "/vols/cms/ia2318/REAL/data_production_180225/Run3_2022/processed_new/mc_all_events_Run3_2022_aiso_{apply_tau}.root"
+    # output_dir: "/vols/cms/ia2318/REAL/outputs/plots/Run3_2022_testing/joint_training_production_180225/{tau}/{global_tag}bkg_sub_with_weights_new_{apply_tau}FFs_yieldsinsubtraction"
+    
+    # ## Double (a)isolation - new ntuples
+    # model_path: "/vols/cms/ia2318/REAL/outputs/best_models/Run3_2022/joint_training_production_180225/{global_tag}bkg_sub_with_weights_new/best_model.pkl"
+    # data_iso_path: "/vols/cms/ia2318/REAL/data_production_180225/Run3_2022/processed_new/data_all_events_Run3_2022_double_iso.root"
+    # data_aiso_path: "/vols/cms/ia2318/REAL/data_production_180225/Run3_2022/processed_new/data_all_events_Run3_2022_double_aiso.root"
+    # mc_iso_path: "/vols/cms/ia2318/REAL/data_production_180225/Run3_2022/processed_new/mc_all_events_Run3_2022_double_iso.root"
+    # mc_aiso_path: "/vols/cms/ia2318/REAL/data_production_180225/Run3_2022/processed_new/mc_all_events_Run3_2022_double_aiso.root"
+    # output_dir: "/vols/cms/ia2318/REAL/outputs/plots/Run3_2022_testing/joint_training_production_180225/doubly_new_leadnoglobal_subleadglobal/{global_tag}bkg_sub_with_weights_new_apply{tau}FFs_yieldsinsubtraction"
+
+features:
+  global: 
+    - 'n_jets'
+    - 'n_bjets'
+    - 'met_var_qcd_{tau_suffix}'
+  no_global: 
+    - 'decayMode_{tau_suffix}'
+    - 'jpt_pt_{tau_suffix}'
+    - 'pt_{tau_suffix}'
+    - 'eta_{tau_suffix}'
+    - 'charge_{tau_suffix}'
+    - 'phi_{tau_suffix}'
+    - 'decayModePNet_{tau_suffix}'
+  plot:
+    - 'decayMode_1'
+    - 'decayMode_2'
+    - 'jpt_pt_1'
+    - 'jpt_pt_2'
+    - 'pt_1'
+    - 'pt_2'
+    - 'pt_tt'
+    - 'eta_1'
+    - 'eta_2'
+    - 'charge_1'
+    - 'charge_2'
+    - 'phi_1'
+    - 'phi_2'
+    - 'dR'
+    - 'n_jets'
+    - 'n_bjets'
+    - 'n_prebjets'
+    - 'm_vis'
+    - 'mt_tot'
+    - 'met_pt'
+    - 'met_phi'
+    - 'met_dphi_1'
+    - 'met_dphi_2'
+    - 'met_var_qcd_1'
+    - 'met_var_qcd_2'
+    - 'decayModePNet_1'
+    - 'decayModePNet_2'
+
+  latex_names:
+    'decayMode_1': 'Decay mode 1'
+    'decayMode_2': 'Decay mode 2'
+    'jpt_pt_1': 'Jet pT 1'
+    'jpt_pt_2': 'Jet pT 2'
+    'pt_1': '$p_{T}^{\tau_h}$ (GeV)'
+    'pt_2': 'Tau pT 2'
+    'pt_tt': 'Di-tau pT'
+    'eta_1': 'Tau eta 1'
+    'eta_2': 'Tau eta 2'
+    'charge_1': 'Tau charge 1'
+    'charge_2': 'Tau charge 2'
+    'phi_1': 'Tau phi 1'
+    'phi_2': 'Tau phi 2'
+    'dR': 'dR'
+    'n_jets': 'Number of jets'
+    'n_bjets': 'Number of b-jets'
+    'n_prebjets': 'Number of pre-b-jets'
+    'm_vis': 'm_vis'
+    'mt_tot': '$m^{total}_T$ (GeV)'
+    'met_pt': 'MET pT'
+    'met_phi': 'MET phi'
+    'met_dphi_1': 'MET dphi 1'
+    'met_dphi_2': 'MET dphi 2'
+    'met_var_qcd_1': 'MET var qcd 1'
+    'met_var_qcd_2': 'MET var qcd 2'
+    'decayModePNet_1': 'Decay mode PNet 1'
+    'decayModePNet_2': 'Decay mode PNet 2'
+
+plot_params:
+  bins:
+    'decayMode_1': 12  # Discrete bins: 0, 1, 10, 11
+    'decayMode_2': 12  # Discrete bins: 0, 1, 10, 11
+    'jpt_pt_1': 100
+    'jpt_pt_2': 100
+    'pt_1': 100
+    'pt_2': 100
+    'pt_tt': 100
+    'eta_1': 30
+    'eta_2': 30
+    'phi_1': 30
+    'phi_2': 30
+    'dR': 30
+    'charge_1': 4
+    'charge_2': 4
+    'n_jets': 10
+    'n_bjets': 4
+    'n_prebjets': 4
+    'm_vis': 100
+    'mt_tot': 100
+    'met_pt': 40
+    'met_phi': 30
+    'met_dphi_1': 30
+    'met_dphi_2': 30
+    'met_var_qcd_1': 50
+    'met_var_qcd_2': 50
+    'decayModePNet_1': 12  # Discrete bins: 0, 1, 2, 10, 11
+    'decayModePNet_2': 12  # Discrete bins: 0, 1, 2, 10, 11
+
+  ranges:
+    'decayMode_1': [0, 12]
+    'decayMode_2': [0, 12]
+    'jpt_pt_1': [0, 3]
+    'jpt_pt_2': [0, 3]
+    'pt_1': [35, 500]
+    'pt_2': [35, 600]
+    'pt_tt': [0, 800]
+    'eta_1': [-3, 3]
+    'eta_2': [-3, 3]
+    'phi_1': [-3.2, 3.2]
+    'phi_2': [-3.2, 3.2]
+    'dR': [0, 6]
+    'charge_1': [-2, 2]
+    'charge_2': [-2, 2]
+    'n_jets': [0, 10]
+    'n_bjets': [0, 4]
+    'n_prebjets': [0, 4]
+    'm_vis': [0, 800]
+    'mt_tot': [0, 800]
+    'met_pt': [0, 200]
+    'met_phi': [-3.2, 3.2]
+    'met_dphi_1': [-3.2, 3.2]
+    'met_dphi_2': [-3.2, 3.2]
+    'met_var_qcd_1': [-10, 10]
+    'met_var_qcd_2': [-10, 10]
+    'decayModePNet_1': [0, 12]
+    'decayModePNet_2': [0, 12]
+  
+  discrete_bins:
+    'charge_1': [-2, -1, 0, 1, 2]
+    'charge_2': [-2, -1, 0, 1, 2]
+    'pt_1': [35, 50, 60, 70, 80, 90, 100, 120, 140, 160, 180, 200, 250, 300, 400, 500]
+    'pt_2': [35, 50, 60, 70, 80, 90, 100, 120, 140, 160, 180, 200, 250, 300, 400, 500]
+    'mt_tot': [0, 50, 100, 150, 200, 250, 300, 350, 400, 450, 500, 600]
+    'm_vis': [0, 50, 100, 150, 200, 250, 300, 350, 400, 450, 500, 600]
+    'met_pt': [0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 120, 140]
+    'decayMode_1': [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+    'decayMode_2': [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+    'decayModePNet_1': [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+    'decayModePNet_2': [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+
+optimal_temperature:
+  leading_tau: 
+    global_variables: 1.000040889967007
+    no_global_variables: 0.9989901219914576
+  subleading_tau:
+    global_variables: 0.9992805270662504
+    no_global_variables: 0.9940765078571909
