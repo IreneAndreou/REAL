@@ -1,255 +1,79 @@
-BBHto2Tau_M_100:
-  eff: 642000
-  filter_efficiency: 1.0
-  xs: 1.0
-BBHto2Tau_M_1000:
-  eff: 175690
-  filter_efficiency: 1.0
-  xs: 1.0
-BBHto2Tau_M_105:
-  eff: 633848
-  filter_efficiency: 1.0
-  xs: 1.0
-BBHto2Tau_M_110:
-  eff: 600708
-  filter_efficiency: 1.0
-  xs: 1.0
-BBHto2Tau_M_1100:
-  eff: 175428
-  filter_efficiency: 1.0
-  xs: 1.0
-BBHto2Tau_M_115:
-  eff: 648956
-  filter_efficiency: 1.0
-  xs: 1.0
-BBHto2Tau_M_120:
-  eff: 587674
-  filter_efficiency: 1.0
-  xs: 1.0
-BBHto2Tau_M_1200:
-  eff: 74178
-  filter_efficiency: 1.0
-  xs: 1.0
-BBHto2Tau_M_125:
-  eff: 658030
-  filter_efficiency: 1.0
-  xs: 1.0
-BBHto2Tau_M_130:
-  eff: 655830
-  filter_efficiency: 1.0
-  xs: 1.0
-BBHto2Tau_M_135:
-  eff: 690810
-  filter_efficiency: 1.0
-  xs: 1.0
-BBHto2Tau_M_140:
-  eff: 640456
-  filter_efficiency: 1.0
-  xs: 1.0
-BBHto2Tau_M_1400:
-  eff: 70136
-  filter_efficiency: 1.0
-  xs: 1.0
-BBHto2Tau_M_160:
-  eff: 626436
-  filter_efficiency: 1.0
-  xs: 1.0
-BBHto2Tau_M_1600:
-  eff: 68530
-  filter_efficiency: 1.0
-  xs: 1.0
-BBHto2Tau_M_180:
-  eff: 652020
-  filter_efficiency: 1.0
-  xs: 1.0
-BBHto2Tau_M_1800:
-  eff: 68916
-  filter_efficiency: 1.0
-  xs: 1.0
-BBHto2Tau_M_200:
-  eff: 648262
-  filter_efficiency: 1.0
-  xs: 1.0
-BBHto2Tau_M_2000:
-  eff: 66230
-  filter_efficiency: 1.0
-  xs: 1.0
-BBHto2Tau_M_2300:
-  eff: 66002
-  filter_efficiency: 1.0
-  xs: 1.0
-BBHto2Tau_M_250:
-  eff: 322106
-  filter_efficiency: 1.0
-  xs: 1.0
-BBHto2Tau_M_2600:
-  eff: 65480
-  filter_efficiency: 1.0
-  xs: 1.0
-BBHto2Tau_M_2900:
-  eff: 62648
-  filter_efficiency: 1.0
-  xs: 1.0
-BBHto2Tau_M_300:
-  eff: 317582
-  filter_efficiency: 1.0
-  xs: 1.0
-BBHto2Tau_M_3200:
-  eff: 61766
-  filter_efficiency: 1.0
-  xs: 1.0
-BBHto2Tau_M_350:
-  eff: 314964
-  filter_efficiency: 1.0
-  xs: 1.0
-BBHto2Tau_M_3500:
-  eff: 62720
-  filter_efficiency: 1.0
-  xs: 1.0
-BBHto2Tau_M_400:
-  eff: 318468
-  filter_efficiency: 1.0
-  xs: 1.0
-BBHto2Tau_M_450:
-  eff: 313394
-  filter_efficiency: 1.0
-  xs: 1.0
-BBHto2Tau_M_500:
-  eff: 319074
-  filter_efficiency: 1.0
-  xs: 1.0
-BBHto2Tau_M_60:
-  eff: 696528
-  filter_efficiency: 1.0
-  xs: 1.0
-BBHto2Tau_M_600:
-  eff: 182740
-  filter_efficiency: 1.0
-  xs: 1.0
-BBHto2Tau_M_65:
-  eff: 630304
-  filter_efficiency: 1.0
-  xs: 1.0
-BBHto2Tau_M_70:
-  eff: 656188
-  filter_efficiency: 1.0
-  xs: 1.0
-BBHto2Tau_M_700:
-  eff: 179602
-  filter_efficiency: 1.0
-  xs: 1.0
-BBHto2Tau_M_75:
-  eff: 642706
-  filter_efficiency: 1.0
-  xs: 1.0
-BBHto2Tau_M_80:
-  eff: 657690
-  filter_efficiency: 1.0
-  xs: 1.0
-BBHto2Tau_M_800:
-  eff: 180982
-  filter_efficiency: 1.0
-  xs: 1.0
-BBHto2Tau_M_85:
-  eff: 652658
-  filter_efficiency: 1.0
-  xs: 1.0
-BBHto2Tau_M_90:
-  eff: 645712
-  filter_efficiency: 1.0
-  xs: 1.0
-BBHto2Tau_M_900:
-  eff: 179452
-  filter_efficiency: 1.0
-  xs: 1.0
-BBHto2Tau_M_95:
-  eff: 652900
-  filter_efficiency: 1.0
-  xs: 1.0
 DYto2L_M_10to50_amcatnloFXFX:
   eff: 74917918
   filter_efficiency: 1.0
-  xs: 1327.8
+  xs: 20950.0
 DYto2L_M_10to50_madgraphMLM:
   eff: 150291788
   filter_efficiency: 1.0
-  xs: 1091.1
+  xs: 17380.0
 DYto2L_M_50_0J_amcatnloFXFX:
-  eff: 63684562
+  eff: 63684562.0
   filter_efficiency: 1.0
   xs: 6282.6
 DYto2L_M_50_1J_amcatnloFXFX:
-  eff: 63684562
+  eff: 63684562.0
   filter_efficiency: 1.0
   xs: 6282.6
 DYto2L_M_50_1J_madgraphMLM:
-  eff: 69398459
+  eff: 69398459.0
   filter_efficiency: 1.0
   xs: 6282.6
 DYto2L_M_50_2J_amcatnloFXFX:
-  eff: 63684562
+  eff: 63684562.0
   filter_efficiency: 1.0
   xs: 6282.6
 DYto2L_M_50_2J_madgraphMLM:
-  eff: 69398459
+  eff: 69398459.0
   filter_efficiency: 1.0
   xs: 6282.6
 DYto2L_M_50_3J_madgraphMLM:
-  eff: 69398459
+  eff: 69398459.0
   filter_efficiency: 1.0
   xs: 6282.6
 DYto2L_M_50_4J_madgraphMLM:
-  eff: 69398459
-  filter_efficiency: 1.0
-  xs: 6282.6
-DYto2L_M_50_PTLL_100to200_1J_amcatnloFXFX:
-  eff: 63684562
-  filter_efficiency: 1.0
-  xs: 6282.6
-DYto2L_M_50_PTLL_100to200_2J_amcatnloFXFX:
-  eff: 63684562
-  filter_efficiency: 1.0
-  xs: 6282.6
-DYto2L_M_50_PTLL_200to400_1J_amcatnloFXFX:
-  eff: 63684562
-  filter_efficiency: 1.0
-  xs: 6282.6
-DYto2L_M_50_PTLL_200to400_2J_amcatnloFXFX:
-  eff: 63684562
-  filter_efficiency: 1.0
-  xs: 6282.6
-DYto2L_M_50_PTLL_400to600_1J_amcatnloFXFX:
-  eff: 63684562
-  filter_efficiency: 1.0
-  xs: 6282.6
-DYto2L_M_50_PTLL_400to600_2J_amcatnloFXFX:
-  eff: 63684562
-  filter_efficiency: 1.0
-  xs: 6282.6
-DYto2L_M_50_PTLL_40to100_1J_amcatnloFXFX:
-  eff: 63684562
-  filter_efficiency: 1.0
-  xs: 6282.6
-DYto2L_M_50_PTLL_40to100_2J_amcatnloFXFX:
-  eff: 63684562
-  filter_efficiency: 1.0
-  xs: 6282.6
-DYto2L_M_50_PTLL_600_1J_amcatnloFXFX:
-  eff: 63684562
-  filter_efficiency: 1.0
-  xs: 6282.6
-DYto2L_M_50_PTLL_600_2J_amcatnloFXFX:
-  eff: 63684562
+  eff: 69398459.0
   filter_efficiency: 1.0
   xs: 6282.6
 DYto2L_M_50_amcatnloFXFX:
-  eff: 63684562
+  eff: 63684562.0
+  filter_efficiency: 1.0
+  xs: 6282.6
+DYto2L_M_50_amcatnloFXFX_ext1:
+  eff: 63684562.0
   filter_efficiency: 1.0
   xs: 6282.6
 DYto2L_M_50_madgraphMLM:
-  eff: 69398459
+  eff: 69398459.0
   filter_efficiency: 1.0
   xs: 6282.6
+DYto2L_M_50_madgraphMLM_ext1:
+  eff: 69398459.0
+  filter_efficiency: 1.0
+  xs: 6282.6
+DYto2Tau_MLL_50_0J_Filtered_amcatnloFXFX:
+  eff: 12163250
+  filter_efficiency: 1.0
+  xs: 1664.6841730883225
+DYto2Tau_MLL_50_0J_amcatnloFXFX:
+  eff: 35162586
+  filter_efficiency: 1.0
+  xs: 1664.6841730883225
+DYto2Tau_MLL_50_1J_Filtered_amcatnloFXFX:
+  eff: 10205589
+  filter_efficiency: 1.0
+  xs: 316.2403378778898
+DYto2Tau_MLL_50_1J_amcatnloFXFX:
+  eff: 33432375
+  filter_efficiency: 1.0
+  xs: 316.2403378778898
+DYto2Tau_MLL_50_2J_Filtered_amcatnloFXFX:
+  eff: 12165380
+  filter_efficiency: 1.0
+  xs: 116.47203023117962
+DYto2Tau_MLL_50_2J_amcatnloFXFX:
+  eff: 36561651
+  filter_efficiency: 1.0
+  xs: 116.47203023117962
 GluGluHTo2Tau_UncorrelatedDecay_CPodd_Filtered_ProdAndDecay:
   eff: 9103069
   filter_efficiency: 0.3848
@@ -274,196 +98,36 @@ GluGluHTo2Tau_UncorrelatedDecay_SM_UnFiltered_ProdAndDecay:
   eff: 103106
   filter_efficiency: 1.0
   xs: 3.2759
-GluGluHto2Tau_M_1000_2HDM_II:
-  eff: 644988
-  filter_efficiency: 1.0
-  xs: 1.0
-GluGluHto2Tau_M_100_2HDM_II:
-  eff: 659932
-  filter_efficiency: 1.0
-  xs: 1.0
-GluGluHto2Tau_M_105_2HDM_II:
-  eff: 656934
-  filter_efficiency: 1.0
-  xs: 1.0
-GluGluHto2Tau_M_1100_2HDM_II:
-  eff: 656998
-  filter_efficiency: 1.0
-  xs: 1.0
-GluGluHto2Tau_M_110_2HDM_II:
-  eff: 641950
-  filter_efficiency: 1.0
-  xs: 1.0
-GluGluHto2Tau_M_115_2HDM_II:
-  eff: 644946
-  filter_efficiency: 1.0
-  xs: 1.0
-GluGluHto2Tau_M_1200_2HDM_II:
-  eff: 632994
-  filter_efficiency: 1.0
-  xs: 1.0
-GluGluHto2Tau_M_120_2HDM_II:
-  eff: 659954
-  filter_efficiency: 1.0
-  xs: 1.0
-GluGluHto2Tau_M_125_2HDM_II:
-  eff: 650928
-  filter_efficiency: 1.0
-  xs: 1.0
-GluGluHto2Tau_M_130_2HDM_II:
-  eff: 650956
-  filter_efficiency: 1.0
-  xs: 1.0
-GluGluHto2Tau_M_135_2HDM_II:
-  eff: 659946
-  filter_efficiency: 1.0
-  xs: 1.0
-GluGluHto2Tau_M_1400_2HDM_II:
-  eff: 653986
-  filter_efficiency: 1.0
-  xs: 1.0
-GluGluHto2Tau_M_140_2HDM_II:
-  eff: 656928
-  filter_efficiency: 1.0
-  xs: 1.0
-GluGluHto2Tau_M_1600_2HDM_II:
-  eff: 653994
-  filter_efficiency: 1.0
-  xs: 1.0
-GluGluHto2Tau_M_160_2HDM_II:
-  eff: 653946
-  filter_efficiency: 1.0
-  xs: 1.0
-GluGluHto2Tau_M_1800_2HDM_II:
-  eff: 645986
-  filter_efficiency: 1.0
-  xs: 1.0
-GluGluHto2Tau_M_180_2HDM_II:
-  eff: 656938
-  filter_efficiency: 1.0
-  xs: 1.0
-GluGluHto2Tau_M_2000_2HDM_II:
-  eff: 633980
-  filter_efficiency: 1.0
-  xs: 1.0
-GluGluHto2Tau_M_200_2HDM_II:
-  eff: 644964
-  filter_efficiency: 1.0
-  xs: 1.0
-GluGluHto2Tau_M_2300_2HDM_II:
-  eff: 635990
-  filter_efficiency: 1.0
-  xs: 1.0
-GluGluHto2Tau_M_250_2HDM_II:
-  eff: 626964
-  filter_efficiency: 1.0
-  xs: 1.0
-GluGluHto2Tau_M_2600_2HDM_II:
-  eff: 655966
-  filter_efficiency: 1.0
-  xs: 1.0
-GluGluHto2Tau_M_2900_2HDM_II:
-  eff: 643946
-  filter_efficiency: 1.0
-  xs: 1.0
-GluGluHto2Tau_M_300_2HDM_II:
-  eff: 656988
-  filter_efficiency: 1.0
-  xs: 1.0
-GluGluHto2Tau_M_3200_2HDM_II:
-  eff: 647914
-  filter_efficiency: 1.0
-  xs: 1.0
-GluGluHto2Tau_M_3500_2HDM_II:
-  eff: 651910
-  filter_efficiency: 1.0
-  xs: 1.0
-GluGluHto2Tau_M_350_2HDM_II:
-  eff: 650992
-  filter_efficiency: 1.0
-  xs: 1.0
-GluGluHto2Tau_M_400_2HDM_II:
-  eff: 650990
-  filter_efficiency: 1.0
-  xs: 1.0
-GluGluHto2Tau_M_450_2HDM_II:
-  eff: 659984
-  filter_efficiency: 1.0
-  xs: 1.0
-GluGluHto2Tau_M_500_2HDM_II:
-  eff: 644990
-  filter_efficiency: 1.0
-  xs: 1.0
-GluGluHto2Tau_M_600_2HDM_II:
-  eff: 653992
-  filter_efficiency: 1.0
-  xs: 1.0
-GluGluHto2Tau_M_60_2HDM_II:
-  eff: 659868
-  filter_efficiency: 1.0
-  xs: 1.0
-GluGluHto2Tau_M_65_2HDM_II:
-  eff: 653896
-  filter_efficiency: 1.0
-  xs: 1.0
-GluGluHto2Tau_M_700_2HDM_II:
-  eff: 638996
-  filter_efficiency: 1.0
-  xs: 1.0
-GluGluHto2Tau_M_70_2HDM_II:
-  eff: 641910
-  filter_efficiency: 1.0
-  xs: 1.0
-GluGluHto2Tau_M_75_2HDM_II:
-  eff: 659884
-  filter_efficiency: 1.0
-  xs: 1.0
-GluGluHto2Tau_M_800_2HDM_II:
-  eff: 656998
-  filter_efficiency: 1.0
-  xs: 1.0
-GluGluHto2Tau_M_80_2HDM_II:
-  eff: 656910
-  filter_efficiency: 1.0
-  xs: 1.0
-GluGluHto2Tau_M_85_2HDM_II:
-  eff: 644910
-  filter_efficiency: 1.0
-  xs: 1.0
-GluGluHto2Tau_M_900_2HDM_II:
-  eff: 656994
-  filter_efficiency: 1.0
-  xs: 1.0
-GluGluHto2Tau_M_90_2HDM_II:
-  eff: 659916
-  filter_efficiency: 1.0
-  xs: 1.0
-GluGluHto2Tau_M_95_2HDM_II:
-  eff: 659916
-  filter_efficiency: 1.0
-  xs: 1.0
 ST_tW_antitop_2L2Nu:
-  eff: 2487898
+  eff: 2487898.0
   filter_efficiency: 1.0
   xs: 3.8
-ST_tW_antitop_4Q:
-  eff: 3975836
+ST_tW_antitop_2L2Nu_ext1:
+  eff: 2487898.0
   filter_efficiency: 1.0
-  xs: 3.9
+  xs: 3.8
 ST_tW_antitop_LNu2Q:
-  eff: 5146462
+  eff: 5146462.0
+  filter_efficiency: 1.0
+  xs: 15.9
+ST_tW_antitop_LNu2Q_ext1:
+  eff: 5146462.0
   filter_efficiency: 1.0
   xs: 15.9
 ST_tW_top_2L2Nu:
-  eff: 2478922
+  eff: 2478922.0
   filter_efficiency: 1.0
   xs: 3.8
-ST_tW_top_4Q:
-  eff: 3933816
+ST_tW_top_2L2Nu_ext1:
+  eff: 2478922.0
   filter_efficiency: 1.0
-  xs: 3.9
+  xs: 3.8
 ST_tW_top_LNu2Q:
-  eff: 4943196
+  eff: 4943196.0
+  filter_efficiency: 1.0
+  xs: 15.8
+ST_tW_top_LNu2Q_ext1:
+  eff: 4943196.0
   filter_efficiency: 1.0
   xs: 15.8
 ST_t_channel_antitop_4f_InclusiveDecays:
@@ -475,15 +139,27 @@ ST_t_channel_top_4f_InclusiveDecays:
   filter_efficiency: 1.0
   xs: 123.8
 TTto2L2Nu:
-  eff: 24357456
+  eff: 24357456.0
+  filter_efficiency: 1.0
+  xs: 98.04387875606875
+TTto2L2Nu_ext1:
+  eff: 24357456.0
   filter_efficiency: 1.0
   xs: 98.04387875606875
 TTto4Q:
-  eff: 52422350
+  eff: 52422350.0
+  filter_efficiency: 1.0
+  xs: 419.8071644141188
+TTto4Q_ext1:
+  eff: 52422350.0
   filter_efficiency: 1.0
   xs: 419.8071644141188
 TTtoLNu2Q:
-  eff: 76050494
+  eff: 76050494.0
+  filter_efficiency: 1.0
+  xs: 405.74895682981236
+TTtoLNu2Q_ext1:
+  eff: 76050494.0
   filter_efficiency: 1.0
   xs: 405.74895682981236
 VBFHToTauTau_UncorrelatedDecay_Filtered:
@@ -498,10 +174,22 @@ WW:
   eff: 16545000
   filter_efficiency: 1.0
   xs: 122.27052
+WWW_4F:
+  eff: 423054
+  filter_efficiency: 1.0
+  xs: 0.2328
+WWZ_4F:
+  eff: 1585526
+  filter_efficiency: 1.0
+  xs: 0.1851
 WZ:
   eff: 8379000
   filter_efficiency: 1.0
   xs: 41.1474
+WZZ:
+  eff: 1625116
+  filter_efficiency: 1.0
+  xs: 0.06206
 WminusHToTauTau_UncorrelatedDecay_Filtered:
   eff: 718725
   filter_efficiency: 0.3944
@@ -519,23 +207,27 @@ WplusHToTauTau_UncorrelatedDecay_UnFiltered:
   filter_efficiency: 1.0
   xs: 0.05575
 WtoLNu_1J_madgraphMLM:
-  eff: 94639090
+  eff: 94639090.0
   filter_efficiency: 1.0
   xs: 63425.09999999999
 WtoLNu_2J_madgraphMLM:
-  eff: 94639090
+  eff: 94639090.0
   filter_efficiency: 1.0
   xs: 63425.09999999999
 WtoLNu_3J_madgraphMLM:
-  eff: 94639090
+  eff: 94639090.0
   filter_efficiency: 1.0
   xs: 63425.09999999999
 WtoLNu_4J_madgraphMLM:
-  eff: 94639090
+  eff: 94639090.0
   filter_efficiency: 1.0
   xs: 63425.09999999999
 WtoLNu_madgraphMLM:
-  eff: 94639090
+  eff: 94639090.0
+  filter_efficiency: 1.0
+  xs: 63425.09999999999
+WtoLNu_madgraphMLM_ext1:
+  eff: 94639090.0
   filter_efficiency: 1.0
   xs: 63425.09999999999
 ZHToTauTau_UncorrelatedDecay_Filtered:
@@ -550,4 +242,8 @@ ZZ:
   eff: 1254000
   filter_efficiency: 1.0
   xs: 19.431
-lumi: 9451
+ZZZ:
+  eff: 1589388
+  filter_efficiency: 1.0
+  xs: 0.01591
+lumi: 9693
