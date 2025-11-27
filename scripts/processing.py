@@ -297,12 +297,6 @@ for era in eras:
                     tau_other_index = "2" if tau == "leading" else "1"
                     file_suffix = "lead" if tau == "leading" else "sublead"
 
-                    # Process region conditions
-                    # # TODO: waiting for ntuples to run et
-                    # # Temporary skip for et channel
-                    # if channel == "et" and ff_process == "QCD" and region == "validation":
-                    #     logging.warning("et channel QCD FF: validation region not yet implemented, skipping.")
-                    #     continue
                     baseline = config["categories"][f"{region}"][f"{channel}_baseline"].format(tau_other_index=tau_other_index)
                     stats = process_selection(
                         data_df,
