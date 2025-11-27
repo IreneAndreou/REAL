@@ -246,7 +246,11 @@ for era in eras:
                     # Preprocessing (parallel)
                     parallel_preprocess(era, category, source_dir, dest_dir, filenames, args.workers)
             if ff_process in {"WjetsMC", "ttbarMC"}:
-                filenames = config["source_files"].get("mc", [])
+                category = "mc"
+                if category not in config["source_files"]:
+                        logging.warning(f"Category '{category}' not found in config; skipping.")
+                        continue
+                filenames = config["source_files"][category]
                 if ff_process == "WjetsMC":
                     filenames = [fn for fn in filenames if fn.startswith("WtoLNu")]
                 if ff_process == "ttbarMC":

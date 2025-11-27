@@ -121,7 +121,7 @@ def select(df, condition, format_dict):
     return df.query(formatted_condition).copy()
 
 
-def feature_engineering(df, name, process):
+def feature_engineering(df, process, channel, tau_index):
     """Add derived columns to the DataFrame based on existing columns and remove negative values."""
     if {"seeding_jpt_1", "pt_1"}.issubset(df.columns):
         df.loc[:, "jpt_pt_1"] = df["seeding_jpt_1"] / df["pt_1"]
@@ -149,43 +149,45 @@ def feature_engineering(df, name, process):
 
             # Calculate the W+jets-style MET variable
             df.loc[:, "met_var_w"] = (met_plus_lep_pt / df["pt_2"]) * np.cos(dphi_met_lep_tau)
-    # Remove events with negative values in derived columns
-    negative_cols = []
-    if "jpt_pt_1" in df.columns:
-        negative_cols.append("jpt_pt_1")
-    if "jpt_pt_2" in df.columns:
-        negative_cols.append("jpt_pt_2")
-    if "met_var_qcd_1" in df.columns:
-        negative_cols.append("met_var_qcd_1")
-    if "met_var_qcd_2" in df.columns:
-        negative_cols.append("met_var_qcd_2")
-    if "met_var_w" in df.columns:
-        negative_cols.append("met_var_w")
-    if negative_cols:
-        for col in negative_cols:
-            df = df[df[col] >= 0]
-            logging.info(f"Removed events with negative values in '{col}'. Removed {len(df[df[col] < 0])} events.")
+
+    # Remove events with negative values in jpt/pt ratios
+    if channel in {"et", "mt"}:
+        cols_to_check = ["jpt_pt_2"]
+    elif channel == "tt" and tau_index == "leading":
+        cols_to_check = ["jpt_pt_1"]
+    elif channel == "tt" and tau_index == "subleading":
+        cols_to_check = ["jpt_pt_2"]
+    else:
+        cols_to_check = []
+    if cols_to_check:
+        initial_count = len(df)
+        mask = np.ones(initial_count, dtype=bool)
+        print(df["pt_2"].tolist()[:100])
+        print(df["seeding_jpt_2"].tolist()[:100])
+        print(df[cols_to_check[0]].tolist()[:100])
+        import sys
+        sys.exit()
+        for col in cols_to_check:
+            mask &= (df[col] >= 0)
+
+        removed = initial_count - mask.sum()
+        if removed > 0:
+            logging.warning(f"Removed {removed} events with negative values in ratio columns: {', '.join(cols_to_check)}")
+
+        df = df[mask].reset_index(drop=True)
+
     return df
 
 
-def process_selection(data_input_file, mc_input_file, tau_index, file_suffix, output_dir, baseline, selections, ff_process):
+def process_selection(data_df, mc_df, tau_index, file_suffix, output_dir, baseline, selections, ff_process, channel):
     """Process Data and MC Parquet files with tau-specific selections."""
     fmt = {
         "tau_index": tau_index,
         "baseline": baseline
     }
 
-    output_dir = Path(output_dir)
-    output_dir.mkdir(parents=True, exist_ok=True)
-
-    # Read input files
-    data_df = pd.DataFrame()
-    if ff_process not in ["WjetsMC", "ttbarMC"]:
-        data_df = pd.read_parquet(data_input_file)
-    mc_df = pd.read_parquet(mc_input_file)
-
     # Data selections
-    if not data_df.empty:
+    if data_df is not None:
         iso_data_df = select(data_df, selections["data_iso"]["condition"], fmt)
         aiso_data_df = select(data_df, selections["data_aiso"]["condition"], fmt)
     else:
@@ -213,14 +215,14 @@ def process_selection(data_input_file, mc_input_file, tau_index, file_suffix, ou
         aiso_data_df = pd.concat([aiso_data_df, aiso_mc_neg_df], ignore_index=True)
 
     # Add derived features
-    for name, df in [
-        ("iso_data", iso_data_df),
-        ("aiso_data", aiso_data_df),
-        ("iso_mc", iso_mc_df),
-        ("aiso_mc", aiso_mc_df)
-    ]:
-        if not df.empty:
-            feature_engineering(df, name, ff_process)
+    if not iso_data_df.empty:
+        iso_data_df = feature_engineering(iso_data_df, ff_process, channel, tau_index)
+    if not aiso_data_df.empty:
+        aiso_data_df = feature_engineering(aiso_data_df, ff_process, channel, tau_index)
+    if not iso_mc_df.empty:
+        iso_mc_df = feature_engineering(iso_mc_df, ff_process, channel, tau_index)
+    if not aiso_mc_df.empty:
+        aiso_mc_df = feature_engineering(aiso_mc_df, ff_process, channel, tau_index)
 
     # Write output files
     if not iso_data_df.empty:
@@ -232,12 +234,17 @@ def process_selection(data_input_file, mc_input_file, tau_index, file_suffix, ou
     if not aiso_mc_df.empty:
         aiso_mc_df.to_parquet(output_dir / f"mc_aiso_{channel}_{file_suffix}.parquet")
 
-    return {
+    stats = {
         "n_data_iso": len(iso_data_df),
         "n_data_aiso": len(aiso_data_df),
         "n_mc_iso": len(iso_mc_df),
         "n_mc_aiso": len(aiso_mc_df),
     }
+
+    # Free references (memory-saving)
+    del iso_data_df, aiso_data_df, iso_mc_df, aiso_mc_df, iso_mc_neg_df, aiso_mc_neg_df
+
+    return stats
 
 
 # -------------------- Main ----------------------------
@@ -246,22 +253,34 @@ taus = {ch: sorted(get_taus_for_channel(ch)) for ch in channels}
 for era in eras:
     for channel in channels:
         for ff_process in channel_processes[channel]:
+            cfg_path = Path(f"configs/{ff_process}.yaml")
+            if not cfg_path.exists():
+                logging.error(f"Missing config file: {cfg_path}")
+                continue
+            with cfg_path.open("r") as f:
+                try:
+                    config = yaml.safe_load(f)
+                    logging.info(f"Loaded config: {cfg_path}")
+                except Exception as e:
+                    logging.error(f"YAML load failed {cfg_path}: {e}")
+                    continue
+            input_folder = config["input_folder"].format(era=era, channel=channel)
+            input_files = config["input_files"]
+
+            data_df = None
+            # Data input file (skip for WjetsMC and ttbarMC)
+            if ff_process not in ["WjetsMC", "ttbarMC"]:
+                data_input_file = Path(input_folder) / input_files["data"].format(era=era)
+                logging.info(f"Loading data file: {data_input_file}")
+                data_df = pd.read_parquet(data_input_file)
+
+            mc_input_file = Path(input_folder) / input_files["mc"].format(era=era)
+            logging.info(f"Loading MC file: {mc_input_file}")
+            mc_df = pd.read_parquet(mc_input_file)
+
             for tau in taus[channel]:
                 for region in regions:
                     logging.info(f"==== Processing era: {era} | channel: {channel} | process: {ff_process} | tau: {tau} | region: {region} ====")
-                    cfg_path = Path(f"configs/{ff_process}.yaml")
-                    if not cfg_path.exists():
-                        logging.error(f"Missing config file: {cfg_path}")
-                        continue
-                    with cfg_path.open("r") as f:
-                        try:
-                            config = yaml.safe_load(f)
-                            logging.info(f"Loaded config: {cfg_path}")
-                        except Exception as e:
-                            logging.error(f"YAML load failed {cfg_path}: {e}")
-                            continue
-                    input_folder = config["input_folder"].format(era=era, channel=channel)
-                    input_files = config["input_files"]
                     if ff_process == "Wjets" and region == "validation":
                         logging.warning("Wjets process FF: no suitable validation region defined, skipping.")
                         continue
@@ -271,16 +290,6 @@ for era in eras:
                     output_dir = Path(config["output_dir"].format(era=era, region=region))
                     output_dir.mkdir(parents=True, exist_ok=True)
 
-                    # Data input file (skip for WjetsMC and ttbarMC)
-                    data_input_file = None
-                    if ff_process not in ["WjetsMC", "ttbarMC"]:
-                        data_input_file = Path(input_folder) / input_files["data"].format(era=era)
-
-                    # MC input file
-                    mc_input_file = Path(input_folder) / input_files["mc"].format(era=era)
-
-                    logging.info(f"Data input file: {data_input_file}")
-                    logging.info(f"MC input file: {mc_input_file}")
                     logging.info(f"Output directory: {output_dir}")
 
                     # Tau index and file suffix
@@ -289,23 +298,25 @@ for era in eras:
                     file_suffix = "lead" if tau == "leading" else "sublead"
 
                     # Process region conditions
-                    #TODO: waiting for ntuples to run et
-                    # Temporary skip for et channel
-                    if channel == "et" and ff_process == "QCD" and region == "validation":
-                        logging.warning("et channel QCD FF: validation region not yet implemented, skipping.")
-                        continue
+                    # # TODO: waiting for ntuples to run et
+                    # # Temporary skip for et channel
+                    # if channel == "et" and ff_process == "QCD" and region == "validation":
+                    #     logging.warning("et channel QCD FF: validation region not yet implemented, skipping.")
+                    #     continue
                     baseline = config["categories"][f"{region}"][f"{channel}_baseline"].format(tau_other_index=tau_other_index)
                     stats = process_selection(
-                        data_input_file,
-                        mc_input_file,
+                        data_df,
+                        mc_df,
                         tau_index,
                         file_suffix,
                         output_dir,
                         baseline,
                         config["selections"],
-                        ff_process
+                        ff_process,
+                        channel
                     )
                     logging.info(f"Events after migration: "
                                  f"data_iso={stats['n_data_iso']}  data_aiso={stats['n_data_aiso']}  "
                                  f"mc_iso={stats['n_mc_iso']}  mc_aiso={stats['n_mc_aiso']}"
                                  )
+            del data_df, mc_df
