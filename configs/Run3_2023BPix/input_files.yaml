@@ -18,7 +18,6 @@ source_files:
     - "EGamma1_Run2023D_v2"
   mc:
     - "DYto2L_M_50_amcatnloFXFX"
-    - "DYto2L_M_50_amcatnloFXFX_ext1"
     - "DYto2L_M_50_0J_amcatnloFXFX"
     - "DYto2L_M_50_1J_amcatnloFXFX"
     - "DYto2L_M_50_2J_amcatnloFXFX"

@@ -1,13 +1,13 @@
-input_folder: "/vols/cms/ia2318/REAL/data_production_071025/{era}/{channel}_Wjets/"
+input_folder: "/vols/cms/ia2318/REAL/data_November25/{era}/{channel}_Wjets/"
 input_files:
   mc: "mc_all_events_{era}.parquet"
   data: "data_all_events_{era}.parquet"
-output_dir: "/vols/cms/ia2318/REAL/data_production_071025/{era}/{region}_region/Wjets/"
+output_dir: "/vols/cms/ia2318/REAL/data_November25/{era}/{region}_region/Wjets/"
 
 categories:
   determination:
-    mt_baseline: "(os == 1) & (mt_1 > 65) & (n_bjets == 0) & (iso_1 < 0.15) & (idDeepTau2018v2p5VSe_2 >= 2) & (idDeepTau2018v2p5VSmu_2 >= 4) & ((((trg_mt_cross) & (pt_1 > 21) & (pt_1 <= 26) & (abs(eta_1) < 2.1) & (pt_2 > 32) & (abs(eta_2) < 2.1)) | ((trg_singlemuon) & (pt_1 > 26) & (abs(eta_1) < 2.4))) | ((trg_singletau) & (pt_2 > 190)))"
-    et_baseline: "(os == 1) & (mt_1 > 65) & (n_bjets == 0) & (iso_1 < 0.15) & (idDeepTau2018v2p5VSe_2 >= 6) & (idDeepTau2018v2p5VSmu_2 >= 4) & (((trg_singleelectron) & (pt_1 > 31) & (abs(eta_1) < 2.1)) | ((trg_singletau) & (pt_2 > 190)))"
+    mt_baseline: "(os == 1) & ((Wjets_pred_score > 0.15)) & (mt_1 > 65) & (n_bjets == 0) & (iso_1 < 0.15) & (idDeepTau2018v2p5VSe_2 >= 2) & (idDeepTau2018v2p5VSmu_2 >= 4) & ((((trg_mt_cross) & (pt_1 > 21) & (pt_1 <= 26) & (abs(eta_1) < 2.1) & (pt_2 > 32) & (abs(eta_2) < 2.1)) | ((trg_singlemuon) & (pt_1 > 26) & (abs(eta_1) < 2.4))) | ((trg_singletau) & (pt_2 > 190)))"
+    et_baseline: "(os == 1) & ((Wjets_pred_score > 0.15)) & (e_pass90_1) & (mt_1 > 65) & (n_bjets == 0) & (iso_1 < 0.15) & (idDeepTau2018v2p5VSe_2 >= 6) & (idDeepTau2018v2p5VSmu_2 >= 4) & (((trg_singleelectron) & (pt_1 > 31) & (abs(eta_1) < 2.1)) | ((trg_singletau) & (pt_2 > 190)))"
 
 selections:
   data_iso:
