@@ -1,8 +1,10 @@
 import argparse
+import gc
 import logging
 import numpy as np
 import pandas as pd
 from pathlib import Path
+import pyarrow.parquet as pq
 import yaml
 
 # Set up argument parser
@@ -115,6 +117,13 @@ def calculate_delta_phi(phi1, phi2):
     return delta_phi
 
 
+def iterate_in_chunks(path, columns=None):
+    """Iterate over a Parquet file in chunks."""
+    parquet_file = pq.ParquetFile(path)
+    for batch in parquet_file.iter_batches(batch_size=100000, columns=columns):
+        yield batch.to_pandas()
+
+
 def select(df, condition, format_dict):
     """Apply a query condition to a DataFrame with formatted strings."""
     formatted_condition = condition.format(**format_dict)
@@ -162,11 +171,6 @@ def feature_engineering(df, process, channel, tau_index):
     if cols_to_check:
         initial_count = len(df)
         mask = np.ones(initial_count, dtype=bool)
-        print(df["pt_2"].tolist()[:100])
-        print(df["seeding_jpt_2"].tolist()[:100])
-        print(df[cols_to_check[0]].tolist()[:100])
-        import sys
-        sys.exit()
         for col in cols_to_check:
             mask &= (df[col] >= 0)
 
@@ -179,26 +183,42 @@ def feature_engineering(df, process, channel, tau_index):
     return df
 
 
-def process_selection(data_df, mc_df, tau_index, file_suffix, output_dir, baseline, selections, ff_process, channel):
-    """Process Data and MC Parquet files with tau-specific selections."""
+def process_selection(data_path, mc_path, tau_index, file_suffix, output_dir, baseline, selections, ff_process, channel):
+    """Process Data and MC Parquet files with tau-specific selections in chunks."""
     fmt = {
         "tau_index": tau_index,
         "baseline": baseline
     }
 
     # Data selections
-    if data_df is not None:
-        iso_data_df = select(data_df, selections["data_iso"]["condition"], fmt)
-        aiso_data_df = select(data_df, selections["data_aiso"]["condition"], fmt)
-    else:
-        iso_data_df = pd.DataFrame()
-        aiso_data_df = pd.DataFrame()
+    data_iso_parts = []
+    data_aiso_parts = []
+    if data_path is not None:
+        for data_df in iterate_in_chunks(data_path):
+            if data_df.empty:
+                continue
+            data_iso_parts.append(select(data_df, selections["data_iso"]["condition"], fmt))
+            data_aiso_parts.append(select(data_df, selections["data_aiso"]["condition"], fmt))
+
+    iso_data_df = pd.concat(data_iso_parts, ignore_index=True) if data_iso_parts else pd.DataFrame()
+    aiso_data_df = pd.concat(data_aiso_parts, ignore_index=True) if data_aiso_parts else pd.DataFrame()
 
     # MC selections
-    iso_mc_df = select(mc_df, selections["mc_iso"]["condition"], fmt)
-    aiso_mc_df = select(mc_df, selections["mc_aiso"]["condition"], fmt)
-    iso_mc_neg_df = select(mc_df, selections["mc_iso_neg"]["condition"], fmt)
-    aiso_mc_neg_df = select(mc_df, selections["mc_aiso_neg"]["condition"], fmt)
+    mc_iso_parts = []
+    mc_aiso_parts = []
+    mc_iso_neg_parts = []
+    mc_aiso_neg_parts = []
+    for mc_df in iterate_in_chunks(mc_path):
+        if mc_df.empty:
+            continue
+        mc_iso_parts.append(select(mc_df, selections["mc_iso"]["condition"], fmt)) 
+        mc_aiso_parts.append(select(mc_df, selections["mc_aiso"]["condition"], fmt))
+        mc_iso_neg_parts.append(select(mc_df, selections["mc_iso_neg"]["condition"], fmt))
+        mc_aiso_neg_parts.append(select(mc_df, selections["mc_aiso_neg"]["condition"], fmt))
+    iso_mc_df = pd.concat(mc_iso_parts, ignore_index=True) if mc_iso_parts else pd.DataFrame()
+    aiso_mc_df = pd.concat(mc_aiso_parts, ignore_index=True) if mc_aiso_parts else pd.DataFrame()
+    iso_mc_neg_df = pd.concat(mc_iso_neg_parts, ignore_index=True) if mc_iso_neg_parts else pd.DataFrame()
+    aiso_mc_neg_df = pd.concat(mc_aiso_neg_parts, ignore_index=True) if mc_aiso_neg_parts else pd.DataFrame()
 
     logging.info(f" Events before migration: "
                  f"data_iso={len(iso_data_df)}  data_aiso={len(aiso_data_df)}  "
@@ -243,6 +263,7 @@ def process_selection(data_df, mc_df, tau_index, file_suffix, output_dir, baseli
 
     # Free references (memory-saving)
     del iso_data_df, aiso_data_df, iso_mc_df, aiso_mc_df, iso_mc_neg_df, aiso_mc_neg_df
+    gc.collect()
 
     return stats
 
@@ -267,16 +288,14 @@ for era in eras:
             input_folder = config["input_folder"].format(era=era, channel=channel)
             input_files = config["input_files"]
 
-            data_df = None
+            data_input_file = None
             # Data input file (skip for WjetsMC and ttbarMC)
             if ff_process not in ["WjetsMC", "ttbarMC"]:
                 data_input_file = Path(input_folder) / input_files["data"].format(era=era)
                 logging.info(f"Loading data file: {data_input_file}")
-                data_df = pd.read_parquet(data_input_file)
 
             mc_input_file = Path(input_folder) / input_files["mc"].format(era=era)
             logging.info(f"Loading MC file: {mc_input_file}")
-            mc_df = pd.read_parquet(mc_input_file)
 
             for tau in taus[channel]:
                 for region in regions:
@@ -299,8 +318,8 @@ for era in eras:
 
                     baseline = config["categories"][f"{region}"][f"{channel}_baseline"].format(tau_other_index=tau_other_index)
                     stats = process_selection(
-                        data_df,
-                        mc_df,
+                        data_input_file,
+                        mc_input_file,
                         tau_index,
                         file_suffix,
                         output_dir,
@@ -313,4 +332,4 @@ for era in eras:
                                  f"data_iso={stats['n_data_iso']}  data_aiso={stats['n_data_aiso']}  "
                                  f"mc_iso={stats['n_mc_iso']}  mc_aiso={stats['n_mc_aiso']}"
                                  )
-            del data_df, mc_df
+            gc.collect()
