@@ -499,9 +499,9 @@ def save_feature_importance(bst, out, top_n=20, normalize=True):
     with open(out / "feature_importance.json", "w") as f:
         json.dump(fi, f, indent=2)
     logging.info(f"Feature importance data saved to {out / 'feature_importance.json'}")
+
+
 # -------------------- Main ----------------------------
-
-
 # Load Configuration File
 with open(args.config, "r") as f:
     config = yaml.safe_load(f)
@@ -861,7 +861,10 @@ def pairwise_valid_mask(probs, min_margin=0.0, return_details=False, features=No
             df.loc[df["_viol"], keep].to_csv(os.path.join(out, "negative_ff_catalogue.csv"), index=False)
 
             # binning
-            pt_bins = np.array([20, 30, 40, 50, 70, 100, 140, 190, 260, 400, 800], float)
+            if channel in ["et", "mt"]:
+                pt_bins = np.array([20, 30, 40, 50, 70, 100, 140, 190, 260, 600], float)
+            else:
+                pt_bins = np.array([20, 30, 40, 50, 70, 100, 140, 190, 260, 400, 800], float)
             eta_bins = np.array([-2.5, -2.1, -1.6, -1.2, -0.8, -0.4, 0.0, 0.4, 0.8, 1.2, 1.6, 2.1, 2.5], float)
             phi_bins = np.linspace(-3.2, 3.2, 17)
             jpt_bins = np.array([0, 0.5, 1, 1.5, 2., 2.5, 3.], float)
@@ -1019,7 +1022,10 @@ if not args.binary:
         Returns a pandas DataFrame with per-bin statistics.
         """
         if pt_bins is None:
-            pt_bins = np.array([20, 30, 40, 50, 70, 100, 140, 190, 260, 400, 800], float)
+            if channel in ["et", "mt"]:
+                pt_bins = np.array([20, 30, 40, 50, 70, 100, 140, 190, 260, 600], float)
+            else:
+                pt_bins = np.array([20, 30, 40, 50, 70, 100, 140, 190, 260, 400, 800], float)
 
         pt = np.asarray(pt)
         w = np.asarray(weights, float).reshape(-1)
@@ -1136,8 +1142,8 @@ if not args.binary:
     fig, (ax, rax) = plt.subplots(2, 1, figsize=(12, 9), gridspec_kw={"height_ratios": [3, 1]}, sharex=True)
     hep.cms.label(**CMS_LABEL, ax=ax)
     ax.plot(pt_bin_centers, report_df["capped_frac"], marker='o', label='No Scaling')
-    ax.plot(pt_bin_centers, report_df_120["capped_frac"], marker='o', label='MC × 1.2')
-    ax.plot(pt_bin_centers, report_df_80["capped_frac"], marker='o', label='MC × 0.8')
+    ax.plot(pt_bin_centers, report_df_120["capped_frac"], marker='o', label='MC × 1.2' if args.process == "QCD" else "MC × 1.1")
+    ax.plot(pt_bin_centers, report_df_80["capped_frac"], marker='o', label='MC × 0.8' if args.process == "QCD" else "MC × 0.9")
     ax.set_xlabel('pT Bin Center')
     ax.set_ylabel('Capped Fraction')
     ax.legend()
