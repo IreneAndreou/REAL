@@ -247,24 +247,8 @@ def objective(trial):
 
     # Calculate log loss
     labels = [0, 1] if args.binary else [0, 1, 2, 3]
-    base_loss = log_loss(y_test, probs, sample_weight=weights_test, labels=labels)
+    loss = log_loss(y_test, probs, sample_weight=weights_test, labels=labels)
 
-    # Custom penalty for p_mc > p_data in any class
-    if not args.binary:
-        margin = 0.0
-        lam = trial.suggest_float("pairwise_lambda", 0.5, 5.0, log=True)
-
-        # Violations: we want p(data_iso) > p(mc_iso)+margin and p(data_aiso) > p(mc_aiso)+margin
-        v1 = probs[:, 2] - probs[:, 0] + margin
-        v2 = probs[:, 3] - probs[:, 1] + margin
-
-        # Squared hinge penalty
-        w = np.asarray(weights_test, dtype=float)
-        penalty = np.sum(w * (np.maximum(0.0, v1)**2 + np.maximum(0.0, v2)**2)) / np.sum(w)
-        # Add weighted penalty to the loss
-        loss = base_loss + lam * penalty
-    else:
-        loss = base_loss
     return loss
 
 
