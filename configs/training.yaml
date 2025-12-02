@@ -43,22 +43,7 @@ training:
     - "n_bjets"
     - "met_var_qcd_{tau_suffix}"
     - "met_var_w_{tau_suffix}"
-  joint_training_no_global:
-    - "decayMode"
-    - "jpt_pt"
-    - "pt"
-    - "eta"
-    - "charge"
-    - "phi"
-    - "decayModePNet"
-    - "is_lead_tau"
-    - "wt_sf"
-  joint_training_global:
-    - "n_jets"
-    - "n_bjets"
-    - "met_var_qcd"
-    - "met_var_w"
-    - "pt_other" ## only for tt channel
+    # - "pt_other" ## only for tt channel
 
 
 hyperparameters:
