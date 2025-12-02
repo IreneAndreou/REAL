@@ -1,34 +1,27 @@
 from datetime import datetime
-import os
-import argparse
 from pathlib import Path
-import yaml
-import numpy as np
-import pandas as pd
-import xgboost as xgb
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import log_loss, roc_auc_score, roc_curve
-import matplotlib.pyplot as plt
-import joblib
-import optuna
-import pickle
-from scipy.special import softmax, expit
 from scipy.optimize import minimize_scalar
+from scipy.special import softmax, expit
+from sklearn.metrics import log_loss, roc_auc_score, roc_curve
+from sklearn.model_selection import train_test_split
+from types import SimpleNamespace
+import argparse
+import joblib
 import json
 import logging
-import uproot
-from types import SimpleNamespace
+import matplotlib.pyplot as plt
 import mplhep as hep
+import numpy as np
+import optuna
+import os
+import pandas as pd
+import pickle
+import uproot
+import xgboost as xgb
+import yaml
 hep.style.use("CMS")
 
-CMS_LABEL = dict(
-    data=True,           # set True if you're plotting real data
-    label="Work in progress",  # or "Work in progress"
-    com=13.6,              # TeV
-    loc=0
-)
-
-
+CMS_LABEL = dict(data=True, label="Work in progress", com=13.6, loc=0)
 
 # Set up argument parser
 parser = argparse.ArgumentParser(description='Train a BDT model for jet->tau FFs processes (QCD, W+jets, ttbar)')
@@ -108,11 +101,11 @@ def load_data(file_paths, branches, which_tau, file_format='parquet', tree_name=
     dfs = []
     for era, file_path in file_paths.items():
         if file_format == 'parquet':
-                    df = pd.read_parquet(file_path, columns=branches)
-                elif file_format == 'root':
-                    with uproot.open(file_path) as f:
-                        tree = f[tree_name]
-                        df = tree.arrays(branches, library='pd')
+            df = pd.read_parquet(file_path, columns=branches)
+        elif file_format == 'root':
+            with uproot.open(file_path) as f:
+                tree = f[tree_name]
+                df = tree.arrays(branches, library='pd')
         df["era_label"] = era_to_label.get(era, KeyError)
 
         # Build a rename map from raw columns to normalised names
@@ -289,9 +282,7 @@ def enrich_params(raw_params, *, binary: bool, device: str = "cpu", seed: int = 
 
 
 def expected_calibration_error(y_true, probs, sample_weight=None, n_bins=15):
-    """
-    Top-label ECE (multiclass-safe). Uses weighted binning if sample_weight given.
-    """
+    """Top-label ECE (multiclass-safe). Uses weighted binning if sample_weight given."""
     y_true = np.asarray(y_true)
     probs = np.asarray(probs)
     if sample_weight is None:
@@ -320,9 +311,7 @@ def expected_calibration_error(y_true, probs, sample_weight=None, n_bins=15):
 
 
 def plot_reliability(y_true, probs, sample_weight=None, n_bins=15, title="Reliability", outpath=None):
-    """
-    Reliability diagram with weighted quantile bins + error bars, and a confidence histogram.
-    """
+    """Reliability diagram with weighted quantile bins + error bars, and a confidence histogram."""
     y_true = np.asarray(y_true)
     probs = np.asarray(probs)
     if sample_weight is None:
@@ -420,7 +409,10 @@ def plot_loss_curves(eval_results, out, binary):
     plt.xlabel("Boosting Round")
     # More descriptive, scientific ylabel with formula
     if binary:
-        plt.ylabel(r"Binary log-loss: $\ell=-\frac{1}{N}\sum_{i}\big[y_i\log p_i +(1-y_i)\log(1-p_i)\big]$")
+        plt.ylabel(
+            r"Binary log-loss: $\ell=-\frac{1}{N}\sum_i "
+            r"\left[y_i\log p_i +(1-y_i)\log(1-p_i)\right]$", fontsize=20
+        )
     else:
         plt.ylabel(r"Multiclass log-loss: $\ell=-\frac{1}{N}\sum_{i}\sum_{k} y_{ik}\log p_{ik}$")
     plt.legend()
@@ -788,21 +780,6 @@ ece_b = expected_calibration_error(y_test.iloc[hold_idx], probs_hold_before, sam
 ece_a = expected_calibration_error(y_test.iloc[hold_idx], probs_hold_after,  sample_weight=weights_test.iloc[hold_idx], n_bins=15)
 print(f"Holdout ECE before={ece_b:.4f} after={ece_a:.4f} (T*={T_cal:.3f})")
 
-# Comments:
-# ECE (all): 0.0038 → 0.0038 (no change). You’re in the “excellent” regime already.
-
-# By era: tiny, mixed shifts (±0.0003). No systematic win → global T* isn’t uniformly helpful.
-
-# Lead vs sublead: both excellent, slight improvement (more for lead).
-
-# Per-class ECE: essentially unchanged; small worsening for class 0 only.
-
-# Brier: 0.273557 → 0.273560 (no change). So sharpness/calibration balance is unaffected.
-
-# pT bins: mixed (some improve, some worsen) → hints that calibration depends on kinematics.
-
-# Confidence/entropy: mean confidence ↓ 0.8225→0.8219 and entropy ↑ a touch → TS made probs a hair less peaky (as expected).
-
 # Log-loss, AUC, feature importance, and ROC curves
 plot_loss_curves(eval_results, out=Path(output_dir), binary=args.binary)
 plot_roc(y_test, probs_after, out=Path(output_dir), binary=args.binary)
@@ -810,21 +787,381 @@ save_feature_importance(bst, out=Path(output_dir))
 
 logging.info("Training and evaluation complete.")
 
+
 # ----------------- begin pairwise-prob protection -----------------
-def pairwise_valid_mask(probs, min_margin=0.0):
+def pairwise_valid_mask(probs, min_margin=0.0, return_details=False, features=None, weights=None, columns=None, make_plots=False, output_dir=None, varmap=None):
     """
-    Return boolean mask where:
-      class0 > class1 + min_margin  or  class2 > class3 + min_margin
-    Classes assumed: [data_iso(0), data_aiso(1), mc_iso(2), mc_aiso(3)]
+    Returns boolean mask where (mc_iso > data_iso + margin) OR (mc_aiso > data_aiso + margin).
+    Classes assumed: [data_iso(0), data_aiso(1), mc_iso(2), mc_aiso(3)].
     """
     probs = np.asarray(probs)
-    if probs.shape[1] < 4:
-        raise ValueError("Expected probs with 4 classes")
-    return (probs[:, 2] > probs[:, 0] + min_margin) | (probs[:, 3] > probs[:, 1] + min_margin)
+    if probs.ndim != 2 or probs.shape[1] < 4:
+        raise ValueError(f"Expected probs with shape (N, >=4), got {probs.shape}")
+
+    # pair masks
+    m1 = probs[:, 2] > probs[:, 0] + min_margin  # mc_iso > data_iso + margin
+    m2 = probs[:, 3] > probs[:, 1] + min_margin  # mc_aiso > data_aiso + margin
+    m_any = (m1 | m2)    
+
+    if features is not None and weights is not None:
+        # normalise features
+        if isinstance(features, pd.DataFrame):
+            df = features.reset_index(drop=True).copy()
+        elif isinstance(features, dict):
+            df = pd.DataFrame(features)
+        elif isinstance(features, np.ndarray):
+            if columns is None:
+                raise ValueError("features is ndarray; provide `columns=[...]`.")
+            df = pd.DataFrame(features, columns=columns)
+        else:
+            raise TypeError("features must be DataFrame, dict, or ndarray")
+
+        # map variable names
+        _varmap = {"pt": "pt", "eta": "eta", "phi": "phi", "dm": "decayMode", "jpt": "jpt_pt", "era": "era_label"}
+        if varmap:
+            _varmap.update(varmap)
+
+        # prepare weights
+        w = np.asarray(weights, float).reshape(-1)
+        if len(w) != len(df):
+            raise ValueError("weights length must match features/probs length.")
+        Wtot = w.sum() if np.isfinite(w).any() else 0.0
+
+        def wfrac(mask):
+            if Wtot <= 0: return 0.0
+            return float(w[mask].sum()/Wtot)
+
+        # attach flags and probs for export
+        df["_viol"] = m_any
+        df["_viol_mi"] = m1 & ~m2
+        df["_viol_ma"] = ~m1 & m2
+        df["_viol_both"] = m1 & m2
+        df["_w"] = w
+        df["p_data_iso"] = probs[:, 0]
+        df["p_data_aiso"] = probs[:, 1]
+        df["p_mc_iso"] = probs[:, 2]
+        df["p_mc_aiso"] = probs[:, 3]
+
+        # overall stats
+        logging.info("Violation (weighted) fraction overall: %.4f", wfrac(df["_viol"].values))
+        logging.info("  m1-only (mc_iso>data_iso): %.4f", wfrac((df["_viol_mi"]).values))
+        logging.info("  m2-only (mc_aiso>data_aiso): %.4f", wfrac((df["_viol_ma"]).values))
+        logging.info("  both: %.4f", wfrac((df["_viol_both"]).values))
+
+        # per decay mode
+        if _varmap["dm"] in df.columns:
+            dm_stats = []
+            for dm, g in df.groupby(_varmap["dm"], observed=True, dropna=False):
+                mask = g.index.values
+                den = w[mask].sum(); num = w[mask][g["_viol"].values].sum()
+                frac = float(num/den) if den>0 else 0.0
+                dm_stats.append({"decayMode": (np.nan if pd.isna(dm) else int(dm)),
+                                 "events_w": float(den), "viol_w": float(num), "viol_frac": frac})
+            dm_tbl = pd.DataFrame(dm_stats).sort_values("viol_frac", ascending=False)
+            logging.info("Top decayMode by violation frac:\n%s", dm_tbl.head(10).to_string(index=False))
+
+        # save catalogue and per-var CSVs/plots if asked
+        if make_plots or output_dir:
+            out = output_dir or "."
+            os.makedirs(out, exist_ok=True)
+
+            # save full catalogue
+            keep = [_varmap[k] for k in ["pt", "eta", "phi", "dm", "jpt", "era"]] + \
+                   ["p_data_iso", "p_data_aiso", "p_mc_iso", "p_mc_aiso", "_viol", "_viol_mi", "_viol_ma", "_viol_both", "_w"]
+            keep = [c for c in keep if c in df.columns]
+            df.loc[df["_viol"], keep].to_csv(os.path.join(out, "negative_ff_catalogue.csv"), index=False)
+
+            # binning
+            pt_bins  = np.array([20, 30, 40, 50, 70, 100, 140, 190, 260, 400, 800], float)
+            eta_bins = np.array([-2.5, -2.1, -1.6, -1.2, -0.8, -0.4, 0.0, 0.4, 0.8, 1.2, 1.6, 2.1, 2.5], float)
+            phi_bins = np.linspace(-3.2, 3.2, 17)
+            jpt_bins = np.array([0, 0.5, 1, 1.5, 2., 2.5, 3.], float)
+            dm_bins = np.array([-0.5, 0.5, 1.5, 9.5, 10.5, 11.5], float)  # integer bins for decayMode
+
+            def binned_plot(var, bins, fname):
+                x = df[_varmap[var]].to_numpy()
+                ix = np.digitize(x, bins) - 1
+                num = np.zeros(len(bins)-1); den = np.zeros(len(bins)-1)
+                for b in range(len(bins)-1):
+                    m_bin = ix == b
+                    den[b] = w[m_bin].sum()
+                    num[b] = w[m_bin & df["_viol"].values].sum()
+                frac = np.divide(num, den, out=np.zeros_like(num), where=den>0)
+                # save csv
+                rows = [{f"{var}_bin": f"[{bins[b]:.2f},{bins[b+1]:.2f})",
+                         "events_w": float(den[b]), "viol_w": float(num[b]),
+                         "viol_frac": float(frac[b])} for b in range(len(bins)-1)]
+                pd.DataFrame(rows).to_csv(os.path.join(out, f"viol_rate_vs_{var}.csv"), index=False)
+                # plot
+                if make_plots:
+                    centers = 0.5*(bins[:-1]+bins[1:])
+                    plt.figure(figsize=(9,6))
+                    plt.plot(centers, frac, marker="o")
+                    plt.xlabel(var); plt.ylabel("Violation fraction (weighted)")
+                    plt.ylim(0, max(frac.max()*1.2, 1e-3))
+                    plt.grid(True, alpha=0.4)
+                    hep.cms.label(ax=plt.gca(), data=True, label="Work in progress", com=13.6, loc=0)
+                    plt.savefig(os.path.join(out, fname), bbox_inches="tight"); plt.close()
+
+            binned_plot("pt",  pt_bins,  "viol_rate_vs_pt.pdf")
+            binned_plot("eta", eta_bins, "viol_rate_vs_eta.pdf")
+            binned_plot("phi", phi_bins, "viol_rate_vs_phi.pdf")
+            binned_plot("jpt", jpt_bins, "viol_rate_vs_jpt_pt.pdf")
+            binned_plot("dm",  dm_bins,  "viol_rate_vs_decayMode.pdf")
+
+            # 2D heatmap: pT vs abs(eta)
+            if make_plots:
+                aeta_bins = np.array([0.0, 0.4, 0.8, 1.2, 1.6, 2.0, 2.5], float)
+                pt = df[_varmap["pt"]].to_numpy()
+                aeta = np.abs(df[_varmap["eta"]].to_numpy())
+                w = w
+                sel = m_any.astype(bool)
+
+                Hd, xedges, yedges = np.histogram2d(pt, aeta, bins=(pt_bins, aeta_bins), weights=w)
+                Hn, _, _ = np.histogram2d(pt[sel], aeta[sel], bins=(pt_bins, aeta_bins), weights=w[sel])
+
+                # Compute fraction safely
+                H = np.divide(Hn, Hd, out=np.zeros_like(Hn), where=Hd > 0)
+                plt.figure(figsize=(10,7))
+                X, Y = np.meshgrid(xedges, yedges, indexing="xy")
+                pcm = plt.pcolormesh(X, Y, H.T, shading="auto")
+                plt.xlabel("pt")
+                plt.ylabel("|eta|")
+                cbar = plt.colorbar(pcm)
+                cbar.set_label("viol frac")
+                hep.cms.label(ax=plt.gca(), data=True, label="Work in progress", com=13.6, loc=0)
+                plt.savefig(os.path.join(out, "viol_heatmap_pt_x_abseta.pdf"), bbox_inches="tight")
+                plt.close()
+
+    if return_details:
+        return m1, m2, m_any
+    return m_any
 
 
-# compute masks and report
-mask_before = pairwise_valid_mask(probs_before, min_margin=0.0)
-mask_after  = pairwise_valid_mask(probs_after,  min_margin=0.0)
-logging.info("Pairwise-valid fraction before TS: %.3f (%d/%d)", mask_before.mean(), mask_before.sum(), len(mask_before))
-logging.info("Pairwise-valid fraction after  TS: %.3f (%d/%d)", mask_after.mean(),  mask_after.sum(),  len(mask_after))
+if not args.binary:
+    # compute masks and report
+    mask_before = pairwise_valid_mask(probs_before, min_margin=0.0)
+    mask_after  = pairwise_valid_mask(probs_after,  min_margin=0.0)
+
+    logging.info("Pairwise-valid fraction before TS: %.3f (%d/%d)", mask_before.mean(), mask_before.sum(), len(mask_before))
+    logging.info("Pairwise-valid fraction after  TS: %.3f (%d/%d)", mask_after.mean(),  mask_after.sum(),  len(mask_after))
+
+    # full catalogue + plots + stats
+    _ = pairwise_valid_mask(probs_after, min_margin=0.0, return_details=True, features=x_test, weights=weights_test, make_plots=True, output_dir=output_dir, varmap={"pt": "pt", "eta": "eta", "phi": "phi", "dm": "decayMode", "jpt_pt": "jpt_pt", "era_label": "era_label"},)
+
+    # Post-training negative FF cap and uncertainty estimation
+    # Central value rule: whenever the subtraction would make the FF negative, set FF = 0
+    # Systematics: keep a generic MC-subtraction uncertainty (e.g. ±20%) everywhere; and in bins you capped to 0, add an even more conservative one-sided variant that’s equivalent to 100% uncertainty on the subtraction (i.e. “pretend we didn’t subtract at all”).
+
+    def cap_negative_ff(probs, cap_value=0.0):
+        """Cap the fake factor (FF) probabilities to be no less than cap_value and add a boolean mask indicating where capping occurred."""
+        probs = np.asarray(probs)
+        if probs.ndim != 2 or probs.shape[1] != 4:
+            raise ValueError(f"Expected probs with shape (N, 4), got {probs.shape}")
+
+        # Compute FF
+        ff_num = probs[:, 0] - probs[:, 2]  # data_iso - mc_iso
+        ff_den = probs[:, 1] - probs[:, 3]  # data_aiso - mc_aiso
+
+        ff = ff_num / ff_den
+
+        # Identify where FF < cap_value
+        mask_cap = ff < cap_value
+        logging.info("Capping applied to %d out of %d events (%.2f%%)", mask_cap.sum(), len(ff), 100.0 * mask_cap.mean())
+
+        # Apply capping
+        ff_capped = np.where(mask_cap, cap_value, ff)
+
+        return ff_capped, mask_cap
+
+    def scale_mc_probs(probs, scale_factor):
+        """Scale the MC probabilities by a given scale factor. If scale_factor=0.0, completely remove MC contribution ONLY
+            for negative FF object weights."""
+        probs = np.asarray(probs)
+        if probs.ndim != 2 or probs.shape[1] != 4:
+            raise ValueError(f"Expected probs with shape (N, 4), got {probs.shape}")
+
+        # Scale MC probabilities
+        probs_scaled = probs.copy()
+        if scale_factor == 0.0:
+            # Special case: remove MC contribution only for negative FF
+            ff_num = probs[:, 0] - probs[:, 2]  # data_iso - mc_iso
+            ff_den = probs[:, 1] - probs[:, 3]  # data_aiso - mc_aiso
+            ff = ff_num / ff_den
+            mask_negative_ff = ff < 0.0
+            probs_scaled[mask_negative_ff, 2] = 0.0  # mc_iso
+            probs_scaled[mask_negative_ff, 3] = 0.0  # mc_aiso
+        else:
+            probs_scaled[:, 2] *= scale_factor  # mc_iso
+            probs_scaled[:, 3] *= scale_factor  # mc_aiso
+
+        # Event masking for ill-conditioned denominators
+        ff_num = probs_scaled[:, 0] - probs_scaled[:, 2]  # data_iso - mc_iso
+        ff_den = probs_scaled[:, 1] - probs_scaled[:, 3]  # data_aiso - mc_aiso
+        ill_conditioned = ff_den <= 1e-6
+        probs_scaled[ill_conditioned, 2] = 0.0  # mc_iso
+        probs_scaled[ill_conditioned, 3] = 0.0  # mc_aiso
+
+        # Re-normalize to ensure probabilities sum to 1
+        row_sums = probs_scaled.sum(axis=1, keepdims=True)
+        probs_scaled /= row_sums
+
+        return probs_scaled
+
+    no_scaling = scale_mc_probs(probs_after, scale_factor=1.0)
+
+    # Re-evaluate FF with scaled-down MC probabilities
+    ff_no_scaling, mask_cap_no_scaling = cap_negative_ff(no_scaling, cap_value=0.0)
+
+    # Stats on ff_no_scaling
+    logging.info("FF (no scaling): %.3f (%.3f)", ff_no_scaling.mean(), ff_no_scaling.std())
+
+    # Per-pT-bin stats
+    pt = combined_df.loc[y_test.index, "pt"].to_numpy()
+    w_arr = np.asarray(weights_test, float).reshape(-1)
+
+    def report_ff_by_pt_bins(pt, weights, ff_vals, mask_cap, pt_bins=None):
+        """
+        Compute and log weighted FF stats per pT bin.
+
+        Returns a pandas DataFrame with per-bin statistics.
+        """
+        if pt_bins is None:
+            pt_bins = np.array([20, 30, 40, 50, 70, 100, 140, 190, 260, 400, 800], float)
+
+        pt = np.asarray(pt)
+        w = np.asarray(weights, float).reshape(-1)
+        ff = np.asarray(ff_vals)
+        mask_cap = np.asarray(mask_cap, dtype=bool)
+
+        bin_idx = np.digitize(pt, pt_bins) - 1
+        n_bins = len(pt_bins) - 1
+
+        rows = []
+        for b in range(n_bins):
+            sel = (bin_idx == b) & np.isfinite(pt) & (w > 0)
+            if not np.any(sel):
+                logging.info("pT bin %5.0f-%5.0f : no events", pt_bins[b], pt_bins[b+1])
+                continue
+
+            w_bin = w[sel]
+            ff_bin = ff[sel]
+            mask_cap_bin = mask_cap[sel]
+
+            wtot = float(w_bin.sum())
+            mean = float(np.average(ff_bin, weights=w_bin))
+            var = float(np.average((ff_bin - mean) ** 2, weights=w_bin))
+            std = float(np.sqrt(var))
+
+            capped_w = float(w_bin[mask_cap_bin].sum()) if mask_cap_bin.any() else 0.0
+            frac_capped = capped_w / wtot if wtot > 0 else 0.0
+
+            logging.info(
+                "pT bin %5.0f-%5.0f : N_w=%.1f  FF_mean=%.4f  FF_std=%.4f  capped_frac=%.4f",
+                pt_bins[b], pt_bins[b+1], wtot, mean, std, frac_capped
+            )
+
+            rows.append({
+                "pt_lo": float(pt_bins[b]),
+                "pt_hi": float(pt_bins[b+1]),
+                "N_w": wtot,
+                "FF_mean": mean,
+                "FF_std": std,
+                "capped_frac": frac_capped
+            })
+
+        return pd.DataFrame(rows)
+
+    # Call the function with current arrays
+    report_df = report_ff_by_pt_bins(pt, w_arr, ff_no_scaling, mask_cap_no_scaling)
+
+    scaled_probs_80_down = scale_mc_probs(probs_after, scale_factor=0.8 if args.process == "QCD" else 0.9)
+
+    # Re-evaluate FF with scaled-down MC probabilities
+    ff_scaled_80_down, mask_cap_scaled_80_down = cap_negative_ff(scaled_probs_80_down, cap_value=0.0)
+
+    # Stats on ff_scaled_80_down
+    logging.info("FF (0.8 scaling): %.3f (%.3f)", ff_scaled_80_down.mean(), ff_scaled_80_down.std())
+
+    # Per-pT-bin stats
+    report_df_80 = report_ff_by_pt_bins(pt, w_arr, ff_scaled_80_down, mask_cap_scaled_80_down)
+
+    scaled_probs_0_down = scale_mc_probs(probs_after, scale_factor=0.0)
+
+    # Re-evaluate FF with scaled-down MC probabilities
+    ff_scaled_0_down, mask_cap_scaled_0_down = cap_negative_ff(scaled_probs_0_down, cap_value=0.0)
+
+    # Stats on ff_scaled_0_down
+    logging.info("FF (0.0 scaling): %.3f (%.3f)", ff_scaled_0_down.mean(), ff_scaled_0_down.std())
+
+    # Per-pT-bin stats
+    report_df_0 = report_ff_by_pt_bins(pt, w_arr, ff_scaled_0_down, mask_cap_scaled_0_down)
+
+    scaled_probs_120_down = scale_mc_probs(probs_after, scale_factor=1.2 if args.process == "QCD" else 1.1)
+
+    # Re-evaluate FF with scaled-down MC probabilities
+    ff_scaled_120_down, mask_cap_scaled_120_down = cap_negative_ff(scaled_probs_120_down, cap_value=0.0)
+
+    # Stats on ff_scaled_120_down
+    logging.info("FF (1.2 scaling): %.3f (%.3f)", ff_scaled_120_down.mean(), ff_scaled_120_down.std())
+
+    # Per-pT-bin stats
+    report_df_120 = report_ff_by_pt_bins(pt, w_arr, ff_scaled_120_down, mask_cap_scaled_120_down)
+
+    # Plotting results
+    pt_bin_centers = 0.5 * (report_df["pt_lo"] + report_df["pt_hi"])
+    # Plot FF mean
+    fig, (ax, rax) = plt.subplots(2, 1, figsize=(12, 9), gridspec_kw={"height_ratios": [3, 1]}, sharex=True)
+
+    hep.cms.label(**CMS_LABEL, ax=ax)
+    ax.errorbar(pt_bin_centers, report_df["FF_mean"], yerr=report_df["FF_std"], marker="o", label="No Scaling")
+    ax.errorbar(pt_bin_centers, report_df_120["FF_mean"], yerr=report_df_120["FF_std"], marker="o", label="MC × 1.2"  if args.process == "QCD" else "MC × 1.1")
+    ax.errorbar(pt_bin_centers, report_df_80["FF_mean"], yerr=report_df_80["FF_std"], marker="o", label="MC × 0.8" if args.process == "QCD" else "MC × 0.9")
+    ax.errorbar(pt_bin_centers, report_df_0["FF_mean"], yerr=report_df_0["FF_std"], marker="o", label="MC × 0.0 (for -ve FF)")
+    ax.set_ylabel("Weighted Mean FF")
+    ax.legend(loc="lower right")
+    ax.grid(True)
+    ax.set_ylim(0, 0.35)
+
+    rax.axhline(1, color="black", linestyle="--", linewidth=1)
+    rax.set_ylabel("Ratio")
+    rax.grid(True)
+    rax.set_xlabel("pT Bin Center")
+
+    # Compute ratios
+    ratio = report_df["FF_mean"] / report_df["FF_mean"]
+    ratio_120 = report_df_120["FF_mean"] / report_df["FF_mean"]
+    ratio_80 = report_df_80["FF_mean"] / report_df["FF_mean"]
+    ratio_0 = report_df_0["FF_mean"] / report_df["FF_mean"]
+    rax.plot(pt_bin_centers, ratio, marker="o")
+    rax.plot(pt_bin_centers, ratio_120, marker="o")
+    rax.plot(pt_bin_centers, ratio_80, marker="o")
+    rax.plot(pt_bin_centers, ratio_0, marker="o")
+    plt.savefig(os.path.join(output_dir, "ff_mean_vs_pt.pdf"), bbox_inches="tight")
+    plt.close()
+
+    # Plot Capped Fraction
+    fig, (ax, rax) = plt.subplots(2, 1, figsize=(12, 9), gridspec_kw={"height_ratios": [3, 1]}, sharex=True)
+    hep.cms.label(**CMS_LABEL, ax=ax)
+    ax.plot(pt_bin_centers, report_df["capped_frac"], marker='o', label='No Scaling')
+    ax.plot(pt_bin_centers, report_df_120["capped_frac"], marker='o', label='MC × 1.2')
+    ax.plot(pt_bin_centers, report_df_80["capped_frac"], marker='o', label='MC × 0.8')
+    ax.set_xlabel('pT Bin Center')
+    ax.set_ylabel('Capped Fraction')
+    ax.legend()
+    ax.grid(True)
+
+    rax.axhline(1, color='black', linestyle='--', linewidth=1)
+    rax.set_ylabel('Ratio')
+    rax.grid(True)
+    rax.set_xlabel('pT Bin Center')
+    # Compute ratios
+    ratio_cap = report_df["capped_frac"] / report_df["capped_frac"]
+    ratio_cap_120 = report_df_120["capped_frac"] / report_df["capped_frac"]
+    ratio_cap_80 = report_df_80["capped_frac"] / report_df["capped_frac"]
+    ratio_cap_0 = report_df_0["capped_frac"] / report_df["capped_frac"]
+    rax.plot(pt_bin_centers, ratio_cap, marker='o')
+    rax.plot(pt_bin_centers, ratio_cap_120, marker='o')
+    rax.plot(pt_bin_centers, ratio_cap_80, marker='o')
+    plt.savefig(os.path.join(output_dir, 'ff_capped_fraction_vs_pt.pdf'), bbox_inches='tight')
+    plt.close()
