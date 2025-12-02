@@ -255,13 +255,13 @@ def objective(trial):
 def enrich_params(raw_params, *, binary: bool, device: str = "cpu", seed: int = 42):
     """Add fixed XGB fields to raw Optuna params and ensure plain Python types."""
     p = {k: (float(v) if isinstance(v, (np.floating,)) else v) for k, v in dict(raw_params).items()}
-    p["objective"]   = "binary:logistic" if binary else "multi:softprob"
+    p["objective"] = "binary:logistic" if binary else "multi:softprob"
     p["eval_metric"] = "logloss" if binary else "mlogloss"
     if not binary:
         p["num_class"] = 4
     p["tree_method"] = "hist"
-    p["device"]      = device
-    p["seed"]        = seed
+    p["device"] = device
+    p["seed"] = seed
     return p
 
 
@@ -365,7 +365,8 @@ def plot_reliability(y_true, probs, sample_weight=None, n_bins=15, title="Reliab
             np.clip(np.array(err_high) - np.array(acc_vals), 0, 1)
         ])
         ax1.errorbar(conf_vals, acc_vals, yerr=yerr, fmt="o", capsize=3, lw=1.5)
-    ax1.set_xlim(0, 1); ax1.set_ylim(0, 1)
+    ax1.set_xlim(0, 1)
+    ax1.set_ylim(0, 1)
     ax1.set_xlabel("Confidence")
     ax1.set_ylabel("Accuracy")
     ax1.set_title(title)
@@ -500,6 +501,7 @@ def save_feature_importance(bst, out, top_n=20, normalize=True):
     logging.info(f"Feature importance data saved to {out / 'feature_importance.json'}")
 # -------------------- Main ----------------------------
 
+
 # Load Configuration File
 with open(args.config, "r") as f:
     config = yaml.safe_load(f)
@@ -586,7 +588,7 @@ x_train, x_test, y_train, y_test, weights_train, weights_test = train_test_split
 # Save column names used for training
 with open(os.path.join(output_dir, "feature_names.txt"), "w") as f:
     for feature in X.columns:
-        f.write(f"{feature}\n") 
+        f.write(f"{feature}\n")
 
 # Save train/test splits
 with open(f"{output_dir}/train_test_split.pkl", 'wb') as file:
@@ -686,7 +688,7 @@ ece_after = expected_calibration_error(y_test, probs_after,  sample_weight=weigh
 logging.info(f"ECE (before TS): {ece_before:.6f}")
 logging.info(f"ECE (after  TS): {ece_after:.6f}")
 
-plot_reliability(y_test, probs_before, sample_weight=weights_test, n_bins=15, title=f"Reliability (before TS)", outpath=os.path.join(output_dir, "reliability_before_ts.pdf"))
+plot_reliability(y_test, probs_before, sample_weight=weights_test, n_bins=15, title="Reliability (before TS)", outpath=os.path.join(output_dir, "reliability_before_ts.pdf"))
 plot_reliability(y_test, probs_after, sample_weight=weights_test, n_bins=15, title=f"Reliability (after TS, T*={T_opt:.3f})", outpath=os.path.join(output_dir, "reliability_after_ts.pdf"))
 
 # Save temperature scaling results
@@ -705,22 +707,22 @@ logging.info(f"Temperature scaling results saved to {output_dir}/temperature_sca
 # 1) Per-slice ECE (by era & lead/sublead)
 slices = {
     "all": np.ones(len(y_test), dtype=bool),
-    **{f"era={e}": (combined_df.loc[y_test.index, "era_label"]==e).values
+    **{f"era={e}": (combined_df.loc[y_test.index, "era_label"] == e).values
        for e in np.sort(combined_df["era_label"].unique())},
-    "lead":   (combined_df.loc[y_test.index, "is_lead_tau"]==1).values,
-    "sublead":(combined_df.loc[y_test.index, "is_lead_tau"]==0).values,
+    "lead": (combined_df.loc[y_test.index, "is_lead_tau"] == 1).values,
+    "sublead": (combined_df.loc[y_test.index, "is_lead_tau"] == 0).values,
 }
 for name, m in slices.items():
     ece_b = expected_calibration_error(y_test[m], probs_before[m], sample_weight=weights_test[m], n_bins=15)
     ece_a = expected_calibration_error(y_test[m], probs_after[m],  sample_weight=weights_test[m], n_bins=15)
-    print(f"{name:12s}  ECE before={ece_b:.4f}  after={ece_a:.4f}  (Δ={ece_a-ece_b:+.4f})")
+    print(rf"{name:12s}  ECE before=${ece_b:.4f}$  after=${ece_a:.4f}$  ($\delta={ece_a-ece_b:+.4f}$)")
 
 # 2) Per-class ECE (one-vs-rest)
 K = probs_before.shape[1]
 for k in range(K):
-    yk = (y_test==k).astype(int)
-    pb = np.column_stack([1-probs_before[:,k], probs_before[:,k]])
-    pa = np.column_stack([1-probs_after[:,k],  probs_after[:,k]])
+    yk = (y_test == k).astype(int)
+    pb = np.column_stack([1-probs_before[:, k], probs_before[:, k]])
+    pa = np.column_stack([1-probs_after[:, k],  probs_after[:, k]])
     ece_b = expected_calibration_error(yk, pb, sample_weight=weights_test, n_bins=15)
     ece_a = expected_calibration_error(yk, pa, sample_weight=weights_test, n_bins=15)
     print(f"class {k}: ECE before={ece_b:.4f} after={ece_a:.4f} (Δ={ece_a-ece_b:+.4f})")
@@ -732,22 +734,23 @@ for k in range(K):
 K = probs_before.shape[1]
 Yoh = np.eye(K)[y_test]  # one-hot
 brier_b = np.average(np.sum((Yoh - probs_before)**2, axis=1), weights=weights_test)
-brier_a = np.average(np.sum((Yoh - probs_after )**2, axis=1), weights=weights_test)
+brier_a = np.average(np.sum((Yoh - probs_after)**2, axis=1), weights=weights_test)
 print(f"Brier before={brier_b:.6f}  after={brier_a:.6f}  (Δ={brier_a-brier_b:+.6f})")
 
 # 4) Confidence–accuracy by pT quantiles (spot covariate shift)
 pt = combined_df.loc[y_test.index, "pt"].values  # or any key kinematic
-qs = np.quantile(pt, [0.0,0.25,0.5,0.75,1.0])
+qs = np.quantile(pt, [0.0, 0.25, 0.5, 0.75, 1.0])
 for i in range(len(qs)-1):
-    m = (pt>=qs[i]) & (pt<=qs[i+1])
+    m = (pt >= qs[i]) & (pt <= qs[i+1])
     ece_b = expected_calibration_error(y_test[m], probs_before[m], sample_weight=weights_test[m], n_bins=10)
     ece_a = expected_calibration_error(y_test[m], probs_after[m],  sample_weight=weights_test[m], n_bins=10)
     print(f"pT bin {qs[i]:.0f}-{qs[i+1]:.0f}: ECE before={ece_b:.4f} after={ece_a:.4f}")
 
 # 5) “Sharpness” & entropy (are predictions confident but not overconfident?)
-conf_b = probs_before.max(axis=1); conf_a = probs_after.max(axis=1)
-entropy_b = -np.sum(probs_before*np.log(np.clip(probs_before,1e-12,1)),axis=1)
-entropy_a = -np.sum(probs_after *np.log(np.clip(probs_after ,1e-12,1)),axis=1)
+conf_b = probs_before.max(axis=1)
+conf_a = probs_after.max(axis=1)
+entropy_b = -np.sum(probs_before * np.log(np.clip(probs_before, 1e-12, 1)), axis=1)
+entropy_a = -np.sum(probs_after * np.log(np.clip(probs_after, 1e-12, 1)), axis=1)
 print(f"mean confidence: before={np.average(conf_b, weights=weights_test):.4f} after={np.average(conf_a, weights=weights_test):.4f}")
 print(f"mean entropy:    before={np.average(entropy_b, weights=weights_test):.4f} after={np.average(entropy_a, weights=weights_test):.4f}")
 
@@ -785,7 +788,7 @@ def pairwise_valid_mask(probs, min_margin=0.0, return_details=False, features=No
     # pair masks
     m1 = probs[:, 2] > probs[:, 0] + min_margin  # mc_iso > data_iso + margin
     m2 = probs[:, 3] > probs[:, 1] + min_margin  # mc_aiso > data_aiso + margin
-    m_any = (m1 | m2)    
+    m_any = (m1 | m2)
 
     if features is not None and weights is not None:
         # normalise features
@@ -812,7 +815,8 @@ def pairwise_valid_mask(probs, min_margin=0.0, return_details=False, features=No
         Wtot = w.sum() if np.isfinite(w).any() else 0.0
 
         def wfrac(mask):
-            if Wtot <= 0: return 0.0
+            if Wtot <= 0:
+                return 0.0
             return float(w[mask].sum()/Wtot)
 
         # attach flags and probs for export
@@ -837,8 +841,9 @@ def pairwise_valid_mask(probs, min_margin=0.0, return_details=False, features=No
             dm_stats = []
             for dm, g in df.groupby(_varmap["dm"], observed=True, dropna=False):
                 mask = g.index.values
-                den = w[mask].sum(); num = w[mask][g["_viol"].values].sum()
-                frac = float(num/den) if den>0 else 0.0
+                den = w[mask].sum()
+                num = w[mask][g["_viol"].values].sum()
+                frac = float(num/den) if den > 0 else 0.0
                 dm_stats.append({"decayMode": (np.nan if pd.isna(dm) else int(dm)),
                                  "events_w": float(den), "viol_w": float(num), "viol_frac": frac})
             dm_tbl = pd.DataFrame(dm_stats).sort_values("viol_frac", ascending=False)
@@ -856,7 +861,7 @@ def pairwise_valid_mask(probs, min_margin=0.0, return_details=False, features=No
             df.loc[df["_viol"], keep].to_csv(os.path.join(out, "negative_ff_catalogue.csv"), index=False)
 
             # binning
-            pt_bins  = np.array([20, 30, 40, 50, 70, 100, 140, 190, 260, 400, 800], float)
+            pt_bins = np.array([20, 30, 40, 50, 70, 100, 140, 190, 260, 400, 800], float)
             eta_bins = np.array([-2.5, -2.1, -1.6, -1.2, -0.8, -0.4, 0.0, 0.4, 0.8, 1.2, 1.6, 2.1, 2.5], float)
             phi_bins = np.linspace(-3.2, 3.2, 17)
             jpt_bins = np.array([0, 0.5, 1, 1.5, 2., 2.5, 3.], float)
@@ -865,12 +870,13 @@ def pairwise_valid_mask(probs, min_margin=0.0, return_details=False, features=No
             def binned_plot(var, bins, fname):
                 x = df[_varmap[var]].to_numpy()
                 ix = np.digitize(x, bins) - 1
-                num = np.zeros(len(bins)-1); den = np.zeros(len(bins)-1)
+                num = np.zeros(len(bins)-1)
+                den = np.zeros(len(bins)-1)
                 for b in range(len(bins)-1):
                     m_bin = ix == b
                     den[b] = w[m_bin].sum()
                     num[b] = w[m_bin & df["_viol"].values].sum()
-                frac = np.divide(num, den, out=np.zeros_like(num), where=den>0)
+                frac = np.divide(num, den, out=np.zeros_like(num), where=den > 0)
                 # save csv
                 rows = [{f"{var}_bin": f"[{bins[b]:.2f},{bins[b+1]:.2f})",
                          "events_w": float(den[b]), "viol_w": float(num[b]),
@@ -879,13 +885,15 @@ def pairwise_valid_mask(probs, min_margin=0.0, return_details=False, features=No
                 # plot
                 if make_plots:
                     centers = 0.5*(bins[:-1]+bins[1:])
-                    plt.figure(figsize=(9,6))
+                    plt.figure(figsize=(9, 6))
                     plt.plot(centers, frac, marker="o")
-                    plt.xlabel(var); plt.ylabel("Violation fraction (weighted)")
+                    plt.xlabel(var)
+                    plt.ylabel("Violation fraction (weighted)")
                     plt.ylim(0, max(frac.max()*1.2, 1e-3))
                     plt.grid(True, alpha=0.4)
                     hep.cms.label(ax=plt.gca(), data=True, label="Work in progress", com=13.6, loc=0)
-                    plt.savefig(os.path.join(out, fname), bbox_inches="tight"); plt.close()
+                    plt.savefig(os.path.join(out, fname), bbox_inches="tight")
+                    plt.close()
 
             binned_plot("pt",  pt_bins,  "viol_rate_vs_pt.pdf")
             binned_plot("eta", eta_bins, "viol_rate_vs_eta.pdf")
@@ -906,7 +914,7 @@ def pairwise_valid_mask(probs, min_margin=0.0, return_details=False, features=No
 
                 # Compute fraction safely
                 H = np.divide(Hn, Hd, out=np.zeros_like(Hn), where=Hd > 0)
-                plt.figure(figsize=(10,7))
+                plt.figure(figsize=(10, 7))
                 X, Y = np.meshgrid(xedges, yedges, indexing="xy")
                 pcm = plt.pcolormesh(X, Y, H.T, shading="auto")
                 plt.xlabel("pt")
@@ -925,7 +933,7 @@ def pairwise_valid_mask(probs, min_margin=0.0, return_details=False, features=No
 if not args.binary:
     # compute masks and report
     mask_before = pairwise_valid_mask(probs_before, min_margin=0.0)
-    mask_after  = pairwise_valid_mask(probs_after,  min_margin=0.0)
+    mask_after = pairwise_valid_mask(probs_after,  min_margin=0.0)
 
     logging.info("Pairwise-valid fraction before TS: %.3f (%d/%d)", mask_before.mean(), mask_before.sum(), len(mask_before))
     logging.info("Pairwise-valid fraction after  TS: %.3f (%d/%d)", mask_after.mean(),  mask_after.sum(),  len(mask_after))
@@ -1099,7 +1107,7 @@ if not args.binary:
 
     hep.cms.label(**CMS_LABEL, ax=ax)
     ax.errorbar(pt_bin_centers, report_df["FF_mean"], yerr=report_df["FF_std"], marker="o", label="No Scaling")
-    ax.errorbar(pt_bin_centers, report_df_120["FF_mean"], yerr=report_df_120["FF_std"], marker="o", label="MC × 1.2"  if args.process == "QCD" else "MC × 1.1")
+    ax.errorbar(pt_bin_centers, report_df_120["FF_mean"], yerr=report_df_120["FF_std"], marker="o", label="MC × 1.2" if args.process == "QCD" else "MC × 1.1")
     ax.errorbar(pt_bin_centers, report_df_80["FF_mean"], yerr=report_df_80["FF_std"], marker="o", label="MC × 0.8" if args.process == "QCD" else "MC × 0.9")
     ax.errorbar(pt_bin_centers, report_df_0["FF_mean"], yerr=report_df_0["FF_std"], marker="o", label="MC × 0.0 (for -ve FF)")
     ax.set_ylabel("Weighted Mean FF")
