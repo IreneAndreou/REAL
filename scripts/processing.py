@@ -159,12 +159,12 @@ def feature_engineering(df, process, channel, tau_index):
             # Calculate the W+jets-style MET variable
             df.loc[:, "met_var_w"] = (met_plus_lep_pt / df["pt_2"]) * np.cos(dphi_met_lep_tau)
 
-    # Remove events with negative values in jpt/pt ratios
+    # Set events with negative values in jpt/pt ratios to a tiny value (0.001) and log their fraction
     if channel in {"et", "mt"}:
         cols_to_check = ["jpt_pt_2"]
-    elif channel == "tt" and tau_index == "leading":
+    elif channel == "tt" and tau_index == "1":
         cols_to_check = ["jpt_pt_1"]
-    elif channel == "tt" and tau_index == "subleading":
+    elif channel == "tt" and tau_index == "2":
         cols_to_check = ["jpt_pt_2"]
     else:
         cols_to_check = []
@@ -174,11 +174,12 @@ def feature_engineering(df, process, channel, tau_index):
         for col in cols_to_check:
             mask &= (df[col] >= 0)
 
-        removed = initial_count - mask.sum()
-        if removed > 0:
-            logging.warning(f"Removed {removed} events with negative values in ratio columns: {', '.join(cols_to_check)}")
+        negative = initial_count - mask.sum()
+        if negative > 0:
+            logging.warning(f"{negative} events with negative values in ratio columns: {', '.join(cols_to_check)}")
+            logging.warning(f"Fraction of negative events in {channel} channel, tau_index {tau_index}: {negative / initial_count:.4%}")
 
-        df = df[mask].reset_index(drop=True)
+        df.loc[~mask, cols_to_check] = 0.0
 
     return df
 
