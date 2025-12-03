@@ -1,0 +1,211 @@
+era:
+  Run3_2022:
+    data_iso_file: "/vols/cms/ia2318/REAL/data_November25/Run3_2022/{region}_region/{ff_process}/data_iso_{channel}_{tau_suffix}.parquet"
+    data_aiso_file: "/vols/cms/ia2318/REAL/data_November25/Run3_2022/{region}_region/{ff_process}/data_aiso_{channel}_{tau_suffix}.parquet"
+    mc_iso_file: "/vols/cms/ia2318/REAL/data_November25/Run3_2022/{region}_region/{ff_process}/mc_iso_{channel}_{tau_suffix}.parquet"
+    mc_aiso_file: "/vols/cms/ia2318/REAL/data_November25/Run3_2022/{region}_region/{ff_process}/mc_aiso_{channel}_{tau_suffix}.parquet"
+  Run3_2022EE:
+    data_iso_file: "/vols/cms/ia2318/REAL/data_November25/Run3_2022EE/{region}_region/{ff_process}/data_iso_{channel}_{tau_suffix}.parquet"
+    data_aiso_file: "/vols/cms/ia2318/REAL/data_November25/Run3_2022EE/{region}_region/{ff_process}/data_aiso_{channel}_{tau_suffix}.parquet"
+    mc_iso_file: "/vols/cms/ia2318/REAL/data_November25/Run3_2022EE/{region}_region/{ff_process}/mc_iso_{channel}_{tau_suffix}.parquet"
+    mc_aiso_file: "/vols/cms/ia2318/REAL/data_November25/Run3_2022EE/{region}_region/{ff_process}/mc_aiso_{channel}_{tau_suffix}.parquet"
+  Run3_2023:
+    data_iso_file: "/vols/cms/ia2318/REAL/data_November25/Run3_2023/{region}_region/{ff_process}/data_iso_{channel}_{tau_suffix}.parquet"
+    data_aiso_file: "/vols/cms/ia2318/REAL/data_November25/Run3_2023/{region}_region/{ff_process}/data_aiso_{channel}_{tau_suffix}.parquet"
+    mc_iso_file: "/vols/cms/ia2318/REAL/data_November25/Run3_2023/{region}_region/{ff_process}/mc_iso_{channel}_{tau_suffix}.parquet"
+    mc_aiso_file: "/vols/cms/ia2318/REAL/data_November25/Run3_2023/{region}_region/{ff_process}/mc_aiso_{channel}_{tau_suffix}.parquet"
+  Run3_2023BPix:
+    data_iso_file: "/vols/cms/ia2318/REAL/data_November25/Run3_2023BPix/{region}_region/{ff_process}/data_iso_{channel}_{tau_suffix}.parquet"
+    data_aiso_file: "/vols/cms/ia2318/REAL/data_November25/Run3_2023BPix/{region}_region/{ff_process}/data_aiso_{channel}_{tau_suffix}.parquet"
+    mc_iso_file: "/vols/cms/ia2318/REAL/data_November25/Run3_2023BPix/{region}_region/{ff_process}/mc_iso_{channel}_{tau_suffix}.parquet"
+    mc_aiso_file: "/vols/cms/ia2318/REAL/data_November25/Run3_2023BPix/{region}_region/{ff_process}/mc_aiso_{channel}_{tau_suffix}.parquet"
+
+model_path: "/vols/cms/ia2318/REAL/outputs/best_models/November25_v3_{global_str}/{channel}_{ff_process}/best_model.pkl"
+train_test_split_path: "/vols/cms/ia2318/REAL/outputs/best_models/November25_v3_{global_str}/{channel}_{ff_process}/train_test_split.pkl"
+classical_ff_path: "/vols/cms/ia2318/HiggsDNA/Run3FakeFactors/{channel}/{year}_fake_factors_{ff_process}.txt"
+optimal_temperature_path: "/vols/cms/ia2318/REAL/outputs/best_models/November25_{global_str}/{channel}_{ff_process}/temperature_scaling_results.json"
+output_dir: "/vols/cms/ia2318/REAL/outputs/plots/November25_{global_str}/{channel}_{ff_process}/"
+
+lead_tau: 
+  - "decayMode_1"
+  - "jpt_pt_1"
+  - "pt_1"
+  - "eta_1"
+  - "charge_1"
+  - "phi_1"
+  - "decayModePNet_1"
+sublead_tau: 
+  - "decayMode_2"
+  - "jpt_pt_2"
+  - "pt_2"
+  - "eta_2"
+  - "charge_2"
+  - "phi_2"
+  - "decayModePNet_2"
+global_variables:
+  - "n_jets"
+  - "n_bjets"
+  - "met_var_qcd_{tau_suffix}"
+  - "met_var_w_{tau_suffix}"
+  - "met_var_w"
+  # - "pt_other" ## only for tt channel
+
+features_to_plot:
+    - 'decayMode'
+    - 'decayMode_other'
+    - 'jpt_pt'
+    - 'jpt_pt_other'
+    - 'pt'
+    - 'pt_other'
+    - 'eta'
+    - 'eta_other'
+    - 'charge'
+    - 'charge_other'
+    - 'phi'
+    - 'phi_other'
+    - 'pt_tt'
+    - 'dR'
+    - 'n_jets'
+    - 'n_bjets'
+    - 'n_prebjets'
+    - 'm_vis'
+    - 'mt_tot'
+    - 'met_pt'
+    - 'met_phi'
+    - 'met_dphi'
+    - 'met_dphi_other'
+
+latex_names_lead:
+    'decayMode': '$\tau_h^{lead}$ decay mode'
+    'decayMode_other': '$\tau_h^{other}$ decay mode'
+    'jpt_pt': 'Ratio of $p_{T}^{jet}$ to $p_{T}^{\tau_h^{lead}}$'
+    'jpt_pt_other': 'Ratio of $p_{T}^{jet}$ to $p_{T}^{\tau_h^{other}}$'
+    'pt': '$p_{T}^{\tau_h^{lead}}$ (GeV)'
+    'pt_other': '$p_{T}^{\tau_h^{other}}$ (GeV)'
+    'pt_tt': '$p_{T}^{\tau_h\tau_h}$ (GeV)'
+    'eta': '$\eta^{\tau_h^{lead}}$'
+    'eta_other': '$\eta^{\tau_h^{other}}$'
+    'charge': '$\tau_h^{lead}$ charge'
+    'charge_other': '$\tau_h^{other}$ charge'
+    'phi': '$\tau_h^{lead} \phi$'
+    'phi_other': '$\tau_h^{other} \phi$'
+    'dR': '$\Delta R(\tau_h^{lead}, \tau_h^{other})$'
+    'n_jets': 'Number of jets'
+    'n_bjets': 'Number of b-jets'
+    'n_prebjets': 'Number of pre-b-jets'
+    'm_vis': '$m_{vis}$ (GeV)'
+    'mt_tot': '$m^{total}_T$ (GeV)'
+    'met_pt': 'MET $p_T$ (GeV)'
+    'met_phi': 'MET $\phi$'
+    'met_dphi': 'MET $\Delta \phi$ with $\tau_h^{lead}$'
+    'met_dphi_other': 'MET $\Delta \phi$ with $\tau_h^{other}$'
+    'met_var_qcd_1': '$C_{\\text{QCD}} = \\frac{\\MET}{p_{T}^{\\tau_h^{lead}}}\\cos\\Delta\\phi(\\vec{\\MET},\\vec{p}_{T}^{\\tau_h^{lead}})$'
+    'met_var_qcd_2': '$C_{\\text{QCD}} = \\frac{\\MET}{p_{T}^{\\tau_h^{other}}}\\cos\\Delta\\phi(\\vec{\\MET},\\vec{p}_{T}^{\\tau_h^{other}})$'
+    'met_var_w_1': '$C_{\\text{W}} = \\frac{\\left\\lvert\\vec{\\MET}+\\vec{p}_T^{\\ell}\\right\\rvert}{p_{T}^{\\tau_h^{lead}}}\\cos\\Delta\\phi(\\vec{\\MET}+\\vec{p}_T^{\\ell},\\vec{p}_{T}^{\\tau_h^{lead}})$'
+    'met_var_w_2': '$C_{\\text{W}} = \\frac{\\left\\lvert\\vec{\\MET}+\\vec{p}_T^{\\ell}\\right\\rvert}{p_{T}^{\\tau_h^{other}}}\\cos\\Delta\\phi(\\vec{\\MET}+\\vec{p}_T^{\\ell},\\vec{p}_{T}^{\\tau_h^{other}})$'
+    'decayModePNet_1': '$\tau_h^{lead}$ PNet decay mode'
+    'decayModePNet_2': '$\tau_h^{other}$ PNet decay mode'
+
+latex_names_sublead:
+    'decayMode': '$\tau_h^{sublead}$ decay mode'
+    'decayMode_other': '$\tau_h^{other}$ decay mode'
+    'jpt_pt': 'Ratio of $p_{T}^{jet}$ to $p_{T}^{\tau_h^{sublead}}$'
+    'jpt_pt_other': 'Ratio of $p_{T}^{jet}$ to $p_{T}^{\tau_h^{other}}$'
+    'pt': '$p_{T}^{\tau_h^{sublead}}$ (GeV)'
+    'pt_other': '$p_{T}^{\tau_h^{other}}$ (GeV)'
+    'pt_tt': '$p_{T}^{\tau_h\tau_h}$ (GeV)'
+    'eta': '$\eta^{\tau_h^{sublead}}$'
+    'eta_other': '$\eta^{\tau_h^{other}}$'
+    'charge': '$\tau_h^{sublead}$ charge'
+    'charge_other': '$\tau_h^{other}$ charge'
+    'phi': '$\tau_h^{sublead} \phi$'
+    'phi_other': '$\tau_h^{other} \phi$'
+    'dR': '$\Delta R(\tau_h^{sublead}, \tau_h^{other})$'
+    'n_jets': 'Number of jets'
+    'n_bjets': 'Number of b-jets'
+    'n_prebjets': 'Number of pre-b-jets'
+    'm_vis': '$m_{vis}$ (GeV)'
+    'mt_tot': '$m^{total}_T$ (GeV)'
+    'met_pt': 'MET $p_T$ (GeV)'
+    'met_phi': 'MET $\phi$'
+    'met_dphi': 'MET $\Delta \phi$ with $\tau_h^{sublead}$'
+    'met_dphi_other': 'MET $\Delta \phi$ with $\tau_h^{other}$'
+    'met_var_qcd_1': '$C_{\\text{QCD}} = \\frac{\\MET}{p_{T}^{\\tau_h^{sublead}}}\\cos\\Delta\\phi(\\vec{\\MET},\\vec{p}_{T}^{\\tau_h^{sublead}})$'
+    'met_var_qcd_2': '$C_{\\text{QCD}} = \\frac{\\MET}{p_{T}^{\\tau_h^{other}}}\\cos\\Delta\\phi(\\vec{\\MET},\\vec{p}_{T}^{\\tau_h^{other}})$'
+    'met_var_w_1': '$C_{\\text{W}} = \\frac{\\left\\lvert\\vec{\\MET}+\\vec{p}_T^{\\ell}\\right\\rvert}{p_{T}^{\\tau_h^{sublead}}}\\cos\\Delta\\phi(\\vec{\\MET}+\\vec{p}_T^{\\ell},\\vec{p}_{T}^{\\tau_h^{sublead}})$'
+    'met_var_w_2': '$C_{\\text{W}} = \\frac{\\left\\lvert\\vec{\\MET}+\\vec{p}_T^{\\ell}\\right\\rvert}{p_{T}^{\\tau_h^{other}}}\\cos\\Delta\\phi(\\vec{\\MET}+\\vec{p}_T^{\\ell},\\vec{p}_{T}^{\\tau_h^{other}})$'
+    'decayModePNet_1': '$\tau_h^{lead}$ PNet decay mode'
+    'decayModePNet_2': '$\tau_h^{other}$ PNet decay mode'
+plot_params:
+  bins:
+    'pt': 100
+    'pt_other': 100
+    'decayMode': 12  # Discrete bins: 0, 1, 10, 11
+    'decayMode_other': 12  # Discrete bins: 0, 1, 10, 11
+    'jpt_pt': 100
+    'jpt_pt_other': 100
+    'pt': 100
+    'pt_other': 100
+    'pt_tt': 100
+    'eta': 30
+    'eta_other': 30
+    'phi': 30
+    'phi_other': 30
+    'dR': 30
+    'charge': 4
+    'charge_other': 4
+    'n_jets': 10
+    'n_bjets': 4
+    'n_prebjets': 4
+    'm_vis': 100
+    'mt_tot': 100
+    'met_pt': 40
+    'met_phi': 30
+    'met_dphi': 30
+    'met_dphi_other': 30
+    'met_var_qcd_1': 50
+    'met_var_qcd_2': 50
+    'decayModePNet': 12  # Discrete bins: 0, 1, 2, 10, 11
+    'decayModePNet_other': 12  # Discrete bins: 0, 1, 2, 10, 11
+
+  ranges:
+    'decayMode': [0, 12]
+    'decayMode_other': [0, 12]
+    'jpt_pt': [0, 3]
+    'jpt_pt_other': [0, 3]
+    'pt': [35, 500]
+    'pt_other': [35, 600]
+    'pt_tt': [0, 800]
+    'eta': [-3, 3]
+    'eta_other': [-3, 3]
+    'phi': [-3.2, 3.2]
+    'phi_other': [-3.2, 3.2]
+    'dR': [0, 6]
+    'charge': [-2, 2]
+    'charge_other': [-2, 2]
+    'n_jets': [0, 10]
+    'n_bjets': [0, 4]
+    'n_prebjets': [0, 4]
+    'm_vis': [0, 800]
+    'mt_tot': [0, 800]
+    'met_pt': [0, 200]
+    'met_phi': [-3.2, 3.2]
+    'met_dphi': [-3.2, 3.2]
+    'met_dphi_other': [-3.2, 3.2]
+    'met_var_qcd_1': [-10, 10]
+    'met_var_qcd_2': [-10, 10]
+    'decayModePNet': [0, 12]
+    'decayModePNet_other': [0, 12]
+  
+  discrete_bins:
+    'charge': [-2, -1, 0, 1, 2]
+    'charge_other': [-2, -1, 0, 1, 2]
+    'pt': [35, 50, 60, 70, 80, 90, 100, 120, 140, 160, 180, 200, 250, 300, 400, 500]
+    'pt_other': [35, 50, 60, 70, 80, 90, 100, 120, 140, 160, 180, 200, 250, 300, 400, 500]
+    'mt_tot': [0, 50, 100, 150, 200, 250, 300, 350, 400, 450, 500, 600]
+    'm_vis': [0, 50, 100, 150, 200, 250, 300, 350, 400, 450, 500, 600]
+    'met_pt': [0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 120, 140]
+    'decayMode': [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+    'decayMode_other': [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+    'decayModePNet': [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+    'decayModePNet_other': [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
