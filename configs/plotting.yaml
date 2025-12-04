@@ -22,7 +22,7 @@ era:
 
 model_path: "/vols/cms/ia2318/REAL/outputs/best_models/November25_v3_{global_str}/{channel}_{ff_process}/best_model.pkl"
 train_test_split_path: "/vols/cms/ia2318/REAL/outputs/best_models/November25_v3_{global_str}/{channel}_{ff_process}/train_test_split.pkl"
-classical_ff_path: "/vols/cms/ia2318/HiggsDNA/Run3FakeFactors/{channel}/{year}_fake_factors_{ff_process}.txt"
+classical_ff_path: "/vols/cms/ia2318/HiggsDNA/Run3FakeFactors/{channel}/{year}_fake_factors_{ff_process}.json"
 optimal_temperature_path: "/vols/cms/ia2318/REAL/outputs/best_models/November25_{global_str}/{channel}_{ff_process}/temperature_scaling_results.json"
 output_dir: "/vols/cms/ia2318/REAL/outputs/plots/November25_{global_str}/{channel}_{ff_process}/"
 

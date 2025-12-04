@@ -11,9 +11,17 @@ import os
 import pandas as pd
 import pickle
 import re
+import sys
 import uproot
 import xgboost as xgb
 import yaml
+if "ROOTSYS" not in os.environ and "PLOT_REEXEC" not in os.environ:
+    source_script = "/vols/cms/ia2318/REAL/source_root.sh"
+    print(f"Sourcing {source_script} and re-executing script...")
+    cmd = f"bash -c 'source {source_script} && export PLOT_REEXEC=1 && python3 {' '.join([sys.argv[0]] + sys.argv[1:])}'"
+    sys.exit(os.system(cmd))
+print("ROOTSYS detected; continuing...")
+import ROOT
 hep.style.use("CMS")
 
 CMS_LABEL = dict(data=True, label="Work in progress", com=13.6, loc=0)
@@ -25,6 +33,7 @@ parser.add_argument("--channels", required=False, default="tt", choices=["all", 
 parser.add_argument("--process", required=False, default="QCD", choices=["all", "QCD", "Wjets", "WjetsMC", "ttbarMC"], help="Select the FF process to run (default: QCD).")
 parser.add_argument("--region", required=False, default="all", choices=["all", "determination", "validation"], help="Select the FF region to run (default: all).")
 parser.add_argument("--global_variables", type=str, required=True, choices=["True", "False"], help="Whether to use global-variable training model.")
+parser.add_argument('--binary', action='store_true', help='If set, plots results from a binary classifier (MC ISO vs MC AISO)')
 
 args = parser.parse_args()
 
@@ -257,6 +266,27 @@ def rebin_histogram_errors(hist_counts, hist_errors, bin_edges, uncertainty_thre
     return np.array(new_bin_edges)
 
 
+def build_tf1_from_fit(name, fit_info):
+    """Build a ROOT TF1 from fit information dictionary."""
+    formula = fit_info["formula"]
+    xmin = fit_info["xmin"]
+    xmax = fit_info["xmax"]
+
+    tf1 = ROOT.TF1(name, formula, xmin, xmax)
+    return tf1
+
+
+def eval_tf1_formula(tf1, x):
+    """Evaluate a ROOT TF1 at given x values (scalar or numpy array)."""
+    x_arr = np.asarray(x, dtype=float)
+
+    if x_arr.ndim == 0:
+        return tf1.Eval(float(x_arr))
+
+    vfunc = np.vectorize(lambda xx: tf1.Eval(float(xx)), otypes=[float])
+    return vfunc(x_arr)
+
+
 def get_ff_category_defs(semi_leptonic):
     """
     Return category definitions for fake factors, expressed as
@@ -318,84 +348,63 @@ def assign_ff_value(df, classical_data, semi_leptonic, tag="nominal"):
             f"(semi_leptonic={semi_leptonic})"
         )
 
-    ff_vals = []
+    ff_vals = np.full(len(df), np.nan, dtype=float)
 
-    for _, row in df.iterrows():
-        cat = row["ff_category"]
-        pt = row[pt_col]
+    for cat_name, mask_fn in get_ff_category_defs(semi_leptonic):
+        mask = df["ff_category"] == cat_name
+        fit_info = classical_data[cat_name][tag]
+        tf1 = fit_info["tf1"]
+        xmin = fit_info["xmin"]
+        xmax = fit_info["xmax"]
 
-        if pd.isna(cat) or cat not in classical_data:
-            ff_vals.append(np.nan)
-            continue
+        pts = df.loc[mask, pt_col].to_numpy(dtype=float)
+        pts_clipped = np.clip(pts, xmin, xmax)
 
-        centers = np.asarray(classical_data[cat][tag]["centers"], dtype=float)
-        vals = np.asarray(classical_data[cat][tag]["vals"], dtype=float)
-
-        if centers.size == 0:
-            ff_vals.append(1.0)
-            continue
-
-        # nearest-neighbour in pT
-        idx = np.abs(centers - pt).argmin()
-        ff_vals.append(vals[idx])
+        ff_chunk = eval_tf1_formula(tf1, pts_clipped)
+        ff_vals[mask.to_numpy()] = ff_chunk
 
     df["ff_classical"] = ff_vals
     return df
 
 
-def load_classical_ff(path, use_fit_values=True):
+def load_classical_ff(path, channel, use_fit_values=True):
     """Parse classical fake-factor data into a dictionary"""
     classical_data = {}
 
     with open(path, "r") as f:
-        first = f.readline()
-        parts = first.strip().split()
+        data = json.load(f)
 
-        for line in f:
-            parts = line.strip().split()
-            if not parts:
-                continue
-
-            full_cat, center, ff, ff_err, fit_ff, fit_err = parts
-
-            center = float(center)
-            ff_val = float(ff)
-            ff_err_val = float(ff_err)
-            fit_val = float(fit_ff)
-            fit_err_val = float(fit_err)
-
-            # Decide what to store as "vals"/"errs"
-            if use_fit_values:
-                val_to_store = fit_val
-                err_to_store = fit_err_val
+        for full_cat, payload in data.items():
+            if channel == "tt":
+                m = re.match(r'^(.*?)(?:_aiso2)?_pt_[12]$', full_cat)
             else:
-                val_to_store = ff_val
-                err_to_store = ff_err_val
+                m = re.match(r'^(.*?)(?:_aiso2_ss)?$', full_cat)
 
-            # Extract category and aiso/nominal tag
-            m = re.match(r'^(.*?)(?:_aiso2)?_pt_[12]$', full_cat)
-            if m:
-                cat = m.group(1)
-                tag = "aiso" if "_aiso2_pt_" in full_cat else "nominal"
-            else:
-                # fallback: tag by 'aiso' substring
-                tag = "aiso" if "aiso" in full_cat else "nominal"
-                cat = full_cat
+            cat = m.group(1)
+            tag = "aiso" if "_aiso" in full_cat else "nominal"
+
+            fit_info = payload["fit"]
+            xmin = fit_info["xmin"]
+            xmax = fit_info["xmax"]
+
+            tf1_name = f"ff_{cat}_{tag}"
+            tf1 = build_tf1_from_fit(tf1_name, fit_info)
 
             if cat not in classical_data:
                 classical_data[cat] = {
-                    "nominal": {"centers": [], "vals": [], "errs": []},
-                    "aiso":    {"centers": [], "vals": [], "errs": []},
+                    "nominal": {},
+                    "aiso": {},
                 }
 
-            classical_data[cat][tag]["centers"].append(center)
-            classical_data[cat][tag]["vals"].append(val_to_store)
-            classical_data[cat][tag]["errs"].append(err_to_store)
-
+            classical_data[cat][tag] = {
+                "tf1": tf1,
+                "xmin": xmin,
+                "xmax": xmax,
+            }
     return classical_data
 
 
-def process_reweighting(df, model, feature_cols, pt_col, dm_col, temperature=1.0, data_iso_idx=0, data_aiso_idx=1, mc_iso_idx=2, mc_aiso_idx=3, batch_size=50000):
+def process_reweighting(df, model, feature_cols, pt_col, dm_col, temperature=1.0, data_iso_idx=0, data_aiso_idx=1, mc_iso_idx=2, mc_aiso_idx=3, batch_size=50000, binary=False):
     """ Compute ML reweighting weights + store kinematics and class scores."""
     n = len(df)
     if n == 0:
@@ -417,11 +426,28 @@ def process_reweighting(df, model, feature_cols, pt_col, dm_col, temperature=1.0
         probs_batch = model.predict(dmat)
         logits_batch = model.predict(dmat, output_margin=True)
 
-        if probs_batch.ndim != 2 or probs_batch.shape[1] != 4:
-            raise ValueError(
-                f"Expected 4-class output from model, got shape {probs_batch.shape}"
-            )
+        probs_batch = np.asarray(probs_batch)
+        logits_batch = np.asarray(logits_batch)
 
+        if probs_batch.ndim == 2 and probs_batch.shape[0] in (2, 4) and probs_batch.shape[0] < probs_batch.shape[1]:
+            probs_batch = probs_batch.T
+        if logits_batch.ndim == 2 and logits_batch.shape[0] in (2, 4) and logits_batch.shape[0] < logits_batch.shape[1]:
+            logits_batch = logits_batch.T
+
+        if binary:
+            if probs_batch.ndim == 2 and probs_batch.shape[1] == 1:
+                probs_batch = probs_batch[:, 0]
+            if logits_batch.ndim == 2 and logits_batch.shape[1] == 1:
+                logits_batch = logits_batch[:, 0]
+            if probs_batch.ndim != 1:
+                raise ValueError(
+                    f"Expected 1D output from binary model, got shape {probs_batch.shape}"
+                )
+        else:
+            if probs_batch.ndim != 2 or probs_batch.shape[1] != 4:
+                raise ValueError(
+                    f"Expected 4-class output from model, got shape {probs_batch.shape}"
+                )
         all_probs_list.append(probs_batch)
         all_logits_list.append(logits_batch)
 
@@ -429,22 +455,42 @@ def process_reweighting(df, model, feature_cols, pt_col, dm_col, temperature=1.0
         dm_list.append(batch[dm_col].to_numpy())
 
     # Concatenate batches
-    probs = np.vstack(all_probs_list)
-    logits = np.vstack(all_logits_list)
+    if binary:
+        probs = np.concatenate(all_probs_list)
+        logits = np.concatenate(all_logits_list)
+    else:
+        probs = np.vstack(all_probs_list)
+        logits = np.vstack(all_logits_list)
     pt = np.concatenate(pt_list)
     dm = np.concatenate(dm_list)
 
     # Apply temperature scaling (if temperature != 1)
-    if temperature != 1.0:
-        probs_scaled = softmax_temperature_scaling(logits, temperature)
+    if binary:
+        # logits and probs are 1D here
+        if temperature != 1.0:
+            probs_1d = 1.0 / (1.0 + np.exp(-logits / temperature))
+        else:
+            probs_1d = probs
+        # Build 2-class probs: [mc_iso, mc_aiso]
+        probs_scaled = np.stack([probs_1d, 1.0 - probs_1d], axis=1)
     else:
-        probs_scaled = probs
+        if temperature != 1.0:
+            probs_scaled = softmax_temperature_scaling(logits, temperature)
+        else:
+            probs_scaled = probs
 
     # Extract the four class probabilities
-    p_data_iso = probs_scaled[:, data_iso_idx]
-    p_data_aiso = probs_scaled[:, data_aiso_idx]
-    p_mc_iso = probs_scaled[:, mc_iso_idx]
-    p_mc_aiso = probs_scaled[:, mc_aiso_idx]
+    if binary:
+        p_data_iso = np.zeros_like(probs_scaled[:, 0])
+        p_data_aiso = np.zeros_like(probs_scaled[:, 0])
+        p_mc_iso = probs_scaled[:, 1]
+        p_mc_aiso = probs_scaled[:, 0]
+    else:
+
+        p_data_iso = probs_scaled[:, data_iso_idx]
+        p_data_aiso = probs_scaled[:, data_aiso_idx]
+        p_mc_iso = probs_scaled[:, mc_iso_idx]
+        p_mc_aiso = probs_scaled[:, mc_aiso_idx]
 
     # ML reweight factor: (DataISO - MC ISO) / (DataAISO - MC AISO)
     numerator = p_data_iso - p_mc_iso
@@ -460,9 +506,14 @@ def process_reweighting(df, model, feature_cols, pt_col, dm_col, temperature=1.0
     valid_primary = np.isfinite(primary_ratio) & (np.abs(primary_ratio) > eps)
 
     # Fallback: DataISO / DataAISO
-    with np.errstate(divide="ignore", invalid="ignore"):
-        fallback_ratio = p_data_iso / p_data_aiso
-    valid_fallback = np.isfinite(fallback_ratio)
+    if not binary:
+        with np.errstate(divide="ignore", invalid="ignore"):
+            fallback_ratio = p_data_iso / p_data_aiso
+        valid_fallback = np.isfinite(fallback_ratio)
+    else:
+        with np.errstate(divide="ignore", invalid="ignore"):
+            fallback_ratio = p_mc_iso / p_mc_aiso
+        valid_fallback = np.zeros_like(weights_ml, dtype=bool)
 
     # Use primary where valid
     weights_ml[valid_primary] = primary_ratio[valid_primary]
@@ -472,7 +523,7 @@ def process_reweighting(df, model, feature_cols, pt_col, dm_col, temperature=1.0
     weights_ml[use_fallback] = fallback_ratio[use_fallback]
 
     # Individual data / mc reweighting scores
-    data_ml_score = p_data_iso / p_data_aiso
+    data_ml_score = p_data_iso / p_data_aiso if not binary else np.zeros_like(p_mc_iso)
     mc_ml_score = p_mc_iso / p_mc_aiso
 
     return {"weights_ml": weights_ml, "weights_data_ml": data_ml_score, "weights_mc_ml": mc_ml_score, "pt": pt, "dm": dm, "probs": probs_scaled, "logits": logits, "data_iso": p_data_iso, "data_aiso": p_data_aiso, "mc_iso": p_mc_iso, "mc_aiso": p_mc_aiso}
@@ -509,14 +560,15 @@ def make_bin_edges(feature, bins, ranges, df_data_aiso, config):
 
 def ratio_and_err(num, den, num_err, den_err):
     """Compute ratio = num/den with standard error propagation."""
-    num = np.ma.array(num)
-    den = np.ma.array(den)
-    num_err = np.ma.array(num_err)
-    den_err = np.ma.array(den_err)
+    num = np.ma.array(num).ravel()
+    den = np.ma.array(den).ravel()
+    num_err = np.ma.array(num_err).ravel()
+    den_err = np.ma.array(den_err).ravel()
 
     ratio = safe_divide(num, den)
     # where ratio is valid, propagate error
     mask = ~ratio.mask
+    mask = np.asarray(mask).ravel()
     out_err = np.ma.masked_all_like(ratio)
     out_err[mask] = ratio[mask] * np.sqrt(
         (num_err[mask] / np.where(num[mask] == 0, np.nan, num[mask]))**2 +
@@ -559,7 +611,8 @@ def plot_individual_reweighing(feature, bins, ranges, df_data_iso, df_data_aiso,
     output_path = os.path.join(region_dir, f"{feature}_individual_reweighting_{tau_suffix}.pdf")
 
     # Determine bin edges
-    bin_edges = make_bin_edges(feature, bins, ranges, df_data_aiso, plotting_config)
+    ref_df = df_data_aiso
+    bin_edges = make_bin_edges(feature, bins, ranges, ref_df, plotting_config)
 
     # Histograms before reweighting
     h_data_iso, err_data_iso = hist_and_err(df_data_iso[feature], df_data_iso["wt_sf"], bin_edges)
@@ -615,16 +668,25 @@ def plot_individual_reweighing(feature, bins, ranges, df_data_iso, df_data_aiso,
     axs[0, 1].legend(title=f"MC (before reweighting) \n ISO: {h_mc_iso.sum():.1f}, \n AISO: {h_mc_aiso.sum():.1f}", fontsize=30, loc="upper right")
 
     # After reweighting
-    axs[1, 0].hist(bin_edges[:-1], bins=bin_edges, weights=h_data_aiso_rw, histtype="step", label="AISO", color="blue", linewidth=2)
+    axs[1, 0].hist(bin_edges[:-1], bins=bin_edges, weights=h_data_aiso_rw, histtype="step", label="ML AISO", color="blue", linewidth=2)
+    axs[1, 0].hist(bin_edges[:-1], bins=bin_edges, weights=h_data_aiso_classical, histtype="step", label="Classical AISO", color="green", linewidth=2)
     axs[1, 0].scatter(bin_centers, h_data_iso, label="ISO", color="black", marker="o")
     axs[1, 0].set_ylabel("Counts")
-    axs[1, 0].legend(title=f"Data (after ML reweighting) \n ISO: {h_data_iso.sum():.1f}, \n AISO: {h_data_aiso_rw.sum():.1f}", fontsize=30, loc="upper right")
+    axs[1, 0].legend(title=f"""Data (after reweighting)
+                     \n ISO: {h_data_iso.sum():.1f},
+                     \n ML AISO: {h_data_aiso_rw.sum():.1f},
+                     \n Classical AISO: {h_data_aiso_classical.sum():.1f}""",
+                     fontsize=30, loc="upper right")
 
-    axs[1, 1].hist(bin_edges[:-1], bins=bin_edges, weights=h_mc_aiso_rw, histtype="step", label="AISO", color="blue", linewidth=2)
+    axs[1, 1].hist(bin_edges[:-1], bins=bin_edges, weights=h_mc_aiso_rw, histtype="step", label="ML AISO", color="blue", linewidth=2)
+    axs[1, 1].hist(bin_edges[:-1], bins=bin_edges, weights=h_mc_aiso_classical, histtype="step", label="Classical AISO", color="green", linewidth=2)
     axs[1, 1].scatter(bin_centers, h_mc_iso, label="ISO", color="black", marker="o")
     axs[1, 1].set_ylabel("Counts")
-    axs[1, 1].legend(title=f"MC (after ML reweighting) \n ISO: {h_mc_iso.sum():.1f}, \n AISO: {h_mc_aiso_rw.sum():.1f}", fontsize=30, loc="upper right")
-
+    axs[1, 1].legend(title=f"""MC (after reweighting)
+                     \n ISO: {h_mc_iso.sum():.1f},
+                     \n ML AISO: {h_mc_aiso_rw.sum():.1f},
+                     \n Classical AISO: {h_mc_aiso_classical.sum():.1f}""",
+                     fontsize=30, loc="upper right")
     # Ratios
     axs[2, 0].errorbar(bin_centers, ratio_data, yerr=np.abs(err_ratio_data), fmt="o", color="gray")  # TODO: Fix definitions so not go negative
     axs[2, 0].errorbar(bin_centers, ratio_data_rw, yerr=np.abs(err_ratio_data_rw), fmt="o", color="blue")
@@ -646,7 +708,7 @@ def plot_individual_reweighing(feature, bins, ranges, df_data_iso, df_data_aiso,
     plt.close()
 
 
-def plot_subtraction_reweighting(feature, bins, ranges, df_data_iso, df_data_aiso, df_mc_iso, df_mc_aiso, era_id, tau_suffix, region, validation_indices=None):
+def plot_subtraction_reweighting(feature, bins, ranges, df_data_iso, df_data_aiso, df_mc_iso, df_mc_aiso, era_id, tau_suffix, region, binary=None, validation_indices=None):
     """Plot comparison of data-MC distributions for a given feature before and after ML reweighting."""
     output_dir = plotting_config["output_dir"].format(global_str="Global" if global_setting else "noGlobal", channel=channel, ff_process=process)
     os.makedirs(output_dir, exist_ok=True)
@@ -658,20 +720,21 @@ def plot_subtraction_reweighting(feature, bins, ranges, df_data_iso, df_data_ais
     output_path = os.path.join(region_dir, f"{feature}_subtraction_reweighting_{tau_suffix}.pdf")
 
     # Determine bin edges
-    bin_edges = make_bin_edges(feature, bins, ranges, df_data_aiso, plotting_config)
+    ref_df = df_data_aiso if not binary else df_mc_aiso
+    bin_edges = make_bin_edges(feature, bins, ranges, ref_df, plotting_config)
 
     # Histograms before reweighting
-    h_data_iso, err_data_iso = hist_and_err(df_data_iso[feature], df_data_iso["wt_sf"], bin_edges)
-    h_data_aiso, err_data_aiso = hist_and_err(df_data_aiso[feature], df_data_aiso["wt_sf"], bin_edges)
+    h_data_iso, err_data_iso = hist_and_err(df_data_iso[feature], df_data_iso["wt_sf"], bin_edges) if not binary else (np.zeros(len(bin_edges)-1), np.zeros(len(bin_edges)-1))
+    h_data_aiso, err_data_aiso = hist_and_err(df_data_aiso[feature], df_data_aiso["wt_sf"], bin_edges) if not binary else (np.zeros(len(bin_edges)-1), np.zeros(len(bin_edges)-1))
     h_mc_iso, err_mc_iso = hist_and_err(df_mc_iso[feature], df_mc_iso["wt_sf"], bin_edges)
     h_mc_aiso, err_mc_aiso = hist_and_err(df_mc_aiso[feature], df_mc_aiso["wt_sf"], bin_edges)
 
     # Histograms after ML reweighting
-    h_data_aiso_rw, err_data_aiso_rw = hist_and_err(df_data_aiso[feature], df_data_aiso["wt_sf"] * df_data_aiso["weight_BDT_ff"], bin_edges)
+    h_data_aiso_rw, err_data_aiso_rw = hist_and_err(df_data_aiso[feature], df_data_aiso["wt_sf"] * df_data_aiso["weight_BDT_ff"], bin_edges) if not binary else (np.zeros(len(bin_edges)-1), np.zeros(len(bin_edges)-1))
     h_mc_aiso_rw, err_mc_aiso_rw = hist_and_err(df_mc_aiso[feature], df_mc_aiso["wt_sf"] * df_mc_aiso["weight_BDT_ff"], bin_edges)
 
     # Histograms after classical reweighting
-    h_data_aiso_classical, err_data_aiso_classical = hist_and_err(df_data_aiso[feature], df_data_aiso["wt_sf"] * df_data_aiso["ff_classical"], bin_edges)
+    h_data_aiso_classical, err_data_aiso_classical = hist_and_err(df_data_aiso[feature], df_data_aiso["wt_sf"] * df_data_aiso["ff_classical"], bin_edges) if not binary else (np.zeros(len(bin_edges)-1), np.zeros(len(bin_edges)-1))
     h_mc_aiso_classical, err_mc_aiso_classical = hist_and_err(df_mc_aiso[feature], df_mc_aiso["wt_sf"] * df_mc_aiso["ff_classical"], bin_edges)
 
     # Masking for safe divisions
@@ -684,24 +747,40 @@ def plot_subtraction_reweighting(feature, bins, ranges, df_data_iso, df_data_ais
     h_data_aiso_classical = np.ma.masked_where(h_data_aiso_classical == 0, h_data_aiso_classical)
     h_mc_aiso_classical = np.ma.masked_where(h_mc_aiso_classical == 0, h_mc_aiso_classical)
 
-    # Ratios after ML reweighting
-    ratio_rw, err_ratio_rw = ratio_and_err(h_data_iso - h_mc_iso, h_data_aiso_rw - h_mc_aiso_rw, np.sqrt(err_data_iso**2 + err_mc_iso**2), np.sqrt(err_data_aiso_rw**2 + err_mc_aiso_rw**2))
+    # Ratios
+    if binary:
+        ratio_rw, err_ratio_rw = ratio_and_err(h_mc_iso, h_mc_aiso_rw, err_mc_iso, err_mc_aiso_rw)
+        ratio_classical, err_ratio_classical = ratio_and_err(h_mc_iso, h_mc_aiso_classical, err_mc_iso, err_mc_aiso_classical)
 
-    # Ratios after classical reweighting
-    ratio_classical, err_ratio_classical = ratio_and_err(h_data_iso - h_mc_iso, h_data_aiso_classical - h_mc_aiso_classical, np.sqrt(err_data_iso**2 + err_mc_iso**2), np.sqrt(err_data_aiso_classical**2 + err_mc_aiso_classical**2))
+    else:
+        ratio_rw, err_ratio_rw = ratio_and_err(h_data_iso - h_mc_iso, h_data_aiso_rw - h_mc_aiso_rw, np.sqrt(err_data_iso**2 + err_mc_iso**2), np.sqrt(err_data_aiso_rw**2 + err_mc_aiso_rw**2))
+        ratio_classical, err_ratio_classical = ratio_and_err(h_data_iso - h_mc_iso, h_data_aiso_classical - h_mc_aiso_classical, np.sqrt(err_data_iso**2 + err_mc_iso**2), np.sqrt(err_data_aiso_classical**2 + err_mc_aiso_classical**2))
 
     # KS statistics
-    ks_rw = ks_hist(h_data_iso - h_mc_iso, h_data_aiso_rw - h_mc_aiso_rw)
-    ks_classical = ks_hist(h_data_iso - h_mc_iso, h_data_aiso_classical - h_mc_aiso_classical)
+    if binary:
+        ks_rw = ks_hist(h_mc_iso, h_mc_aiso_rw)
+        ks_classical = ks_hist(h_mc_iso, h_mc_aiso_classical)
+    else:
+        ks_rw = ks_hist(h_data_iso - h_mc_iso, h_data_aiso_rw - h_mc_aiso_rw)
+        ks_classical = ks_hist(h_data_iso - h_mc_iso, h_data_aiso_classical - h_mc_aiso_classical)
 
     # Plotting
     bin_centers = (bin_edges[:-1] + bin_edges[1:]) / 2.0
 
     fig, axs = plt.subplots(2, 1, figsize=(15, 10), gridspec_kw={"height_ratios": [3, 1]}, sharex="col")
 
-    axs[0].hist(bin_edges[:-1], bins=bin_edges, weights=h_data_aiso_rw - h_mc_aiso_rw, histtype="step", label="ML Reweighting", color="blue", linewidth=2)
-    axs[0].hist(bin_edges[:-1], bins=bin_edges, weights=h_data_aiso_classical - h_mc_aiso_classical, histtype="step", label="Classical Reweighting", color="green", linewidth=2)
-    axs[0].scatter(bin_centers, h_data_iso - h_mc_iso, label="ISO", color="black", marker="o")
+    if binary:
+        h_aiso_rw = h_mc_aiso_rw
+        h_aiso_classical = h_mc_aiso_classical
+        h_iso = h_mc_iso
+    else:
+        h_aiso_rw = h_data_aiso_rw - h_mc_aiso_rw
+        h_aiso_classical = h_data_aiso_classical - h_mc_aiso_classical
+        h_iso = h_data_iso - h_mc_iso
+
+    axs[0].hist(bin_edges[:-1], bins=bin_edges, weights=h_aiso_rw, histtype="step", label="ML Reweighting", color="blue", linewidth=2)
+    axs[0].hist(bin_edges[:-1], bins=bin_edges, weights=h_aiso_classical, histtype="step", label="Classical Reweighting", color="green", linewidth=2)
+    axs[0].scatter(bin_centers, h_iso, label="ISO", color="black", marker="o")
     axs[0].set_ylabel("Counts")
     # Use scientific notation for y-axis (e.g. 1eN / 10^N)
     fmt = ScalarFormatter(useMathText=True)
@@ -715,21 +794,30 @@ def plot_subtraction_reweighting(feature, bins, ranges, df_data_iso, df_data_ais
     axs[0].set_xlim(ranges[0], ranges[-1]*2)
 
     if validation_indices is not None:
-        data_iso_val = df_data_iso[df_data_iso.index.isin(validation_indices)]
-        data_aiso_val = df_data_aiso[df_data_aiso.index.isin(validation_indices)]
-        mc_iso_val = df_mc_iso[df_mc_iso.index.isin(validation_indices)]
-        mc_aiso_val = df_mc_aiso[df_mc_aiso.index.isin(validation_indices)]
+        if not binary:
+            data_iso_val = df_data_iso[df_data_iso.index.isin(validation_indices)]
+            data_aiso_val = df_data_aiso[df_data_aiso.index.isin(validation_indices)]
+            mc_iso_val = df_mc_iso[df_mc_iso.index.isin(validation_indices)]
+            mc_aiso_val = df_mc_aiso[df_mc_aiso.index.isin(validation_indices)]
+        else:
+            mc_iso_val = df_mc_iso[df_mc_iso.index.isin(validation_indices)]
+            mc_aiso_val = df_mc_aiso[df_mc_aiso.index.isin(validation_indices)]
+
 
         # Histograms for validation subset, including ML / classical weights already attached
-        h_data_iso_val, _ = hist_and_err(data_iso_val[feature], data_iso_val["wt_sf"], bin_edges)
+        h_data_iso_val, _ = hist_and_err(data_iso_val[feature], data_iso_val["wt_sf"], bin_edges) if not binary else (np.zeros(len(bin_edges)-1), np.zeros(len(bin_edges)-1))
         h_mc_iso_val, _ = hist_and_err(mc_iso_val[feature], mc_iso_val["wt_sf"], bin_edges)
 
-        h_data_aiso_val_rw, _ = hist_and_err(data_aiso_val[feature], data_aiso_val["wt_sf"] * data_aiso_val["weight_BDT_ff"], bin_edges)
+        h_data_aiso_val_rw, _ = hist_and_err(data_aiso_val[feature], data_aiso_val["wt_sf"] * data_aiso_val["weight_BDT_ff"], bin_edges) if not binary else (np.zeros(len(bin_edges)-1), np.zeros(len(bin_edges)-1))
         h_mc_aiso_val_rw, _ = hist_and_err(mc_aiso_val[feature], mc_aiso_val["wt_sf"] * mc_aiso_val["weight_BDT_ff"], bin_edges)
 
         # Data - MC for validation (same logic as main, but smaller stats)
-        h_val_iso_sub = h_data_iso_val - h_mc_iso_val
-        h_val_aiso_sub = h_data_aiso_val_rw - h_mc_aiso_val_rw
+        if not binary:
+            h_val_iso_sub = h_data_iso_val - h_mc_iso_val
+            h_val_aiso_sub = h_data_aiso_val_rw - h_mc_aiso_val_rw
+        else:
+            h_val_iso_sub = h_mc_iso_val
+            h_val_aiso_sub = h_mc_aiso_val_rw
 
         # Create inset axes inside the top panel
         ax_inset = inset_axes(axs[0], width="30%", height="45%", loc="lower right", borderpad=1.2)
@@ -797,9 +885,8 @@ for channel in channels:
 
         # Load train/test split
         split_path = plotting_config.get("train_test_split_path").format(channel=channel, ff_process=process, global_str=global_str)
-        with open(split_path, "r") as f_split:
-            with open(split_path, "rb") as f_split:
-                split_info = pickle.load(f_split)
+        with open(split_path, "rb") as f_split:
+            split_info = pickle.load(f_split)
         X_test = split_info["X_test"]
         test_indices = X_test.index.tolist()
 
@@ -831,11 +918,7 @@ for channel in channels:
                 # Add features for plotting
                 for feat in ["dR", "n_jets", "n_bjets", "n_prebjets", "pt_tt", "m_vis", "mt_tot", "met_pt", "met_phi", "met_dphi_1", "met_dphi_2"]:
                     if feat not in features_cfg:
-                        features_cfg.append(feat)
-                    if channel in ["et", "mt"]:
-                        for lep_feat in ["iso_1", "pt_1", "eta_1", "phi_1"]:
-                            if lep_feat not in features_cfg:
-                                features_cfg.append(lep_feat)
+                        features_cfg.append(feat)  # TODO: fix this for semi-leptonic channels
 
                 # Raw tau-indexed branch names to load from file
                 if tau_suffix == "lead":
@@ -858,8 +941,8 @@ for channel in channels:
 
                 data_iso['label'] = 0
                 data_aiso['label'] = 1
-                mc_iso['label'] = 2
-                mc_aiso['label'] = 3
+                mc_iso['label'] = 2 if not args.binary else 0
+                mc_aiso['label'] = 3 if not args.binary else 1
 
                 is_lead_flag = 1 if tau_suffix == "lead" else 0
                 for df in [data_iso, data_aiso, mc_iso, mc_aiso]:
@@ -875,36 +958,36 @@ for channel in channels:
                 mc_aiso["weight_BDT_ff_mc"] = 1.0
 
                 # Attach classical FF category
-                data_aiso = assign_ff_category(data_aiso, semi_leptonic=semi_leptonic)
+                data_aiso = assign_ff_category(data_aiso, semi_leptonic=semi_leptonic) if not data_aiso.empty else data_aiso
                 mc_aiso = assign_ff_category(mc_aiso, semi_leptonic=semi_leptonic)
 
-                for era_id in sorted(data_aiso["era_label"].dropna().unique()):
+                for era_id in sorted(mc_aiso["era_label"].dropna().unique()):
                     # Load classical FF file once
                     era_map = {0: "Run3_2022", 1: "Run3_2022EE", 2: "Run3_2023", 3: "Run3_2023BPix", -1: "Run3_Combined"}
                     classical_path = plotting_config["classical_ff_path"].format(channel=channel, year=era_map[era_id], ff_process=process)
                     logger.info(f"Loading classical fake-factor data from '{classical_path}'")
-                    classical_data = load_classical_ff(classical_path, use_fit_values=True)
-                    data_iso_era = data_iso[data_iso["era_label"] == era_id].copy()
+                    classical_data = load_classical_ff(classical_path, channel=channel, use_fit_values=True)
+                    data_iso_era = data_iso[data_iso["era_label"] == era_id].copy() if not data_iso.empty else data_iso
                     mc_iso_era = mc_iso[mc_iso["era_label"] == era_id].copy()
-                    data_aiso_era = data_aiso[data_aiso["era_label"] == era_id].copy()
+                    data_aiso_era = data_aiso[data_aiso["era_label"] == era_id].copy() if not data_aiso.empty else data_aiso
                     mc_aiso_era = mc_aiso[mc_aiso["era_label"] == era_id].copy()
 
-                    data_reweighting = process_reweighting(df=data_aiso_era, model=model, feature_cols=feature_cols, pt_col=pt_col, dm_col=dm_col, temperature=optimal_temperature, data_iso_idx=0, data_aiso_idx=1, mc_iso_idx=2, mc_aiso_idx=3)
-                    data_aiso_era["weight_BDT_ff"] = data_reweighting["weights_ml"]
-                    data_aiso_era["weight_BDT_ff_data"] = data_reweighting["weights_data_ml"]
+                    if not args.binary:
+                        data_reweighting = process_reweighting(df=data_aiso_era, model=model, feature_cols=feature_cols, pt_col=pt_col, dm_col=dm_col, temperature=optimal_temperature, data_iso_idx=0, data_aiso_idx=1, mc_iso_idx=2, mc_aiso_idx=3, binary=args.binary)
+                        data_aiso_era["weight_BDT_ff"] = data_reweighting["weights_ml"]
+                        data_aiso_era["weight_BDT_ff_data"] = data_reweighting["weights_data_ml"]
 
-                    mc_reweighting = process_reweighting(df=mc_aiso_era, model=model, feature_cols=feature_cols, pt_col=pt_col, dm_col=dm_col, temperature=optimal_temperature, data_iso_idx=0, data_aiso_idx=1, mc_iso_idx=2, mc_aiso_idx=3)
+                    mc_reweighting = process_reweighting(df=mc_aiso_era, model=model, feature_cols=feature_cols, pt_col=pt_col, dm_col=dm_col, temperature=optimal_temperature, data_iso_idx=0, data_aiso_idx=1, mc_iso_idx=2, mc_aiso_idx=3, binary=args.binary)
                     mc_aiso_era["weight_BDT_ff"] = mc_reweighting["weights_ml"]
                     mc_aiso_era["weight_BDT_ff_mc"] = mc_reweighting["weights_mc_ml"]
 
                     # Attach classical FF value
-                    # if era_id == 0:
-                    data_aiso_era = assign_ff_value(data_aiso_era, classical_data=classical_data, semi_leptonic=semi_leptonic, tag="aiso")
-                    mc_aiso_era = assign_ff_value(mc_aiso_era, classical_data=classical_data, semi_leptonic=semi_leptonic, tag="aiso")
-
-                    # else:  # no classical FFs for the rest of the eras now -- set to None for now TODO: fix this when you have the fits for all eras
-                    #     data_aiso_era["ff_classical"] = np.nan
-                    #     mc_aiso_era["ff_classical"] = np.nan
+                    if channel in ["et", "mt"]:
+                        data_aiso_era = assign_ff_value(data_aiso_era, classical_data=classical_data, semi_leptonic=semi_leptonic, tag="nominal") if not data_aiso_era.empty else data_aiso_era
+                        mc_aiso_era = assign_ff_value(mc_aiso_era, classical_data=classical_data, semi_leptonic=semi_leptonic, tag="nominal")
+                    elif channel == "tt":
+                        data_aiso_era = assign_ff_value(data_aiso_era, classical_data=classical_data, semi_leptonic=False, tag="aiso")
+                        mc_aiso_era = assign_ff_value(mc_aiso_era, classical_data=classical_data, semi_leptonic=False, tag="aiso")
 
                     # Attach values to combined DataFrames as well
                     data_aiso.loc[data_aiso_era.index, ["weight_BDT_ff",
@@ -912,7 +995,7 @@ for channel in channels:
                                                         "ff_classical"]] = \
                         data_aiso_era[["weight_BDT_ff",
                                        "weight_BDT_ff_data",
-                                       "ff_classical"]].values
+                                       "ff_classical"]].values if not data_aiso_era.empty else data_aiso_era
 
                     mc_aiso.loc[mc_aiso_era.index, ["weight_BDT_ff",
                                                     "weight_BDT_ff_mc",
@@ -923,6 +1006,9 @@ for channel in channels:
 
                     # Plotting
                     for feature in plotting_config["features_to_plot"]:
+                        if channel in ["et", "mt"] and "_other" in feature:  # TODO: need to fix the config
+                            # Skip _other features for et/mt channels
+                            continue
                         plot_individual_reweighing(
                             feature=feature,
                             bins=plotting_config["plot_params"]["bins"][feature],
@@ -936,7 +1022,7 @@ for channel in channels:
                             era_id=era_id,
                             tau_suffix=tau_suffix,
                             region=region
-                        )
+                        ) if not args.binary else None
 
                         plot_subtraction_reweighting(
                             feature=feature,
@@ -949,11 +1035,16 @@ for channel in channels:
                             era_id=era_id,
                             tau_suffix=tau_suffix,
                             region=region,
+                            binary=args.binary,
                             validation_indices=test_indices
                         )
                 # Plot combined eras
                 logging.info(f"Plotting combined eras for tau:{tau_suffix}")
                 for feature in plotting_config["features_to_plot"]:
+                    if channel in ["et", "mt"] and "_other" in feature:
+                        # Skip _other features for et/mt channels
+                        continue
+                    print()
                     plot_individual_reweighing(
                         feature=feature,
                         bins=plotting_config["plot_params"]["bins"][feature],
@@ -967,7 +1058,7 @@ for channel in channels:
                         era_id=-1,
                         tau_suffix=tau_suffix,
                         region=region
-                    )
+                    ) if not args.binary else None
 
                     plot_subtraction_reweighting(
                         feature=feature,
@@ -980,5 +1071,6 @@ for channel in channels:
                         era_id=-1,
                         tau_suffix=tau_suffix,
                         region=region,
+                        binary=args.binary,
                         validation_indices=test_indices
                     )
