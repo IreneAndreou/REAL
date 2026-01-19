@@ -130,7 +130,7 @@ def select(df, condition, format_dict):
     return df.query(formatted_condition).copy()
 
 
-def feature_engineering(df, process, channel, tau_index):
+def feature_engineering(df, process, channel, tau_index, name):
     """Add derived columns to the DataFrame based on existing columns and remove negative values."""
     if {"seeding_jpt_1", "pt_1"}.issubset(df.columns):
         df.loc[:, "jpt_pt_1"] = df["seeding_jpt_1"] / df["pt_1"]
@@ -159,7 +159,7 @@ def feature_engineering(df, process, channel, tau_index):
             # Calculate the W+jets-style MET variable
             df.loc[:, "met_var_w"] = (met_plus_lep_pt / df["pt_2"]) * np.cos(dphi_met_lep_tau)
 
-    # Set events with negative values in jpt/pt ratios to a tiny value (0.001) and log their fraction
+    # Set events with negative values in jpt/pt ratios to a zero and log their fraction
     if channel in {"et", "mt"}:
         cols_to_check = ["jpt_pt_2"]
     elif channel == "tt" and tau_index == "1":
@@ -237,13 +237,13 @@ def process_selection(data_path, mc_path, tau_index, file_suffix, output_dir, ba
 
     # Add derived features
     if not iso_data_df.empty:
-        iso_data_df = feature_engineering(iso_data_df, ff_process, channel, tau_index)
+        iso_data_df = feature_engineering(iso_data_df, ff_process, channel, tau_index, "data_iso")
     if not aiso_data_df.empty:
-        aiso_data_df = feature_engineering(aiso_data_df, ff_process, channel, tau_index)
+        aiso_data_df = feature_engineering(aiso_data_df, ff_process, channel, tau_index, "data_aiso")
     if not iso_mc_df.empty:
-        iso_mc_df = feature_engineering(iso_mc_df, ff_process, channel, tau_index)
+        iso_mc_df = feature_engineering(iso_mc_df, ff_process, channel, tau_index, "mc_iso")
     if not aiso_mc_df.empty:
-        aiso_mc_df = feature_engineering(aiso_mc_df, ff_process, channel, tau_index)
+        aiso_mc_df = feature_engineering(aiso_mc_df, ff_process, channel, tau_index, "mc_aiso")
 
     # Write output files
     if not iso_data_df.empty:
