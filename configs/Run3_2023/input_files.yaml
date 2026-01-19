@@ -1,6 +1,6 @@
-source_dir: "/vols/cms/ia2318/HiggsDNA-powheg/output/NovemberProduction/Run3_2023/{channel}"
+source_dir: "/vols/cms/ia2318/HiggsDNA-powheg/output/BTaggingEfficiencies/Run3_2023/{channel}"
 
-destination_dir: "/vols/cms/ia2318/REAL/data_November25/Run3_2023/{channel}_{ff_process}"
+destination_dir: "/vols/cms/ia2318/REAL/data_January26/Run3_2023/{channel}_{ff_process}"
 
 source_files:
   tt_data:
