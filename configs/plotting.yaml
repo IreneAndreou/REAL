@@ -1,31 +1,30 @@
 era:
   Run3_2022:
-    data_iso_file: "/vols/cms/ia2318/REAL/data_November25/Run3_2022/{region}_region/{ff_process}/data_iso_{channel}_{tau_suffix}.parquet"
-    data_aiso_file: "/vols/cms/ia2318/REAL/data_November25/Run3_2022/{region}_region/{ff_process}/data_aiso_{channel}_{tau_suffix}.parquet"
-    mc_iso_file: "/vols/cms/ia2318/REAL/data_November25/Run3_2022/{region}_region/{ff_process}/mc_iso_{channel}_{tau_suffix}.parquet"
-    mc_aiso_file: "/vols/cms/ia2318/REAL/data_November25/Run3_2022/{region}_region/{ff_process}/mc_aiso_{channel}_{tau_suffix}.parquet"
+    data_iso_file: "/vols/cms/ia2318/REAL/data_January26/Run3_2022/{region}_region/{ff_process}/data_iso_{channel}_{tau_suffix}.parquet"
+    data_aiso_file: "/vols/cms/ia2318/REAL/data_January26/Run3_2022/{region}_region/{ff_process}/data_aiso_{channel}_{tau_suffix}.parquet"
+    mc_iso_file: "/vols/cms/ia2318/REAL/data_January26/Run3_2022/{region}_region/{ff_process}/mc_iso_{channel}_{tau_suffix}.parquet"
+    mc_aiso_file: "/vols/cms/ia2318/REAL/data_January26/Run3_2022/{region}_region/{ff_process}/mc_aiso_{channel}_{tau_suffix}.parquet"
   Run3_2022EE:
-    data_iso_file: "/vols/cms/ia2318/REAL/data_November25/Run3_2022EE/{region}_region/{ff_process}/data_iso_{channel}_{tau_suffix}.parquet"
-    data_aiso_file: "/vols/cms/ia2318/REAL/data_November25/Run3_2022EE/{region}_region/{ff_process}/data_aiso_{channel}_{tau_suffix}.parquet"
-    mc_iso_file: "/vols/cms/ia2318/REAL/data_November25/Run3_2022EE/{region}_region/{ff_process}/mc_iso_{channel}_{tau_suffix}.parquet"
-    mc_aiso_file: "/vols/cms/ia2318/REAL/data_November25/Run3_2022EE/{region}_region/{ff_process}/mc_aiso_{channel}_{tau_suffix}.parquet"
+    data_iso_file: "/vols/cms/ia2318/REAL/data_January26/Run3_2022EE/{region}_region/{ff_process}/data_iso_{channel}_{tau_suffix}.parquet"
+    data_aiso_file: "/vols/cms/ia2318/REAL/data_January26/Run3_2022EE/{region}_region/{ff_process}/data_aiso_{channel}_{tau_suffix}.parquet"
+    mc_iso_file: "/vols/cms/ia2318/REAL/data_January26/Run3_2022EE/{region}_region/{ff_process}/mc_iso_{channel}_{tau_suffix}.parquet"
+    mc_aiso_file: "/vols/cms/ia2318/REAL/data_January26/Run3_2022EE/{region}_region/{ff_process}/mc_aiso_{channel}_{tau_suffix}.parquet"
   Run3_2023:
-    data_iso_file: "/vols/cms/ia2318/REAL/data_November25/Run3_2023/{region}_region/{ff_process}/data_iso_{channel}_{tau_suffix}.parquet"
-    data_aiso_file: "/vols/cms/ia2318/REAL/data_November25/Run3_2023/{region}_region/{ff_process}/data_aiso_{channel}_{tau_suffix}.parquet"
-    mc_iso_file: "/vols/cms/ia2318/REAL/data_November25/Run3_2023/{region}_region/{ff_process}/mc_iso_{channel}_{tau_suffix}.parquet"
-    mc_aiso_file: "/vols/cms/ia2318/REAL/data_November25/Run3_2023/{region}_region/{ff_process}/mc_aiso_{channel}_{tau_suffix}.parquet"
+    data_iso_file: "/vols/cms/ia2318/REAL/data_January26/Run3_2023/{region}_region/{ff_process}/data_iso_{channel}_{tau_suffix}.parquet"
+    data_aiso_file: "/vols/cms/ia2318/REAL/data_January26/Run3_2023/{region}_region/{ff_process}/data_aiso_{channel}_{tau_suffix}.parquet"
+    mc_iso_file: "/vols/cms/ia2318/REAL/data_January26/Run3_2023/{region}_region/{ff_process}/mc_iso_{channel}_{tau_suffix}.parquet"
+    mc_aiso_file: "/vols/cms/ia2318/REAL/data_January26/Run3_2023/{region}_region/{ff_process}/mc_aiso_{channel}_{tau_suffix}.parquet"
   Run3_2023BPix:
-    data_iso_file: "/vols/cms/ia2318/REAL/data_November25/Run3_2023BPix/{region}_region/{ff_process}/data_iso_{channel}_{tau_suffix}.parquet"
-    data_aiso_file: "/vols/cms/ia2318/REAL/data_November25/Run3_2023BPix/{region}_region/{ff_process}/data_aiso_{channel}_{tau_suffix}.parquet"
-    mc_iso_file: "/vols/cms/ia2318/REAL/data_November25/Run3_2023BPix/{region}_region/{ff_process}/mc_iso_{channel}_{tau_suffix}.parquet"
-    mc_aiso_file: "/vols/cms/ia2318/REAL/data_November25/Run3_2023BPix/{region}_region/{ff_process}/mc_aiso_{channel}_{tau_suffix}.parquet"
+    data_iso_file: "/vols/cms/ia2318/REAL/data_January26/Run3_2023BPix/{region}_region/{ff_process}/data_iso_{channel}_{tau_suffix}.parquet"
+    data_aiso_file: "/vols/cms/ia2318/REAL/data_January26/Run3_2023BPix/{region}_region/{ff_process}/data_aiso_{channel}_{tau_suffix}.parquet"
+    mc_iso_file: "/vols/cms/ia2318/REAL/data_January26/Run3_2023BPix/{region}_region/{ff_process}/mc_iso_{channel}_{tau_suffix}.parquet"
+    mc_aiso_file: "/vols/cms/ia2318/REAL/data_January26/Run3_2023BPix/{region}_region/{ff_process}/mc_aiso_{channel}_{tau_suffix}.parquet"
 
-model_path: "/vols/cms/ia2318/REAL/outputs/best_models/November25_v3_{global_str}/{channel}_{ff_process}/best_model.pkl"
-train_test_split_path: "/vols/cms/ia2318/REAL/outputs/best_models/November25_v3_{global_str}/{channel}_{ff_process}/train_test_split.pkl"
+model_path: "/vols/cms/ia2318/REAL/outputs/best_models/January26__{global_str}/{channel}_{ff_process}/best_model.pkl"
+train_test_split_path: "/vols/cms/ia2318/REAL/outputs/best_models/January26__{global_str}/{channel}_{ff_process}/train_test_split.pkl"
 classical_ff_path: "/vols/cms/ia2318/HiggsDNA/Run3FakeFactors/{channel}/{year}_fake_factors_{ff_process}.json"
-optimal_temperature_path: "/vols/cms/ia2318/REAL/outputs/best_models/November25_{global_str}/{channel}_{ff_process}/temperature_scaling_results.json"
-output_dir: "/vols/cms/ia2318/REAL/outputs/plots/November25_{global_str}/{channel}_{ff_process}/"
-
+optimal_temperature_path: "/vols/cms/ia2318/REAL/outputs/best_models/January26__{global_str}/{channel}_{ff_process}/temperature_scaling_results.json"
+output_dir: "/vols/cms/ia2318/REAL/outputs/plots/January26__{global_str}/ARC_MEETING/{channel}_{ff_process}/"
 lead_tau: 
   - "decayMode_1"
   - "jpt_pt_1"
@@ -45,64 +44,71 @@ sublead_tau:
 global_variables:
   - "n_jets"
   - "n_bjets"
-  - "met_var_qcd_{tau_suffix}"
-  - "met_var_w_{tau_suffix}"
-  - "met_var_w"
+  # - "met_var_qcd_{tau_suffix}"
+  # - "met_var_w_{tau_suffix}"
+  # - "met_var_w"
   # - "pt_other" ## only for tt channel
 
 features_to_plot:
-    - 'decayMode'
-    - 'decayMode_other'
-    - 'jpt_pt'
-    - 'jpt_pt_other'
+    # - 'decayMode'
+    # - 'decayMode_other'
+    # - 'jpt_pt'
+    # - 'jpt_pt_other'
     - 'pt'
-    - 'pt_other'
-    - 'eta'
-    - 'eta_other'
-    - 'charge'
-    - 'charge_other'
-    - 'phi'
-    - 'phi_other'
-    - 'pt_tt'
-    - 'dR'
-    - 'n_jets'
-    - 'n_bjets'
-    - 'n_prebjets'
+    # - 'pt_other'
+    # - 'eta'
+    # - 'eta_other'
+    # - 'charge'
+    # - 'charge_other'
+    # - 'phi'
+    # - 'phi_other'
+    # - 'pt_tt'
+    # - 'dR'
+    # - 'n_jets'
+    # - 'n_bjets'
+    # - 'n_prebjets'
     - 'm_vis'
     - 'mt_tot'
+    - 'FastMTT_mass'
     - 'met_pt'
-    - 'met_phi'
-    - 'met_dphi'
-    - 'met_dphi_other'
+    # - 'BDT_pred_score'
+    # - 'BDT_pred_class'
+    - 'BDT_raw_score_tau'
+    - 'BDT_raw_score_higgs'
+    - 'BDT_raw_score_fake'
+    # - 'met_phi'
+    # - 'met_dphi'
+    # - 'met_dphi_other'
 
 latex_names_lead:
     'decayMode': '$\tau_h^{lead}$ decay mode'
     'decayMode_other': '$\tau_h^{other}$ decay mode'
     'jpt_pt': 'Ratio of $p_{T}^{jet}$ to $p_{T}^{\tau_h^{lead}}$'
-    'jpt_pt_other': 'Ratio of $p_{T}^{jet}$ to $p_{T}^{\tau_h^{other}}$'
+    'jpt_pt_other': 'Ratio of $p_{T}^{jet}$ to $p_{T}^{\tau_h^{lead}}$'
     'pt': '$p_{T}^{\tau_h^{lead}}$ (GeV)'
-    'pt_other': '$p_{T}^{\tau_h^{other}}$ (GeV)'
+    'pt_other': '$p_{T}^{\tau_h^{sublead}}$ (GeV)'
     'pt_tt': '$p_{T}^{\tau_h\tau_h}$ (GeV)'
     'eta': '$\eta^{\tau_h^{lead}}$'
-    'eta_other': '$\eta^{\tau_h^{other}}$'
+    'eta_other': '$\eta^{\tau_h^{sublead}}$'
     'charge': '$\tau_h^{lead}$ charge'
-    'charge_other': '$\tau_h^{other}$ charge'
+    'charge_other': '$\tau_h^{sublead}$ charge'
     'phi': '$\tau_h^{lead} \phi$'
-    'phi_other': '$\tau_h^{other} \phi$'
-    'dR': '$\Delta R(\tau_h^{lead}, \tau_h^{other})$'
+    'phi_other': '$\tau_h^{sublead} \phi$'
+    'dR': '$\Delta R(\tau_h^{lead}, \tau_h^{sublead})$'
     'n_jets': 'Number of jets'
     'n_bjets': 'Number of b-jets'
     'n_prebjets': 'Number of pre-b-jets'
     'm_vis': '$m_{vis}$ (GeV)'
     'mt_tot': '$m^{total}_T$ (GeV)'
+    'FastMTT_mass': 'FastMTT mass (GeV)'
     'met_pt': 'MET $p_T$ (GeV)'
     'met_phi': 'MET $\phi$'
     'met_dphi': 'MET $\Delta \phi$ with $\tau_h^{lead}$'
-    'met_dphi_other': 'MET $\Delta \phi$ with $\tau_h^{other}$'
+    'met_dphi_other': 'MET $\Delta \phi$ with $\tau_h^{sublead}$'
     'met_var_qcd_1': '$C_{\\text{QCD}} = \\frac{\\MET}{p_{T}^{\\tau_h^{lead}}}\\cos\\Delta\\phi(\\vec{\\MET},\\vec{p}_{T}^{\\tau_h^{lead}})$'
-    'met_var_qcd_2': '$C_{\\text{QCD}} = \\frac{\\MET}{p_{T}^{\\tau_h^{other}}}\\cos\\Delta\\phi(\\vec{\\MET},\\vec{p}_{T}^{\\tau_h^{other}})$'
+    'met_var_qcd_2': '$C_{\\text{QCD}} = \\frac{\\MET}{p_{T}^{\\tau_h^{sublead}}}\\cos\\Delta\\phi(\\vec{\\MET},\\vec{p}_{T}^{\\tau_h^{sublead}})$'
     'met_var_w_1': '$C_{\\text{W}} = \\frac{\\left\\lvert\\vec{\\MET}+\\vec{p}_T^{\\ell}\\right\\rvert}{p_{T}^{\\tau_h^{lead}}}\\cos\\Delta\\phi(\\vec{\\MET}+\\vec{p}_T^{\\ell},\\vec{p}_{T}^{\\tau_h^{lead}})$'
-    'met_var_w_2': '$C_{\\text{W}} = \\frac{\\left\\lvert\\vec{\\MET}+\\vec{p}_T^{\\ell}\\right\\rvert}{p_{T}^{\\tau_h^{other}}}\\cos\\Delta\\phi(\\vec{\\MET}+\\vec{p}_T^{\\ell},\\vec{p}_{T}^{\\tau_h^{other}})$'
+    'met_var_w_2': '$C_{\\text{W}} = \\frac{\\left\\lvert\\vec{\\MET}+\\vec{p}_T^{\\ell}\\right\\rvert}{p_{T}^{\\tau_h^{sublead}}}\\cos\\Delta\\phi(\\vec{\\MET}+\\vec{p}_T^{\\ell},\\vec{p}_{T}^{\\tau_h^{sublead}})$'
     'decayModePNet_1': '$\tau_h^{lead}$ PNet decay mode'
     'decayModePNet_2': '$\tau_h^{other}$ PNet decay mode'
 
@@ -126,6 +132,7 @@ latex_names_sublead:
     'n_prebjets': 'Number of pre-b-jets'
     'm_vis': '$m_{vis}$ (GeV)'
     'mt_tot': '$m^{total}_T$ (GeV)'
+    'FastMTT_mass': 'FastMTT mass (GeV)'
     'met_pt': 'MET $p_T$ (GeV)'
     'met_phi': 'MET $\phi$'
     'met_dphi': 'MET $\Delta \phi$ with $\tau_h^{sublead}$'
@@ -134,6 +141,38 @@ latex_names_sublead:
     'met_var_qcd_2': '$C_{\\text{QCD}} = \\frac{\\MET}{p_{T}^{\\tau_h^{other}}}\\cos\\Delta\\phi(\\vec{\\MET},\\vec{p}_{T}^{\\tau_h^{other}})$'
     'met_var_w_1': '$C_{\\text{W}} = \\frac{\\left\\lvert\\vec{\\MET}+\\vec{p}_T^{\\ell}\\right\\rvert}{p_{T}^{\\tau_h^{sublead}}}\\cos\\Delta\\phi(\\vec{\\MET}+\\vec{p}_T^{\\ell},\\vec{p}_{T}^{\\tau_h^{sublead}})$'
     'met_var_w_2': '$C_{\\text{W}} = \\frac{\\left\\lvert\\vec{\\MET}+\\vec{p}_T^{\\ell}\\right\\rvert}{p_{T}^{\\tau_h^{other}}}\\cos\\Delta\\phi(\\vec{\\MET}+\\vec{p}_T^{\\ell},\\vec{p}_{T}^{\\tau_h^{other}})$'
+    'decayModePNet_1': '$\tau_h^{lead}$ PNet decay mode'
+    'decayModePNet_2': '$\tau_h^{other}$ PNet decay mode'
+
+latex_names_comb:
+    'decayMode': '$\tau_h^{lead}$ decay mode'
+    'decayMode_other': '$\tau_h^{other}$ decay mode'
+    'jpt_pt': 'Ratio of $p_{T}^{jet}$ to $p_{T}^{\tau_h^{lead}}$'
+    'jpt_pt_other': 'Ratio of $p_{T}^{jet}$ to $p_{T}^{\tau_h^{sublead}}$'
+    'pt': '$p_{T}^{\tau_h^{lead}}$ (GeV)'
+    'pt_other': '$p_{T}^{\tau_h^{sublead}}$ (GeV)'
+    'pt_tt': '$p_{T}^{\tau_h\tau_h}$ (GeV)'
+    'eta': '$\eta^{\tau_h^{lead}}$'
+    'eta_other': '$\eta^{\tau_h^{sublead}}$'
+    'charge': '$\tau_h^{lead}$ charge'
+    'charge_other': '$\tau_h^{sublead}$ charge'
+    'phi': '$\tau_h^{lead} \phi$'
+    'phi_other': '$\tau_h^{sublead} \phi$'
+    'dR': '$\Delta R(\tau_h^{lead}, \tau_h^{sublead})$'
+    'n_jets': 'Number of jets'
+    'n_bjets': 'Number of b-jets'
+    'n_prebjets': 'Number of pre-b-jets'
+    'm_vis': '$m_{vis}$ (GeV)'
+    'mt_tot': '$m^{total}_T$ (GeV)'
+    'FastMTT_mass': 'FastMTT mass (GeV)'
+    'met_pt': 'MET $p_T$ (GeV)'
+    'met_phi': 'MET $\phi$'
+    'met_dphi': 'MET $\Delta \phi$ with $\tau_h^{lead}$'
+    'met_dphi_other': 'MET $\Delta \phi$ with $\tau_h^{sublead}$'
+    'met_var_qcd_1': '$C_{\\text{QCD}} = \\frac{\\MET}{p_{T}^{\\tau_h^{lead}}}\\cos\\Delta\\phi(\\vec{\\MET},\\vec{p}_{T}^{\\tau_h^{lead}})$'
+    'met_var_qcd_2': '$C_{\\text{QCD}} = \\frac{\\MET}{p_{T}^{\\tau_h^{sublead}}}\\cos\\Delta\\phi(\\vec{\\MET},\\vec{p}_{T}^{\\tau_h^{sublead}})$'
+    'met_var_w_1': '$C_{\\text{W}} = \\frac{\\left\\lvert\\vec{\\MET}+\\vec{p}_T^{\\ell}\\right\\rvert}{p_{T}^{\\tau_h^{lead}}}\\cos\\Delta\\phi(\\vec{\\MET}+\\vec{p}_T^{\\ell},\\vec{p}_{T}^{\\tau_h^{lead}})$'
+    'met_var_w_2': '$C_{\\text{W}} = \\frac{\\left\\lvert\\vec{\\MET}+\\vec{p}_T^{\\ell}\\right\\rvert}{p_{T}^{\\tau_h^{sublead}}}\\cos\\Delta\\phi(\\vec{\\MET}+\\vec{p}_T^{\\ell},\\vec{p}_{T}^{\\tau_h^{sublead}})$'
     'decayModePNet_1': '$\tau_h^{lead}$ PNet decay mode'
     'decayModePNet_2': '$\tau_h^{other}$ PNet decay mode'
 plot_params:
@@ -157,9 +196,10 @@ plot_params:
     'n_jets': 10
     'n_bjets': 4
     'n_prebjets': 4
-    'm_vis': 100
-    'mt_tot': 100
-    'met_pt': 40
+    'm_vis': 15
+    'mt_tot': 15
+    'FastMTT_mass': 15
+    'met_pt': 15
     'met_phi': 30
     'met_dphi': 30
     'met_dphi_other': 30
@@ -167,13 +207,18 @@ plot_params:
     'met_var_qcd_2': 50
     'decayModePNet': 12  # Discrete bins: 0, 1, 2, 10, 11
     'decayModePNet_other': 12  # Discrete bins: 0, 1, 2, 10, 11
+    # 'BDT_pred_score': 10
+    # 'BDT_pred_class': 10
+    'BDT_raw_score_tau': 10
+    'BDT_raw_score_higgs': 10
+    'BDT_raw_score_fake': 10
 
   ranges:
     'decayMode': [0, 12]
     'decayMode_other': [0, 12]
     'jpt_pt': [0, 3]
     'jpt_pt_other': [0, 3]
-    'pt': [35, 500]
+    'pt': [35, 1200]
     'pt_other': [35, 600]
     'pt_tt': [0, 800]
     'eta': [-3, 3]
@@ -186,9 +231,10 @@ plot_params:
     'n_jets': [0, 10]
     'n_bjets': [0, 4]
     'n_prebjets': [0, 4]
-    'm_vis': [0, 800]
-    'mt_tot': [0, 800]
-    'met_pt': [0, 200]
+    'm_vis': [0, 1200]
+    'mt_tot': [0, 1200]
+    'FastMTT_mass': [0, 1200]
+    'met_pt': [0, 1200]
     'met_phi': [-3.2, 3.2]
     'met_dphi': [-3.2, 3.2]
     'met_dphi_other': [-3.2, 3.2]
@@ -196,16 +242,25 @@ plot_params:
     'met_var_qcd_2': [-10, 10]
     'decayModePNet': [0, 12]
     'decayModePNet_other': [0, 12]
+    # 'BDT_pred_score': [0., 1.]
+    # 'BDT_pred_class': [0, 1]
+    'BDT_raw_score_tau': [0.33, 1.]
+    'BDT_raw_score_higgs': [0.33, 1.]
+    'BDT_raw_score_fake': [0.33, 1.]
   
   discrete_bins:
     'charge': [-2, -1, 0, 1, 2]
     'charge_other': [-2, -1, 0, 1, 2]
-    'pt': [35, 50, 60, 70, 80, 90, 100, 120, 140, 160, 180, 200, 250, 300, 400, 500]
-    'pt_other': [35, 50, 60, 70, 80, 90, 100, 120, 140, 160, 180, 200, 250, 300, 400, 500]
-    'mt_tot': [0, 50, 100, 150, 200, 250, 300, 350, 400, 450, 500, 600]
-    'm_vis': [0, 50, 100, 150, 200, 250, 300, 350, 400, 450, 500, 600]
-    'met_pt': [0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 120, 140]
+    'pt': [35, 50, 100, 150, 200, 250, 300, 350, 400, 450, 500] ## run out of stats, high pT > 200 GeV change 500 -> 800 for tt
+    'pt_other': [35, 50, 100, 150, 200, 250, 300, 400, 800]
+    'mt_tot': [0, 100, 200, 300, 400, 500]
+    'm_vis': [0, 50, 100, 150, 200, 250, 300, 400, 500, 600, 700, 1200]
+    'FastMTT_mass': [0, 50, 100, 150, 200, 250, 300, 400, 500, 600, 700, 1200]
+    'met_pt': [0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 120, 140, 160, 180, 200, 250, 300, 400]
     'decayMode': [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
     'decayMode_other': [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
     'decayModePNet': [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
     'decayModePNet_other': [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+    'BDT_raw_score_higgs': [0.33, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
+    'BDT_raw_score_tau': [0.33, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
+    'BDT_raw_score_fake': [0.33, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
