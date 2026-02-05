@@ -1,4 +1,4 @@
-source_dir: "/vols/cms/ia2318/HiggsDNA-powheg/output/BTaggingEfficiencies/Run3_2022/{channel}"
+source_dir: "/vols/cms/ia2318/HiggsDNA-powheg/output/JanuaryEarlyRun3/Run3_2022/{channel}"
 
 destination_dir: "/vols/cms/ia2318/REAL/data_January26/Run3_2022/{channel}_{ff_process}"
 
