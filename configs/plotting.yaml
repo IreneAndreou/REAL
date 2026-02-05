@@ -24,30 +24,22 @@ model_path: "/vols/cms/ia2318/REAL/outputs/best_models/January26__{global_str}/{
 train_test_split_path: "/vols/cms/ia2318/REAL/outputs/best_models/January26__{global_str}/{channel}_{ff_process}/train_test_split.pkl"
 classical_ff_path: "/vols/cms/ia2318/HiggsDNA/Run3FakeFactors/{channel}/{year}_fake_factors_{ff_process}.json"
 optimal_temperature_path: "/vols/cms/ia2318/REAL/outputs/best_models/January26__{global_str}/{channel}_{ff_process}/temperature_scaling_results.json"
-output_dir: "/vols/cms/ia2318/REAL/outputs/plots/January26__{global_str}/ARC_MEETING/{channel}_{ff_process}/"
+output_dir: "/vols/cms/ia2318/REAL/outputs/plots/January26__{global_str}/ARCReview/{channel}_{ff_process}/"
 lead_tau: 
   - "decayMode_1"
   - "jpt_pt_1"
   - "pt_1"
   - "eta_1"
-  - "charge_1"
   - "phi_1"
-  - "decayModePNet_1"
 sublead_tau: 
   - "decayMode_2"
   - "jpt_pt_2"
   - "pt_2"
   - "eta_2"
-  - "charge_2"
   - "phi_2"
-  - "decayModePNet_2"
 global_variables:
   - "n_jets"
   - "n_bjets"
-  # - "met_var_qcd_{tau_suffix}"
-  # - "met_var_w_{tau_suffix}"
-  # - "met_var_w"
-  # - "pt_other" ## only for tt channel
 
 features_to_plot:
     # - 'decayMode'
