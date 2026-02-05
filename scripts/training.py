@@ -522,7 +522,7 @@ def save_feature_importance(bst, out, top_n=20, normalize=True):
         labels = [s.replace("_", " ") for s in scores.index]
 
         # scale height dynamically
-        fig_height = max(4, 0.35 * len(scores))
+        fig_height = max(4, len(scores))
         fig, ax = plt.subplots(figsize=(30, fig_height))
 
         # barh plot
