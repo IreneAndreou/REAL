@@ -84,6 +84,44 @@ console_handler.setFormatter(colored_formatter)
 logger.addHandler(console_handler)
 
 
+# Define custom callback for percentage-based early stopping
+class PercentageEarlyStopping(xgb.callback.TrainingCallback):
+    def __init__(self, rounds: int, percent_threshold: float, data_name: str, metric_name: str, save_best: bool = True):
+        self.rounds = int(rounds)
+        self.percent_threshold = float(percent_threshold)
+        self.data_name = data_name
+        self.metric_name = metric_name
+        self.save_best = save_best
+
+        self.best_score = None
+        self.best_iteration = 0
+        self.wait = 0
+
+    def after_iteration(self, model, epoch, evals_log):
+        score = evals_log[self.data_name][self.metric_name][-1]
+
+        if self.best_score is None:
+            self.best_score = score
+            self.best_iteration = epoch
+            return False
+
+        min_delta = abs(self.best_score) * self.percent_threshold  # e.g. 1%
+        improved = (self.best_score - score) > min_delta  # assuming lower is better
+
+        if improved:
+            self.best_score = score
+            self.best_iteration = epoch
+            self.wait = 0
+            if self.save_best:
+                model.set_attr(best_iteration=str(epoch))
+        else:
+            self.wait += 1
+            if self.wait >= self.rounds:
+                return True  # stop training
+
+        return False
+
+
 # -------------------- Helpers -------------------------
 def load_data(file_paths, branches, which_tau, file_format='parquet', tree_name='ntuple'):
     """
@@ -106,7 +144,7 @@ def load_data(file_paths, branches, which_tau, file_format='parquet', tree_name=
             with uproot.open(file_path) as f:
                 tree = f[tree_name]
                 df = tree.arrays(branches, library='pd')
-        df["era_label"] = era_to_label.get(era, KeyError)
+        df["era_label"] = era_to_label[era]
 
         # Build a rename map from raw columns to normalised names
         rename_map = {}
@@ -176,6 +214,15 @@ def feature_list(training_config, channel, ff_process, tau_suffix, global_settin
         if global_setting == 'True':
             features += [var.format(tau_suffix='1') if '{tau_suffix}' in var else var for var in global_variables]
             features += [var.format(tau_suffix='2') if '{tau_suffix}' in var else var for var in global_variables]
+            if ff_process in ["QCD"]:
+                # Remove any features containing W+jet specific variables
+                features = [f for f in features if "met_var_w" not in f]
+            elif ff_process in ["Wjets", "WjetsMC"]:
+                # Remove any features containing QCD specific variables
+                features = [f for f in features if "met_var_qcd" not in f]
+            elif ff_process in ["ttbarMC"]:
+                # Remove any features containing W+jet or QCD specific variables
+                features = [f for f in features if "met_var_w" not in f and "met_var_qcd" not in f]
     elif channel in ["et", "mt"]:
         features = training_config[f"{tau_suffix}_tau"].copy()
         if global_setting == 'True':
@@ -220,7 +267,7 @@ def build_xgb_params(trial, hyperparams, binary, device, seed):
         "eval_metric": "logloss" if binary else "mlogloss",
         "tree_method": "hist",
         "device": device,
-        "nthread": 2,
+        "nthread": 3,
     }
     if not binary:
         params["num_class"] = 4
@@ -234,11 +281,14 @@ def objective(trial):
     dtrain = xgb.DMatrix(x_train, label=y_train, weight=weights_train)
     dtest = xgb.DMatrix(x_test, label=y_test, weight=weights_test)
 
+    percent_stop = PercentageEarlyStopping(rounds=20, percent_threshold=0.001, data_name="eval", metric_name="logloss" if args.binary else "mlogloss", save_best=False)
+
     evals_result = {}
-    bst = xgb.train(params, dtrain, num_boost_round=1000, evals=[(dtrain, "train"), (dtest, "eval")], early_stopping_rounds=50, evals_result=evals_result, verbose_eval=False)
+    bst = xgb.train(params, dtrain, num_boost_round=1000, evals=[(dtrain, "train"), (dtest, "eval")], callbacks=[percent_stop], evals_result=evals_result, verbose_eval=False)
 
     # Predict on test set
-    logits = bst.predict(dtest, output_margin=True)
+    best_iteration = percent_stop.best_iteration
+    logits = bst.predict(dtest, output_margin=True, iteration_range=(0, best_iteration + 1))
     if args.binary:
         probs = expit(logits)
         probs = np.vstack([1 - probs, probs]).T
@@ -529,6 +579,8 @@ for tau_suffix in tau_suffix:
     # Load branches with appropriate features
     branches = feature_list(training_cfg, channel, ff_process, tau_suffix, global_setting)
     branches += ['wt_sf']  # Always include weight
+    id_branches = ['event', 'run', 'lumi']  # For use in train_test splitting and potential debugging, but not as features. Will be dropped before training.
+    branches += id_branches
 
     # Load data with normalised column names
     data_iso = load_data(data_iso_map, branches, which_tau=tau_suffix, file_format=args.file_format, tree_name=args.tree_name) if data_iso_map is not None else None
@@ -555,6 +607,18 @@ for tau_suffix in tau_suffix:
 
 combined_df = pd.concat(combined_dfs, ignore_index=True) if combined_dfs else pd.DataFrame()
 
+for c in ["run", "lumi", "event", "is_lead_tau", "label", "era_label"]:
+    combined_df[c] = combined_df[c].astype(np.int64)
+
+combined_df["event_uid"] = (
+    combined_df["run"].astype(str) + ":" +
+    combined_df["lumi"].astype(str) + ":" +
+    combined_df["event"].astype(str) + ":" +
+    combined_df["is_lead_tau"].astype(str) + ":" +
+    combined_df["label"].astype(str) + ":" +
+    combined_df["era_label"].astype(str)
+)
+
 # Diagnostic info on combined dataframe
 logging.info(f"Combined dataframe shape: {combined_df.shape}")
 logging.info(f"Columns: {combined_df.columns.tolist()}")
@@ -579,11 +643,11 @@ era_label_counts = combined_df['era_label'].value_counts(dropna=False)
 logging.info(f"era_label value counts:\n{era_label_counts}")
 
 # Train-test split
-drop_cols = {"wt_sf", "label"}
-X = combined_df[[c for c in combined_df.columns if c not in drop_cols]]
+drop_cols = {"wt_sf", "label", "event_uid"} | set(id_branches)
+X = combined_df[[c for c in combined_df.columns if c not in drop_cols and "other" not in c]]
 y = combined_df["label"].astype(int)
 w = combined_df["wt_sf"]
-x_train, x_test, y_train, y_test, weights_train, weights_test = train_test_split(X, y, w, test_size=0.2, random_state=42, stratify=y)
+x_train, x_test, y_train, y_test, weights_train, weights_test = train_test_split(X, y, w, test_size=0.3, random_state=42, stratify=y)
 
 # Save column names used for training
 with open(os.path.join(output_dir, "feature_names.txt"), "w") as f:
@@ -591,17 +655,9 @@ with open(os.path.join(output_dir, "feature_names.txt"), "w") as f:
         f.write(f"{feature}\n")
 
 # Save train/test splits
-with open(f"{output_dir}/train_test_split.pkl", 'wb') as file:
-    pickle.dump({
-        'X_train': x_train,
-        'X_test': x_test,
-        'y_train': y_train,
-        'y_test': y_test,
-        'w_train': weights_train,
-        'w_test': weights_test
-    }, file)
-
-logging.info(f"Training and testing splits saved to {output_dir}/train_test_split.pkl")
+combined_df.loc[x_train.index, ["event_uid"]].to_csv(os.path.join(output_dir, "train_event_ids.csv"), index=False)
+combined_df.loc[x_test.index, ["event_uid"]].to_csv(os.path.join(output_dir, "test_event_ids.csv"), index=False)
+logging.info(f"Training and testing splits saved to {output_dir}/train_event_ids.csv and {output_dir}/test_event_ids.csv")
 
 # Optuna search for hyperparameter optimization
 best_hp_path = os.path.join(output_dir, "best_hyperparameters.json")
@@ -633,6 +689,7 @@ else:
             "early_stopping_rounds": hyperparameters_cfg.get("early_stopping_rounds"),
             "num_boost_round": hyperparameters_cfg.get("num_boost_round"),
             "timestamp": datetime.utcnow().isoformat() + "Z",
+            "nthread": 3,
         }
     }
     with open(best_hp_path, "w") as f:
@@ -643,11 +700,12 @@ logging.info(f"Best trial: {study.best_trial.params}")
 
 # Train final model with best hyperparameters
 eval_results = {}
-dtrain = xgb.DMatrix(x_train, label=y_train, weight=weights_train, nthread=2)
-dtest = xgb.DMatrix(x_test, label=y_test, weight=weights_test, nthread=2)
+dtrain = xgb.DMatrix(x_train, label=y_train, weight=weights_train, nthread=3)
+dtest = xgb.DMatrix(x_test, label=y_test, weight=weights_test, nthread=3)
+early_stopping = PercentageEarlyStopping(hyperparameters_cfg.get("early_stopping_rounds", 50), percent_threshold=0.001, data_name="eval", metric_name="logloss" if args.binary else "mlogloss", save_best=True)
 bst = xgb.train(best_params, dtrain, num_boost_round=hyperparameters_cfg['num_boost_round'],
                 evals=[(dtrain, 'train'), (dtest, 'eval')], evals_result=eval_results,
-                early_stopping_rounds=hyperparameters_cfg['early_stopping_rounds'], verbose_eval=True)
+                callbacks=[early_stopping], verbose_eval=True)
 
 # Save the Model
 bst.save_model(f"{output_dir}/best_model.json")
@@ -657,7 +715,8 @@ with open(f"{output_dir}/eval_results.json", "w") as f:
     json.dump(eval_results, f, indent=2)
 
 # Temperature Scaling
-logits = bst.predict(dtest, output_margin=True)
+best_iteration = early_stopping.best_iteration
+logits = bst.predict(dtest, output_margin=True, iteration_range=(0, best_iteration + 1))
 T_opt = find_optimal_temperature(logits, y_test, sample_weight=weights_test, binary=args.binary)
 logging.info(f"Optimal temperature (T*): {T_opt:.6f}")
 
