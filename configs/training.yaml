@@ -1,26 +1,26 @@
 era:
   Run3_2022:
-    data_iso_file: "/vols/cms/ia2318/REAL/data_November25/Run3_2022/determination_region/{ff_process}/data_iso_{channel}_{tau_suffix}.parquet"
-    data_aiso_file: "/vols/cms/ia2318/REAL/data_November25/Run3_2022/determination_region/{ff_process}/data_aiso_{channel}_{tau_suffix}.parquet"
-    mc_iso_file: "/vols/cms/ia2318/REAL/data_November25/Run3_2022/determination_region/{ff_process}/mc_iso_{channel}_{tau_suffix}.parquet"
-    mc_aiso_file: "/vols/cms/ia2318/REAL/data_November25/Run3_2022/determination_region/{ff_process}/mc_aiso_{channel}_{tau_suffix}.parquet"
+    data_iso_file: "/vols/cms/ia2318/REAL/data_January26/Run3_2022/determination_region/{ff_process}/data_iso_{channel}_{tau_suffix}.parquet"
+    data_aiso_file: "/vols/cms/ia2318/REAL/data_January26/Run3_2022/determination_region/{ff_process}/data_aiso_{channel}_{tau_suffix}.parquet"
+    mc_iso_file: "/vols/cms/ia2318/REAL/data_January26/Run3_2022/determination_region/{ff_process}/mc_iso_{channel}_{tau_suffix}.parquet"
+    mc_aiso_file: "/vols/cms/ia2318/REAL/data_January26/Run3_2022/determination_region/{ff_process}/mc_aiso_{channel}_{tau_suffix}.parquet"
   Run3_2022EE:
-    data_iso_file: "/vols/cms/ia2318/REAL/data_November25/Run3_2022EE/determination_region/{ff_process}/data_iso_{channel}_{tau_suffix}.parquet"
-    data_aiso_file: "/vols/cms/ia2318/REAL/data_November25/Run3_2022EE/determination_region/{ff_process}/data_aiso_{channel}_{tau_suffix}.parquet"
-    mc_iso_file: "/vols/cms/ia2318/REAL/data_November25/Run3_2022EE/determination_region/{ff_process}/mc_iso_{channel}_{tau_suffix}.parquet"
-    mc_aiso_file: "/vols/cms/ia2318/REAL/data_November25/Run3_2022EE/determination_region/{ff_process}/mc_aiso_{channel}_{tau_suffix}.parquet"
+    data_iso_file: "/vols/cms/ia2318/REAL/data_January26/Run3_2022EE/determination_region/{ff_process}/data_iso_{channel}_{tau_suffix}.parquet"
+    data_aiso_file: "/vols/cms/ia2318/REAL/data_January26/Run3_2022EE/determination_region/{ff_process}/data_aiso_{channel}_{tau_suffix}.parquet"
+    mc_iso_file: "/vols/cms/ia2318/REAL/data_January26/Run3_2022EE/determination_region/{ff_process}/mc_iso_{channel}_{tau_suffix}.parquet"
+    mc_aiso_file: "/vols/cms/ia2318/REAL/data_January26/Run3_2022EE/determination_region/{ff_process}/mc_aiso_{channel}_{tau_suffix}.parquet"
   Run3_2023:
-    data_iso_file: "/vols/cms/ia2318/REAL/data_November25/Run3_2023/determination_region/{ff_process}/data_iso_{channel}_{tau_suffix}.parquet"
-    data_aiso_file: "/vols/cms/ia2318/REAL/data_November25/Run3_2023/determination_region/{ff_process}/data_aiso_{channel}_{tau_suffix}.parquet"
-    mc_iso_file: "/vols/cms/ia2318/REAL/data_November25/Run3_2023/determination_region/{ff_process}/mc_iso_{channel}_{tau_suffix}.parquet"
-    mc_aiso_file: "/vols/cms/ia2318/REAL/data_November25/Run3_2023/determination_region/{ff_process}/mc_aiso_{channel}_{tau_suffix}.parquet"
+    data_iso_file: "/vols/cms/ia2318/REAL/data_January26/Run3_2023/determination_region/{ff_process}/data_iso_{channel}_{tau_suffix}.parquet"
+    data_aiso_file: "/vols/cms/ia2318/REAL/data_January26/Run3_2023/determination_region/{ff_process}/data_aiso_{channel}_{tau_suffix}.parquet"
+    mc_iso_file: "/vols/cms/ia2318/REAL/data_January26/Run3_2023/determination_region/{ff_process}/mc_iso_{channel}_{tau_suffix}.parquet"
+    mc_aiso_file: "/vols/cms/ia2318/REAL/data_January26/Run3_2023/determination_region/{ff_process}/mc_aiso_{channel}_{tau_suffix}.parquet"
   Run3_2023BPix:
-    data_iso_file: "/vols/cms/ia2318/REAL/data_November25/Run3_2023BPix/determination_region/{ff_process}/data_iso_{channel}_{tau_suffix}.parquet"
-    data_aiso_file: "/vols/cms/ia2318/REAL/data_November25/Run3_2023BPix/determination_region/{ff_process}/data_aiso_{channel}_{tau_suffix}.parquet"
-    mc_iso_file: "/vols/cms/ia2318/REAL/data_November25/Run3_2023BPix/determination_region/{ff_process}/mc_iso_{channel}_{tau_suffix}.parquet"
-    mc_aiso_file: "/vols/cms/ia2318/REAL/data_November25/Run3_2023BPix/determination_region/{ff_process}/mc_aiso_{channel}_{tau_suffix}.parquet"
+    data_iso_file: "/vols/cms/ia2318/REAL/data_January26/Run3_2023BPix/determination_region/{ff_process}/data_iso_{channel}_{tau_suffix}.parquet"
+    data_aiso_file: "/vols/cms/ia2318/REAL/data_January26/Run3_2023BPix/determination_region/{ff_process}/data_aiso_{channel}_{tau_suffix}.parquet"
+    mc_iso_file: "/vols/cms/ia2318/REAL/data_January26/Run3_2023BPix/determination_region/{ff_process}/mc_iso_{channel}_{tau_suffix}.parquet"
+    mc_aiso_file: "/vols/cms/ia2318/REAL/data_January26/Run3_2023BPix/determination_region/{ff_process}/mc_aiso_{channel}_{tau_suffix}.parquet"
 
-output_dir: "/vols/cms/ia2318/REAL/outputs/best_models/November25_v2{global_prefix}/{channel}_{ff_process}/"
+output_dir: "/vols/cms/ia2318/REAL/outputs/best_models/Test{global_prefix}/{channel}_{ff_process}/"
 
 training:
   lead_tau: 
@@ -28,23 +28,16 @@ training:
     - "jpt_pt_1"
     - "pt_1"
     - "eta_1"
-    - "charge_1"
     - "phi_1"
-    - "decayModePNet_1"
   sublead_tau: 
     - "decayMode_2"
     - "jpt_pt_2"
     - "pt_2"
     - "eta_2"
-    - "charge_2"
     - "phi_2"
-    - "decayModePNet_2"
   global_variables:
     - "n_jets"
     - "n_bjets"
-    - "met_var_qcd_{tau_suffix}"
-    - "met_var_w_{tau_suffix}"
-    # - "pt_other" ## only for tt channel
 
 
 hyperparameters:
