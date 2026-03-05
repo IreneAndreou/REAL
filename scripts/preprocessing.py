@@ -242,7 +242,7 @@ for era in eras:
                         continue
                     filenames = config["source_files"][category]
                     if ff_process == "Wjets" and category == "mc":
-                        filenames = [fn for fn in filenames if "WtoLNu" not in fn]
+                        filenames = [fn for fn in filenames if "Wto" not in fn]
                     # Preprocessing (parallel)
                     parallel_preprocess(era, category, source_dir, dest_dir, filenames, args.workers)
             if ff_process in {"WjetsMC", "ttbarMC"}:
@@ -252,7 +252,7 @@ for era in eras:
                         continue
                 filenames = config["source_files"][category]
                 if ff_process == "WjetsMC":
-                    filenames = [fn for fn in filenames if fn.startswith("WtoLNu")]
+                    filenames = [fn for fn in filenames if fn.startswith("Wto")]
                 if ff_process == "ttbarMC":
                     filenames = [fn for fn in filenames if fn.startswith("TT")]
                 # Preprocessing (parallel)
