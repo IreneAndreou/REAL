@@ -1,0 +1,7 @@
+{
+  "optimal_temperature": 0.9920574121315499,
+  "log_loss_before_ts": 0.458038954152319,
+  "log_loss_after_ts": 0.45802460045156823,
+  "ece_before_ts": 0.0026968719717615592,
+  "ece_after_ts": 0.0024466323587840786
+}

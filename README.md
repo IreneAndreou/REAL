@@ -24,3 +24,6 @@ conda env create -f environment.yml
 ```bash
 conda activate real
 ```
+
+### Information preservation for CMS-TAU-25-001
+The relevant trainings, temperature scaling and classical Fake Factor files used to make the plots in CMS-TAU-25-001 are stored in the ```TAU-25-001/``` directory.
