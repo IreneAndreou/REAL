@@ -22,6 +22,8 @@ era:
 
 output_dir: "/vols/cms/ia2318/REAL/outputs/best_models/ARCReview{global_prefix}/{channel}_{ff_process}/"
 
+lumi: 62.4
+
 training:
   lead_tau: 
     - "decayMode_1"
