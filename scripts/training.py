@@ -21,7 +21,6 @@ import xgboost as xgb
 import yaml
 hep.style.use("CMS")
 
-CMS_LABEL = dict(data=True, label="Work in progress", com=13.6, loc=0)
 
 # Set up argument parser
 parser = argparse.ArgumentParser(description='Train a BDT model for jet->tau FFs processes (QCD, W+jets, ttbar)')
@@ -32,6 +31,7 @@ parser.add_argument('--global_variables', type=str, choices=['True', 'False'], d
 parser.add_argument('--binary', action='store_true', help='If set, trains a binary classifier (MC ISO vs MC AISO)')
 parser.add_argument('--file_format', type=str, choices=['parquet', 'root'], default='parquet', help='Input file format (default: parquet)')
 parser.add_argument('--tree_name', type=str, default='ntuple', help='Name of the ROOT tree to read (default: ntuple)')
+parser.add_argument('--legend_label', type=str, default="", help='Custom label for plots (default: empty string)')
 
 args = parser.parse_args()
 
@@ -108,6 +108,47 @@ class PercentageEarlyStopping(xgb.callback.TrainingCallback):
         min_delta = abs(self.best_score) * self.percent_threshold  # e.g. 1%
         improved = (self.best_score - score) > min_delta  # assuming lower is better
 
+        if improved:
+            self.best_score = score
+            self.best_iteration = epoch
+            self.wait = 0
+            if self.save_best:
+                model.set_attr(best_iteration=str(epoch))
+        else:
+            self.wait += 1
+            if self.wait >= self.rounds:
+                return True  # stop training
+
+        return False
+
+
+class AbsoluteEarlyStopping(xgb.callback.TrainingCallback):
+    """
+    Early stopping with an ABSOLUTE improvement threshold (min_delta).
+    Much more stable than percent-threshold when eval logloss is ~0.3 and noisy.
+    """
+    def __init__(self, rounds: int, min_delta: float, data_name: str, metric_name: str, save_best: bool = True):
+        self.rounds = int(rounds)
+        self.min_delta = float(min_delta)
+        self.data_name = data_name
+        self.metric_name = metric_name
+        self.save_best = save_best
+
+        self.best_score = None
+        self.best_iteration = 0
+        self.wait = 0
+
+    def after_iteration(self, model, epoch, evals_log):
+        score = evals_log[self.data_name][self.metric_name][-1]
+
+        if self.best_score is None:
+            self.best_score = score
+            self.best_iteration = epoch
+            if self.save_best:
+                model.set_attr(best_iteration=str(epoch))
+            return False
+
+        improved = (self.best_score - score) > self.min_delta  # lower is better
         if improved:
             self.best_score = score
             self.best_iteration = epoch
@@ -284,10 +325,30 @@ def objective(trial):
     percent_stop = PercentageEarlyStopping(rounds=20, percent_threshold=0.001, data_name="eval", metric_name="logloss" if args.binary else "mlogloss", save_best=False)
 
     evals_result = {}
-    bst = xgb.train(params, dtrain, num_boost_round=1000, evals=[(dtrain, "train"), (dtest, "eval")], callbacks=[percent_stop], evals_result=evals_result, verbose_eval=False)
+    bst = xgb.train(params, dtrain, num_boost_round=hyperparameters_cfg["num_boost_round"], evals=[(dtrain, "train"), (dtest, "eval")], callbacks=[percent_stop], evals_result=evals_result, verbose_eval=False)
 
     # Predict on test set
     best_iteration = percent_stop.best_iteration
+
+    # abs_stop = AbsoluteEarlyStopping(
+    #     rounds=100,
+    #     min_delta=2e-5,
+    #     data_name="eval",
+    #     metric_name="logloss" if args.binary else "mlogloss",
+    #     save_best=False
+    # )
+
+    # evals_result = {}
+    # bst = xgb.train(
+    #     params, dtrain,
+    #     num_boost_round=hyperparameters_cfg["num_boost_round"],
+    #     evals=[(dtrain, "train"), (dtest, "eval")],
+    #     callbacks=[abs_stop],
+    #     evals_result=evals_result,
+    #     verbose_eval=False,
+    # )
+
+    # best_iteration = abs_stop.best_iteration
     logits = bst.predict(dtest, output_margin=True, iteration_range=(0, best_iteration + 1))
     if args.binary:
         probs = expit(logits)
@@ -344,8 +405,8 @@ def expected_calibration_error(y_true, probs, sample_weight=None, n_bins=15):
     return float(ece)
 
 
-def plot_reliability(y_true, probs, sample_weight=None, n_bins=15, title="Reliability", outpath=None):
-    """Reliability diagram with weighted quantile bins + error bars, and a confidence histogram."""
+def plot_reliability(y_true, probs, sample_weight=None, n_bins=15, title="", outpath=None):
+    """Reliability diagram with equal-width bins + error bars, and a confidence histogram."""
     y_true = np.asarray(y_true)
     probs = np.asarray(probs)
     if sample_weight is None:
@@ -353,82 +414,93 @@ def plot_reliability(y_true, probs, sample_weight=None, n_bins=15, title="Reliab
     else:
         sample_weight = np.asarray(sample_weight, dtype=float)
 
-    # Confidence, predictions, correctness
     confid = probs.max(axis=1)
     preds = probs.argmax(axis=1)
     correct = (preds == y_true).astype(float)
 
-    # ---------- weighted quantile bin edges ----------
-    if sample_weight is None:
-        qs = np.linspace(0, 1, n_bins + 1)
-        bin_edges = np.quantile(confid, qs)
-    else:
-        order = np.argsort(confid)
-        c_sorted = confid[order]
-        w_sorted = sample_weight[order].astype(float)
-        cw = np.cumsum(w_sorted) / w_sorted.sum()
-        targets = np.linspace(0.0, 1.0, n_bins + 1)
-        bin_edges = np.interp(targets, cw, c_sorted)
+    # ---------- equal-width bin edges (standard for reliability diagrams) ----------
+    bin_edges = np.linspace(0.0, 1.0, n_bins + 1)
 
-    # ensure proper coverage & uniqueness
-    bin_edges[0] = 0.0
-    bin_edges[-1] = 1.0
-    bin_edges = np.unique(bin_edges)
-    if len(bin_edges) < 3:  # fallback if too many duplicates
-        bin_edges = np.linspace(0, 1, min(n_bins, 5) + 1)
-
-    # ---------- per-bin stats + error bars ----------
-    conf_vals, acc_vals, w_hist = [], [], []
+    # ---------- per-bin stats ----------
+    conf_vals, acc_vals = [], []
     err_low, err_high = [], []
 
     for i in range(len(bin_edges) - 1):
         lo, hi = bin_edges[i], bin_edges[i + 1]
         mask = (confid >= lo) & (confid < hi) if i < len(bin_edges) - 2 else (confid >= lo) & (confid <= hi)
-
         if not np.any(mask):
             continue
-
         w_bin = sample_weight[mask].astype(float)
         if w_bin.sum() == 0:
             continue
-
         conf_vals.append(np.average(confid[mask], weights=w_bin))
-        p_hat = np.average(correct[mask], weights=w_bin)   # empirical accuracy
+        p_hat = np.average(correct[mask], weights=w_bin)
         acc_vals.append(p_hat)
         w_tot = w_bin.sum()
-        w_hist.append(w_tot)
-
-        # Normal-approx error (using effective N = total weight)
         se = np.sqrt(max(p_hat * (1.0 - p_hat) / w_tot, 0.0))
         err_low.append(p_hat - se)
         err_high.append(p_hat + se)
 
-    # ---------- plot ----------
-    fig = plt.figure(figsize=(18, 15))
+    # ---------- single-panel plot ----------
+    fig, ax1 = plt.subplots(figsize=(12, 10))
 
-    # Reliability curve with error bars
-    ax1 = fig.add_axes([0.12, 0.42, 0.82, 0.52])
-    ax1.plot([0, 1], [0, 1], linestyle="--", linewidth=1, alpha=0.6)
-    if conf_vals:  # avoid errors if empty
+    # Background: confidence histogram on secondary y-axis (right)
+    ax2 = ax1.twinx()
+    total_weight = sample_weight.sum()
+    n_events = len(confid)
+    counts, _, patches = ax2.hist(
+        confid, bins=bin_edges, weights=np.ones(n_events) / n_events,
+        color="lightsteelblue", alpha=0.35, edgecolor="steelblue", linewidth=0.5,
+        label="Confidence distribution\n(fraction of total events)",
+        zorder=1,
+    )
+    ax2.set_ylabel("Fraction of total events", fontsize=28, color="steelblue")
+    ax2.tick_params(axis="y", labelcolor="steelblue")
+    ax2.set_ylim(0, 1)  # push histogram to bottom quarter
+    ax2.yaxis.set_major_formatter(plt.matplotlib.ticker.PercentFormatter(xmax=1.0, decimals=0))
+    ax2.set_yticks(ax2.get_yticks()[1:])  # remove 0% tick
+
+    # Perfect calibration diagonal
+    ax1.plot([0, 1], [0, 1], linestyle="--", linewidth=1.5, alpha=0.7,
+             color="grey", label="Perfect calibration", zorder=2)
+
+    # Reliability curve
+    if conf_vals:
+        conf_arr = np.array(conf_vals)
+        acc_arr  = np.array(acc_vals)
         yerr = np.vstack([
-            np.clip(np.array(acc_vals) - np.array(err_low), 0, 1),
-            np.clip(np.array(err_high) - np.array(acc_vals), 0, 1)
+            np.clip(acc_arr - np.array(err_low),  0, 1),
+            np.clip(np.array(err_high) - acc_arr, 0, 1),
         ])
-        ax1.errorbar(conf_vals, acc_vals, yerr=yerr, fmt="o", capsize=3, lw=1.5)
-    ax1.set_xlim(0, 1)
-    ax1.set_ylim(0, 1)
-    ax1.set_xlabel("Confidence")
-    ax1.set_ylabel("Accuracy")
-    ax1.set_title(title)
+        # merge first two bins if first bin has high error
+        if len(conf_arr) > 1 and yerr[0, 0] > 0.15:
+            conf_arr = conf_arr[1:]
+            acc_arr = acc_arr[1:]
+            yerr = yerr[:, 1:]
+        ax1.errorbar(
+            conf_arr, acc_arr, yerr=yerr,
+            fmt="o", capsize=4, lw=1.5, capthick=1.5,
+            elinewidth=1.5, markersize=6, color="#3f90da",
+            label=r"Empirical accuracy ± 1$\sigma$", zorder=3,
+        )
+        pad = 0.05
+        ylo = max(0.0, acc_arr.min() - yerr[0].max() - pad)
+        yhi = min(1.0, acc_arr.max() + yerr[1].max() + pad)
+        ax1.set_ylim(ylo, yhi)
 
-    # Confidence histogram (weighted), using the same quantile edges
-    ax2 = fig.add_axes([0.12, 0.10, 0.82, 0.24], sharex=ax1)
-    hist_edges = np.linspace(0.0, 1.0, 21)  # 20 equal-width bins
-    ax2.hist(confid, bins=hist_edges, weights=sample_weight, edgecolor="black")
-    ax2.set_xlim(0, 1)
-    ax2.set_xlabel("Confidence")
-    ax2.set_ylabel("Weight")
-    hep.cms.label(**CMS_LABEL, ax=ax1)
+    ax1.set_xlim(0, 1)
+    ax1.set_xlabel("Confidence (maximum predicted probability)", fontsize=28)
+    ax1.set_ylabel("Empirical accuracy", fontsize=28)
+    ax1.set_zorder(ax2.get_zorder() + 1)
+    ax1.patch.set_visible(False)
+
+    # Combined legend
+    lines1, labels1 = ax1.get_legend_handles_labels()
+    lines2, labels2 = ax2.get_legend_handles_labels()
+    ax1.legend(lines1 + lines2, labels1 + labels2, fontsize=24, frameon=False, loc="upper left")
+
+    hep.cms.label(**CMS_LABEL, ax=ax1, fontsize=28)
+    plt.tight_layout()
 
     if outpath:
         plt.savefig(outpath, bbox_inches="tight")
@@ -563,6 +635,10 @@ output_dir = config['output_dir'].format(channel=channel, ff_process=ff_process,
 os.makedirs(output_dir, exist_ok=True)
 training_cfg = config['training']
 hyperparameters_cfg = config['hyperparameters']
+lumi = config.get('lumi', 62.4)
+
+CMS_LABEL = dict(data=True, label=args.legend_label, com=13.6, loc=0, lumi=lumi)
+
 
 # Combined dataframes
 combined_dfs = []
@@ -676,6 +752,7 @@ else:
         n_trials=hyperparameters_cfg.get("n_trials", 50),
         n_jobs=hyperparameters_cfg.get("n_jobs", 1),
     )
+    joblib.dump(study, os.path.join(output_dir, "optuna_study.pkl"))  # for thesis plotting
     best_params = enrich_params(study.best_trial.params, binary=args.binary, device="cpu", seed=42)
 
     # Also persist useful run metadata alongside the params
@@ -706,8 +783,22 @@ early_stopping = PercentageEarlyStopping(hyperparameters_cfg.get("early_stopping
 bst = xgb.train(best_params, dtrain, num_boost_round=hyperparameters_cfg['num_boost_round'],
                 evals=[(dtrain, 'train'), (dtest, 'eval')], evals_result=eval_results,
                 callbacks=[early_stopping], verbose_eval=True)
+best_iteration = early_stopping.best_iteration
 
-# Save the Model
+# early_stopping = AbsoluteEarlyStopping(
+#     rounds=hyperparameters_cfg.get("early_stopping_rounds", 100),
+#     min_delta=hyperparameters_cfg.get("early_stopping_min_delta", 2e-5),
+#     data_name="eval",
+#     metric_name="logloss" if args.binary else "mlogloss",
+#     save_best=True
+# )
+# bst = xgb.train(best_params, dtrain, num_boost_round=hyperparameters_cfg['num_boost_round'],
+#                 evals=[(dtrain, 'train'), (dtest, 'eval')], evals_result=eval_results,
+#                 callbacks=[early_stopping], verbose_eval=False)
+# best_iteration = early_stopping.best_iteration
+
+# Save the Model up to the Best Iteration
+bst = bst[:best_iteration + 1]
 bst.save_model(f"{output_dir}/best_model.json")
 joblib.dump(bst, f"{output_dir}/best_model.pkl")
 
@@ -715,7 +806,6 @@ with open(f"{output_dir}/eval_results.json", "w") as f:
     json.dump(eval_results, f, indent=2)
 
 # Temperature Scaling
-best_iteration = early_stopping.best_iteration
 logits = bst.predict(dtest, output_margin=True, iteration_range=(0, best_iteration + 1))
 T_opt = find_optimal_temperature(logits, y_test, sample_weight=weights_test, binary=args.binary)
 logging.info(f"Optimal temperature (T*): {T_opt:.6f}")
@@ -747,8 +837,8 @@ ece_after = expected_calibration_error(y_test, probs_after,  sample_weight=weigh
 logging.info(f"ECE (before TS): {ece_before:.6f}")
 logging.info(f"ECE (after  TS): {ece_after:.6f}")
 
-plot_reliability(y_test, probs_before, sample_weight=weights_test, n_bins=15, title="Reliability (before TS)", outpath=os.path.join(output_dir, "reliability_before_ts.pdf"))
-plot_reliability(y_test, probs_after, sample_weight=weights_test, n_bins=15, title=f"Reliability (after TS, T*={T_opt:.3f})", outpath=os.path.join(output_dir, "reliability_after_ts.pdf"))
+plot_reliability(y_test, probs_before, sample_weight=weights_test, n_bins=15, outpath=os.path.join(output_dir, "reliability_before_ts.pdf"))
+plot_reliability(y_test, probs_after, sample_weight=weights_test, n_bins=15, outpath=os.path.join(output_dir, "reliability_after_ts.pdf"))
 
 # Save temperature scaling results
 ts_results = {
@@ -1178,7 +1268,7 @@ if not args.binary:
     ax.set_ylabel("Weighted Mean FF")
     ax.legend(loc="lower right")
     ax.grid(True)
-    ax.set_ylim(0, 0.35)
+    ax.set_ylim(0, max(report_df["FF_mean"].max(), report_df_120["FF_mean"].max(), report_df_80["FF_mean"].max(), report_df_0["FF_mean"].max()) * 1.5)
 
     rax.axhline(1, color="black", linestyle="--", linewidth=1)
     rax.set_ylabel("Ratio")

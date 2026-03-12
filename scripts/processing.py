@@ -317,7 +317,13 @@ for era in eras:
                     tau_other_index = "2" if tau == "leading" else "1"
                     file_suffix = "lead" if tau == "leading" else "sublead"
 
-                    baseline = config["categories"][f"{region}"][f"{channel}_baseline"].format(tau_other_index=tau_other_index)
+                    if ff_process == "QCD":
+                        if era == "Run3_2024":
+                            baseline = config["categories"]["Run3_2024"][region][f"{channel}_baseline"].format(tau_other_index=tau_other_index)
+                        else:
+                            baseline = config["categories"]["EarlyRun3"][region][f"{channel}_baseline"].format(tau_other_index=tau_other_index)
+                    else:
+                        baseline = config["categories"][region][f"{channel}_baseline"].format(tau_other_index=tau_other_index)
                     stats = process_selection(
                         data_input_file,
                         mc_input_file,
