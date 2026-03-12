@@ -1,7 +1,3 @@
-{
-  "optimal_temperature": 0.9963452679969742,
-  "log_loss_before_ts": 0.25419285231204225,
-  "log_loss_after_ts": 0.25419035438163684,
-  "ece_before_ts": 0.0008175800274825794,
-  "ece_after_ts": 0.0005312321970576595
-}
+version https://git-lfs.github.com/spec/v1
+oid sha256:02a1b185295d8132f7e19ea870297a13bbbf39d0be85b8e8452483e4172d9ed1
+size 219
