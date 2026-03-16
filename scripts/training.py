@@ -454,7 +454,7 @@ def plot_reliability(y_true, probs, sample_weight=None, n_bins=15, title="", out
         label="Confidence distribution\n(fraction of total events)",
         zorder=1,
     )
-    ax2.set_ylabel("Fraction of total events", fontsize=28, color="steelblue")
+    ax2.set_ylabel("Fraction of total weights per bin", fontsize=28, color="steelblue")
     ax2.tick_params(axis="y", labelcolor="steelblue")
     ax2.set_ylim(0, 1)  # push histogram to bottom quarter
     ax2.yaxis.set_major_formatter(plt.matplotlib.ticker.PercentFormatter(xmax=1.0, decimals=0))
@@ -480,7 +480,7 @@ def plot_reliability(y_true, probs, sample_weight=None, n_bins=15, title="", out
         ax1.errorbar(
             conf_arr, acc_arr, yerr=yerr,
             fmt="o", capsize=4, lw=1.5, capthick=1.5,
-            elinewidth=1.5, markersize=6, color="#3f90da",
+            elinewidth=1.5, markersize=6, color="black",
             label=r"Empirical accuracy ± 1$\sigma$", zorder=3,
         )
         pad = 0.05
@@ -621,6 +621,298 @@ def save_feature_importance(bst, out, top_n=20, normalize=True):
     with open(out / "feature_importance.json", "w") as f:
         json.dump(fi, f, indent=2)
     logging.info(f"Feature importance data saved to {out / 'feature_importance.json'}")
+
+
+def logits_to_probs(logits, binary=False):
+    """Convert model logits to class probabilities."""
+    logits = np.asarray(logits)
+    if binary:
+        probs = expit(logits)
+        return np.vstack([1.0 - probs, probs]).T
+    return softmax(logits, axis=1)
+
+
+def select_top_features_from_model(bst, feature_names, max_features=20):
+    """Select top-N model features by gain, with robust fallback ordering."""
+    feature_names = list(feature_names)
+    gain = bst.get_score(importance_type="gain")
+    if not gain:
+        return feature_names[:max_features]
+
+    indexed = []
+    for name, score in gain.items():
+        if name in feature_names:
+            indexed.append((name, float(score)))
+            continue
+        if name.startswith("f") and name[1:].isdigit():
+            idx = int(name[1:])
+            if 0 <= idx < len(feature_names):
+                indexed.append((feature_names[idx], float(score)))
+
+    indexed.sort(key=lambda x: x[1], reverse=True)
+    ordered = []
+    seen = set()
+    for name, _ in indexed:
+        if name not in seen:
+            seen.add(name)
+            ordered.append(name)
+
+    for name in feature_names:
+        if name not in seen:
+            ordered.append(name)
+            seen.add(name)
+
+    return ordered[:max_features]
+
+
+def weighted_corr_matrix(df, features, weights):
+    """Compute weighted Pearson correlation matrix on finite rows only."""
+    cols = [c for c in features if c in df.columns]
+    if not cols:
+        raise ValueError("No requested features are present in the dataframe.")
+
+    x = df[cols].apply(pd.to_numeric, errors="coerce").to_numpy(dtype=float)
+    w = np.asarray(weights, dtype=float).reshape(-1)
+
+    valid = np.isfinite(w) & (w > 0)
+    valid &= np.all(np.isfinite(x), axis=1)
+    x = x[valid]
+    w = w[valid]
+
+    if len(w) < 2:
+        raise ValueError("Not enough valid weighted rows to compute correlations.")
+
+    wsum = w.sum()
+    mu = np.average(x, axis=0, weights=w)
+    xc = x - mu
+    cov = (xc * w[:, None]).T @ xc / wsum
+    var = np.clip(np.diag(cov), 1e-12, None)
+    denom = np.sqrt(np.outer(var, var))
+    corr = np.divide(cov, denom, out=np.zeros_like(cov), where=denom > 0)
+    corr = np.clip(corr, -1.0, 1.0)
+    np.fill_diagonal(corr, 1.0)
+
+    return corr, cols
+
+
+def plot_matrix_heatmap(matrix, labels, outpath, title, vmin=None, vmax=None, cmap="coolwarm"):
+    """Generic heatmap helper for square matrices."""
+    n = len(labels)
+    side = max(8, 0.35 * n + 4)
+    fig, ax = plt.subplots(figsize=(side, side))
+    im = ax.imshow(matrix, cmap=cmap, vmin=vmin, vmax=vmax, aspect="auto")
+    ax.set_xticks(np.arange(n))
+    ax.set_yticks(np.arange(n))
+    ax.set_xticklabels(labels, rotation=70, ha="right", fontsize=9)
+    ax.set_yticklabels(labels, fontsize=9)
+    ax.set_title(title)
+    cbar = plt.colorbar(im, ax=ax, fraction=0.046, pad=0.04)
+    cbar.ax.tick_params(labelsize=9)
+    plt.tight_layout()
+    plt.savefig(outpath, bbox_inches="tight")
+    plt.close(fig)
+
+
+def plot_feature_correlation_diagnostics(x_train, x_test, weights_train, weights_test, out, feature_candidates):
+    """Plot train/test weighted feature correlations and their drift."""
+    features = [f for f in feature_candidates if f in x_train.columns and f in x_test.columns]
+    if len(features) < 2:
+        logging.warning("Skipping correlation diagnostics: fewer than 2 common features.")
+        return
+
+    corr_train, used = weighted_corr_matrix(x_train, features, weights_train)
+    corr_test, _ = weighted_corr_matrix(x_test, used, weights_test)
+    corr_delta = corr_test - corr_train
+    corr_abs_delta = np.abs(corr_delta)
+
+    tri = np.triu_indices(len(used), k=1)
+    if len(tri[0]) > 0:
+        mean_abs_delta = float(np.mean(corr_abs_delta[tri]))
+        max_idx = int(np.argmax(corr_abs_delta[tri]))
+        i_max = int(tri[0][max_idx])
+        j_max = int(tri[1][max_idx])
+        max_pair = [used[i_max], used[j_max]]
+        max_abs_delta = float(corr_abs_delta[i_max, j_max])
+    else:
+        mean_abs_delta = 0.0
+        max_pair = []
+        max_abs_delta = 0.0
+
+    summary = {
+        "n_features": len(used),
+        "features": used,
+        "mean_abs_correlation_shift": mean_abs_delta,
+        "max_abs_correlation_shift": max_abs_delta,
+        "max_shift_feature_pair": max_pair,
+    }
+    with open(out / "correlation_shift_summary.json", "w") as f:
+        json.dump(summary, f, indent=2)
+
+    vmax = max(0.05, max_abs_delta)
+    plot_matrix_heatmap(corr_train, used, out / "feature_corr_train_weighted.pdf", "Weighted feature correlation (train)", vmin=-1, vmax=1, cmap="coolwarm")
+    plot_matrix_heatmap(corr_test, used, out / "feature_corr_test_weighted.pdf", "Weighted feature correlation (test)", vmin=-1, vmax=1, cmap="coolwarm")
+    plot_matrix_heatmap(corr_delta, used, out / "feature_corr_shift_test_minus_train.pdf", "Correlation shift: test - train", vmin=-vmax, vmax=vmax, cmap="coolwarm")
+
+    logging.info("Correlation diagnostics saved to %s", out)
+
+
+def weighted_mean_and_error(values, weights):
+    """Weighted mean and uncertainty estimate using effective sample size."""
+    values = np.asarray(values, dtype=float)
+    weights = np.asarray(weights, dtype=float)
+    if len(values) == 0 or weights.sum() <= 0:
+        return np.nan, np.nan, 0.0
+
+    mean = float(np.average(values, weights=weights))
+    var = float(np.average((values - mean) ** 2, weights=weights))
+    wsum = float(weights.sum())
+    wsqsum = float(np.square(weights).sum())
+    n_eff = (wsum ** 2 / wsqsum) if wsqsum > 0 else 0.0
+    err = float(np.sqrt(var / max(n_eff, 1.0)))
+    return mean, err, n_eff
+
+
+def plot_score_stability_by_era(y_true, probs, weights, era_labels, out, binary=False):
+    """Plot era-by-era score stability to expose potential domain leakage."""
+    y_true = np.asarray(y_true)
+    probs = np.asarray(probs)
+    w = np.asarray(weights, dtype=float).reshape(-1)
+    era = np.asarray(era_labels)
+
+    valid = np.isfinite(w) & (w > 0)
+    y_true, probs, w, era = y_true[valid], probs[valid], w[valid], era[valid]
+    eras = np.sort(pd.unique(era))
+    if len(eras) < 1:
+        logging.warning("Skipping era score stability: no valid eras found.")
+        return
+
+    if binary:
+        score = probs[:, 1]
+        groups = [("true_class_0", y_true == 0), ("true_class_1", y_true == 1)]
+        y_bin = y_true.astype(int)
+    else:
+        score = probs[:, 2] + probs[:, 3]
+        groups = [("true_data_01", y_true <= 1), ("true_mc_23", y_true >= 2)]
+        y_bin = (y_true >= 2).astype(int)
+
+    rows = []
+    fig, ax = plt.subplots(figsize=(11, 7))
+    for label, gmask in groups:
+        means, errs = [], []
+        for e in eras:
+            m = gmask & (era == e)
+            if not np.any(m):
+                means.append(np.nan)
+                errs.append(np.nan)
+                continue
+            mean, err, n_eff = weighted_mean_and_error(score[m], w[m])
+            means.append(mean)
+            errs.append(err)
+            rows.append({
+                "group": label,
+                "era_label": int(e),
+                "mean_score": float(mean),
+                "score_err": float(err),
+                "n_eff": float(n_eff),
+                "sum_w": float(w[m].sum()),
+            })
+        ax.errorbar(eras, means, yerr=errs, marker="o", capsize=3, label=label)
+
+    ax.set_xlabel("era_label")
+    ax.set_ylabel("Mean score")
+    ax.set_title("Score stability across eras")
+    ax.grid(True, alpha=0.4)
+    ax.legend()
+    hep.cms.label(**CMS_LABEL, ax=ax)
+    plt.tight_layout()
+    plt.savefig(out / "score_stability_by_era.pdf", bbox_inches="tight")
+    plt.close(fig)
+
+    # Binary discrimination stability across eras
+    auc_rows = []
+    for e in eras:
+        m = era == e
+        auc = np.nan
+        if np.unique(y_bin[m]).size == 2:
+            try:
+                auc = float(roc_auc_score(y_bin[m], score[m], sample_weight=w[m]))
+            except ValueError:
+                auc = np.nan
+        auc_rows.append({"era_label": int(e), "auc_data_vs_mc": auc, "sum_w": float(w[m].sum())})
+
+    auc_df = pd.DataFrame(auc_rows)
+    auc_df.to_csv(out / "score_auc_by_era.csv", index=False)
+
+    fig, ax = plt.subplots(figsize=(10, 6))
+    ax.bar(auc_df["era_label"].astype(str), auc_df["auc_data_vs_mc"].fillna(0.0), color="tab:blue", alpha=0.8)
+    ax.set_xlabel("era_label")
+    ax.set_ylabel("AUC (data-vs-MC score)")
+    ax.set_ylim(0.0, 1.0)
+    ax.set_title("AUC stability across eras")
+    ax.grid(True, axis="y", alpha=0.4)
+    hep.cms.label(**CMS_LABEL, ax=ax)
+    plt.tight_layout()
+    plt.savefig(out / "score_auc_by_era.pdf", bbox_inches="tight")
+    plt.close(fig)
+
+    pd.DataFrame(rows).to_csv(out / "score_stability_by_era.csv", index=False)
+    logging.info("Era score stability diagnostics saved to %s", out)
+
+
+def evaluate_domain_permutation_sensitivity(bst, x_eval, y_eval, weights_eval, out, binary=False, variables=None, n_repeats=8, random_seed=42):
+    """Measure dependence on domain-like variables via permutation sensitivity."""
+    if variables is None:
+        variables = ["era_label", "is_lead_tau"]
+
+    y = np.asarray(y_eval)
+    w = np.asarray(weights_eval, dtype=float).reshape(-1)
+    labels = [0, 1] if binary else [0, 1, 2, 3]
+
+    logits_base = bst.predict(xgb.DMatrix(x_eval), output_margin=True)
+    probs_base = logits_to_probs(logits_base, binary=binary)
+    baseline_loss = float(log_loss(y, probs_base, sample_weight=w, labels=labels))
+
+    rng = np.random.default_rng(random_seed)
+    rows = []
+    for var in variables:
+        if var not in x_eval.columns:
+            continue
+        deltas = []
+        for _ in range(n_repeats):
+            x_perm = x_eval.copy()
+            x_perm[var] = rng.permutation(x_perm[var].to_numpy())
+            logits_perm = bst.predict(xgb.DMatrix(x_perm), output_margin=True)
+            probs_perm = logits_to_probs(logits_perm, binary=binary)
+            loss_perm = float(log_loss(y, probs_perm, sample_weight=w, labels=labels))
+            deltas.append(loss_perm - baseline_loss)
+
+        rows.append({
+            "variable": var,
+            "delta_logloss_mean": float(np.mean(deltas)),
+            "delta_logloss_std": float(np.std(deltas)),
+            "n_repeats": int(n_repeats),
+            "baseline_logloss": baseline_loss,
+        })
+
+    if not rows:
+        logging.warning("No domain variables available for permutation sensitivity check.")
+        return
+
+    df = pd.DataFrame(rows).sort_values("delta_logloss_mean", ascending=False)
+    df.to_csv(out / "domain_permutation_sensitivity.csv", index=False)
+
+    fig, ax = plt.subplots(figsize=(10, 6))
+    ax.bar(df["variable"], df["delta_logloss_mean"], yerr=df["delta_logloss_std"], capsize=4, color="tab:purple", alpha=0.85)
+    ax.axhline(0.0, color="black", linestyle="--", linewidth=1)
+    ax.set_ylabel("Δ log-loss after permutation")
+    ax.set_title("Domain-variable permutation sensitivity")
+    ax.grid(True, axis="y", alpha=0.4)
+    hep.cms.label(**CMS_LABEL, ax=ax)
+    plt.tight_layout()
+    plt.savefig(out / "domain_permutation_sensitivity.pdf", bbox_inches="tight")
+    plt.close(fig)
+
+    logging.info("Domain permutation sensitivity diagnostics saved to %s", out)
 
 
 # -------------------- Main ----------------------------
@@ -920,6 +1212,35 @@ print(f"Holdout ECE before={ece_b:.4f} after={ece_a:.4f} (T*={T_cal:.3f})")
 plot_loss_curves(eval_results, out=Path(output_dir), binary=args.binary)
 plot_roc(y_test, probs_after, out=Path(output_dir), binary=args.binary)
 save_feature_importance(bst, out=Path(output_dir))
+
+# Domain-leakage and correlation diagnostics
+diag_features = select_top_features_from_model(bst, list(x_train.columns), max_features=20)
+plot_feature_correlation_diagnostics(
+    x_train=x_train,
+    x_test=x_test,
+    weights_train=weights_train,
+    weights_test=weights_test,
+    out=Path(output_dir),
+    feature_candidates=diag_features,
+)
+plot_score_stability_by_era(
+    y_true=y_test,
+    probs=probs_after,
+    weights=weights_test,
+    era_labels=combined_df.loc[y_test.index, "era_label"].to_numpy(),
+    out=Path(output_dir),
+    binary=args.binary,
+)
+evaluate_domain_permutation_sensitivity(
+    bst=bst,
+    x_eval=x_test,
+    y_eval=y_test,
+    weights_eval=weights_test,
+    out=Path(output_dir),
+    binary=args.binary,
+    variables=["era_label", "is_lead_tau"],
+    n_repeats=8,
+)
 
 logging.info("Training and evaluation complete.")
 
