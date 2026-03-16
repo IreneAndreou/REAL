@@ -19,9 +19,9 @@ parser.add_argument("--output-dir", type=str, required=True, help="Directory to 
 parser.add_argument("--eras", type=str, default="", help="Era label to include in plot (e.g. 'EarlyRun3', 'Run3_2024').")
 args = parser.parse_args()
 
-CMS_LABEL = dict(data=True, label="", com=13.6, loc=0, lumi=62.4)
+CMS_LABEL = dict(data=True, label="", com=13.6, loc=0, lumi=62.4 if args.eras == "EarlyRun3" else 109.08)
 if args.process in ["WjetsMC", "ttbarMC"]:
-    CMS_LABEL = dict(data=True, label="Simulation", com=13.6, loc=0, lumi=62.4)
+    CMS_LABEL = dict(data=True, label="Simulation", com=13.6, loc=0, lumi=62.4 if args.eras == "EarlyRun3" else 109.08)
 
 
 def read_metrics_txt(path):
