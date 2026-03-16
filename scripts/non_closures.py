@@ -16,6 +16,7 @@ parser.add_argument("--channel", type=str, default="tt", help="Channel to read m
 parser.add_argument("--process", type=str, default="QCD", help="Process to read metrics from (e.g. 'QCD', 'Wjets', 'ttbarMC').")
 parser.add_argument("--region", type=str, default="all", help="Which regions to plot (e.g. 'all', 'determination', 'validation').")
 parser.add_argument("--output-dir", type=str, required=True, help="Directory to save non-closure plots to.")
+parser.add_argument("--eras", type=str, default="", help="Era label to include in plot (e.g. 'EarlyRun3', 'Run3_2024').")
 args = parser.parse_args()
 
 CMS_LABEL = dict(data=True, label="", com=13.6, loc=0, lumi=62.4)
@@ -196,7 +197,10 @@ def plot_nonclosure_centered(feature, r_ml, e_ml, r_cl, e_cl, bin_centers=None, 
     print(f"Plot saved to {outpath}")
 
 
-features_to_plot = ["pt", "mt_tot", "pt_tt", "BDT_raw_score_tau", "BDT_raw_score_higgs", "BDT_raw_score_fake"]
+if args.eras == "EarlyRun3":
+    features_to_plot = ["pt", "mt_tot", "pt_tt", "BDT_raw_score_tau", "BDT_raw_score_higgs", "BDT_raw_score_fake"]
+elif args.eras == "Run3_2024":
+    features_to_plot = ["pt", "mt_tot", "pt_tt"]  # only kinematic variables for EarlyRun3 since BDTs not used in that analysis
 for feature in features_to_plot:
     suffix = "lead" if args.leading else "sublead"
     feature, r_ml, e_ml, r_cl, e_cl, bin_centers, bin_widths, ml_diff, closure_diff, const_ml, const_cl = read_metrics_txt(f"{args.output_dir}/Run3_Combined/{args.region}/{feature}_subtraction_reweighting_{suffix}_metrics.txt")

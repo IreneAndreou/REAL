@@ -9,6 +9,7 @@ if plotting_type not in ["1", "2"]:
 plotting_type = "" if plotting_type == "1" else "_2024"
 
 config_file = f"configs/plotting{plotting_type}.yaml"
+era = "EarlyRun3" if plotting_type == "" else "Run3_2024"
 
 to_run = [
     {"channel": "tt", "process": "QCD", "binary": False, "leading": True, "regions": "all"},
@@ -31,8 +32,8 @@ for config in to_run:
     if regions != "all":
         binary += f" --region {regions}"
         region = regions
-    os.system(f"python scripts/plotting.py --config {config_file} --channel {channel} --process {process} --global_variables False {binary} --paper_plots")
+    os.system(f"python scripts/plotting.py --config {config_file} --channel {channel} --process {process} --global_variables True {binary} --paper_plots")
     with open(config_file, 'r') as f:
         config_data = yaml.safe_load(f)
-    output_dir = config_data['output_dir'].format(channel=channel, ff_process=process)
-    os.system(f"python scripts/non_closures.py --output-dir {output_dir} --channel {channel} --process {process} --region {region} {leading}")
+    output_dir = config_data['output_dir'].format(channel=channel, ff_process=process, global_str="Global")
+    os.system(f"python scripts/non_closures.py --output-dir {output_dir} --channel {channel} --process {process} --region {region} {leading} --eras {era}")
