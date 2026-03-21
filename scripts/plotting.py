@@ -765,7 +765,7 @@ def plot_individual_reweighing(feature, bins, ranges, df_data_iso, df_data_aiso,
     axs[0, 1].hist(bin_edges[:-1], bins=bin_edges, weights=h_mc_aiso, histtype="step", label="AISO", color="gray", linewidth=2)
     axs[0, 1].scatter(bin_centers, h_mc_iso, label="ISO", color="black", marker="o")
     axs[0, 1].set_ylabel("Counts")
-    axs[0, 1].legend(title=f"MC (before reweighting) \n ISO: {h_mc_iso.sum():.1f}, \n AISO: {h_mc_aiso.sum():.1f}", fontsize=30, loc="upper right")
+    axs[0, 1].legend(title=f"MC (before reweighting) \n ISO: {float(np.ma.filled(np.ma.sum(h_mc_iso), 0.0)):.1f}, \n AISO: {float(np.ma.filled(np.ma.sum(h_mc_aiso), 0.0)):.1f}", fontsize=30, loc="upper right")
 
     # After reweighting
     axs[1, 0].hist(bin_edges[:-1], bins=bin_edges, weights=h_data_aiso_rw, histtype="step", label="ML AISO", color="blue", linewidth=2)
@@ -783,9 +783,9 @@ def plot_individual_reweighing(feature, bins, ranges, df_data_iso, df_data_aiso,
     axs[1, 1].scatter(bin_centers, h_mc_iso, label="ISO", color="black", marker="o")
     axs[1, 1].set_ylabel("Counts")
     axs[1, 1].legend(title=f"""MC (after reweighting)
-                     \n ISO: {h_mc_iso.sum():.1f},
-                     \n ML AISO: {h_mc_aiso_rw.sum():.1f},
-                     \n Classical AISO: {h_mc_aiso_classical.sum():.1f}""",
+                     \n ISO: {float(np.ma.filled(np.ma.sum(h_mc_iso), 0.0)):.1f},
+                     \n ML AISO: {float(np.ma.filled(np.ma.sum(h_mc_aiso_rw), 0.0)):.1f},
+                     \n Classical AISO: {float(np.ma.filled(np.ma.sum(h_mc_aiso_classical), 0.0)):.1f}""",
                      fontsize=30, loc="upper right")
     # Ratios
     axs[2, 0].errorbar(bin_centers, ratio_data, yerr=np.abs(err_ratio_data), fmt="o", color="gray")  # TODO: Fix definitions so not go negative
@@ -810,6 +810,10 @@ def plot_individual_reweighing(feature, bins, ranges, df_data_iso, df_data_aiso,
 
 def plot_subtraction_reweighting(feature, bins, ranges, df_data_iso, df_data_aiso, df_mc_iso, df_mc_aiso, era_id, tau_suffix, region, binary=None, validation_indices_main=None, validation_indices_alt=None, feature_tag=""):
     """Plot comparison of data-MC distributions for a given feature before and after ML reweighting."""
+    use_data_only = (feature == "pileup") and (not binary)
+    if feature == "pileup" and binary:
+        logger.warning("MC trainings cannot have pileup closure plots, skipping.")
+        return
     output_dir = plotting_config["output_dir"].format(global_str="Global" if global_setting else "noGlobal", channel=channel, ff_process=process)
     os.makedirs(output_dir, exist_ok=True)
     if era_cfg.get("Run3_2024", False):
@@ -864,6 +868,11 @@ def plot_subtraction_reweighting(feature, bins, ranges, df_data_iso, df_data_ais
         ratio_rw_alt, err_ratio_rw_alt = ratio_and_err(h_mc_iso, h_mc_aiso_rw_alt, err_mc_iso, err_mc_aiso_rw_alt)
         ratio_classical, err_ratio_classical = ratio_and_err(h_mc_iso, h_mc_aiso_classical, err_mc_iso, err_mc_aiso_classical)
 
+    elif use_data_only:
+        ratio_rw, err_ratio_rw = ratio_and_err(h_data_iso, h_data_aiso_rw, err_data_iso, err_data_aiso_rw)
+        ratio_rw_alt, err_ratio_rw_alt = ratio_and_err(h_data_iso, h_data_aiso_rw_alt, err_data_iso, err_data_aiso_rw_alt)
+        ratio_classical, err_ratio_classical = ratio_and_err(h_data_iso, h_data_aiso_classical, err_data_iso, err_data_aiso_classical)
+
     else:
         ratio_rw, err_ratio_rw = ratio_and_err(h_data_iso - h_mc_iso, h_data_aiso_rw - h_mc_aiso_rw, np.sqrt(err_data_iso**2 + err_mc_iso**2), np.sqrt(err_data_aiso_rw**2 + err_mc_aiso_rw**2))
         ratio_rw_alt, err_ratio_rw_alt = ratio_and_err(h_data_iso - h_mc_iso, h_data_aiso_rw_alt - h_mc_aiso_rw_alt, np.sqrt(err_data_iso**2 + err_mc_iso**2), np.sqrt(err_data_aiso_rw_alt**2 + err_mc_aiso_rw_alt**2))
@@ -884,6 +893,18 @@ def plot_subtraction_reweighting(feature, bins, ranges, df_data_iso, df_data_ais
         err_aiso_rw = err_mc_aiso_rw
         err_aiso_rw_alt = err_mc_aiso_rw_alt
         err_aiso_classical = err_mc_aiso_classical
+
+    elif use_data_only:
+        # For pileup: target is Data ISO, predictions are weighted Data AISO
+        h_aiso_rw = h_data_aiso_rw
+        h_aiso_rw_alt = h_data_aiso_rw_alt
+        h_aiso_classical = h_data_aiso_classical
+        h_iso = h_data_iso
+        err_iso = err_data_iso
+        err_aiso_rw = err_data_aiso_rw
+        err_aiso_rw_alt = err_data_aiso_rw_alt
+        err_aiso_classical = err_data_aiso_classical
+
     else:
         h_aiso_rw = h_data_aiso_rw - h_mc_aiso_rw
         h_aiso_rw_alt = h_data_aiso_rw_alt - h_mc_aiso_rw_alt
@@ -1874,7 +1895,7 @@ for channel in channels:
                 features_cfg = feature_list(plotting_config, channel, process, tau_suffix, global_setting)
 
                 # Add features for plotting
-                for feat in ["dR", "n_jets", "n_bjets", "n_prebjets", "pt_tt", "m_vis", "mt_tot", "met_pt", "met_phi", "met_dphi_1", "met_dphi_2", "FastMTT_mass", "BDT_raw_score_tau", "BDT_raw_score_higgs", "BDT_raw_score_fake", "mjj"]:
+                for feat in ["dR", "n_jets", "n_bjets", "n_prebjets", "pt_tt", "m_vis", "mt_tot", "met_pt", "met_phi", "met_dphi_1", "met_dphi_2", "FastMTT_mass", "BDT_raw_score_tau", "BDT_raw_score_higgs", "BDT_raw_score_fake", "mjj", "pileup"]:
                     if feat not in features_cfg:
                         if plotting_config['era'].get('Run3_2024', False) and feat in ["BDT_raw_score_tau", "BDT_raw_score_higgs", "BDT_raw_score_fake"]:
                             logger.warning(f"Skipping feature '{feat}' for 2024 era as it's not available in the data")

@@ -1,30 +1,30 @@
 era:
   Run3_2022:
-    data_iso_file: "/vols/cms/ia2318/REAL/data_January26/Run3_2022/{region}_region/{ff_process}/data_iso_{channel}_{tau_suffix}.parquet"
-    data_aiso_file: "/vols/cms/ia2318/REAL/data_January26/Run3_2022/{region}_region/{ff_process}/data_aiso_{channel}_{tau_suffix}.parquet"
-    mc_iso_file: "/vols/cms/ia2318/REAL/data_January26/Run3_2022/{region}_region/{ff_process}/mc_iso_{channel}_{tau_suffix}.parquet"
-    mc_aiso_file: "/vols/cms/ia2318/REAL/data_January26/Run3_2022/{region}_region/{ff_process}/mc_aiso_{channel}_{tau_suffix}.parquet"
+    data_iso_file: "/vols/cms/ia2318/REAL/data_with_pileup_January26/Run3_2022/{region}_region/{ff_process}/data_iso_{channel}_{tau_suffix}.parquet"
+    data_aiso_file: "/vols/cms/ia2318/REAL/data_with_pileup_January26/Run3_2022/{region}_region/{ff_process}/data_aiso_{channel}_{tau_suffix}.parquet"
+    mc_iso_file: "/vols/cms/ia2318/REAL/data_with_pileup_January26/Run3_2022/{region}_region/{ff_process}/mc_iso_{channel}_{tau_suffix}.parquet"
+    mc_aiso_file: "/vols/cms/ia2318/REAL/data_with_pileup_January26/Run3_2022/{region}_region/{ff_process}/mc_aiso_{channel}_{tau_suffix}.parquet"
   Run3_2022EE:
-    data_iso_file: "/vols/cms/ia2318/REAL/data_January26/Run3_2022EE/{region}_region/{ff_process}/data_iso_{channel}_{tau_suffix}.parquet"
-    data_aiso_file: "/vols/cms/ia2318/REAL/data_January26/Run3_2022EE/{region}_region/{ff_process}/data_aiso_{channel}_{tau_suffix}.parquet"
-    mc_iso_file: "/vols/cms/ia2318/REAL/data_January26/Run3_2022EE/{region}_region/{ff_process}/mc_iso_{channel}_{tau_suffix}.parquet"
-    mc_aiso_file: "/vols/cms/ia2318/REAL/data_January26/Run3_2022EE/{region}_region/{ff_process}/mc_aiso_{channel}_{tau_suffix}.parquet"
+    data_iso_file: "/vols/cms/ia2318/REAL/data_with_pileup_January26/Run3_2022EE/{region}_region/{ff_process}/data_iso_{channel}_{tau_suffix}.parquet"
+    data_aiso_file: "/vols/cms/ia2318/REAL/data_with_pileup_January26/Run3_2022EE/{region}_region/{ff_process}/data_aiso_{channel}_{tau_suffix}.parquet"
+    mc_iso_file: "/vols/cms/ia2318/REAL/data_with_pileup_January26/Run3_2022EE/{region}_region/{ff_process}/mc_iso_{channel}_{tau_suffix}.parquet"
+    mc_aiso_file: "/vols/cms/ia2318/REAL/data_with_pileup_January26/Run3_2022EE/{region}_region/{ff_process}/mc_aiso_{channel}_{tau_suffix}.parquet"
   Run3_2023:
-    data_iso_file: "/vols/cms/ia2318/REAL/data_January26/Run3_2023/{region}_region/{ff_process}/data_iso_{channel}_{tau_suffix}.parquet"
-    data_aiso_file: "/vols/cms/ia2318/REAL/data_January26/Run3_2023/{region}_region/{ff_process}/data_aiso_{channel}_{tau_suffix}.parquet"
-    mc_iso_file: "/vols/cms/ia2318/REAL/data_January26/Run3_2023/{region}_region/{ff_process}/mc_iso_{channel}_{tau_suffix}.parquet"
-    mc_aiso_file: "/vols/cms/ia2318/REAL/data_January26/Run3_2023/{region}_region/{ff_process}/mc_aiso_{channel}_{tau_suffix}.parquet"
+    data_iso_file: "/vols/cms/ia2318/REAL/data_with_pileup_January26/Run3_2023/{region}_region/{ff_process}/data_iso_{channel}_{tau_suffix}.parquet"
+    data_aiso_file: "/vols/cms/ia2318/REAL/data_with_pileup_January26/Run3_2023/{region}_region/{ff_process}/data_aiso_{channel}_{tau_suffix}.parquet"
+    mc_iso_file: "/vols/cms/ia2318/REAL/data_with_pileup_January26/Run3_2023/{region}_region/{ff_process}/mc_iso_{channel}_{tau_suffix}.parquet"
+    mc_aiso_file: "/vols/cms/ia2318/REAL/data_with_pileup_January26/Run3_2023/{region}_region/{ff_process}/mc_aiso_{channel}_{tau_suffix}.parquet"
   Run3_2023BPix:
-    data_iso_file: "/vols/cms/ia2318/REAL/data_January26/Run3_2023BPix/{region}_region/{ff_process}/data_iso_{channel}_{tau_suffix}.parquet"
-    data_aiso_file: "/vols/cms/ia2318/REAL/data_January26/Run3_2023BPix/{region}_region/{ff_process}/data_aiso_{channel}_{tau_suffix}.parquet"
-    mc_iso_file: "/vols/cms/ia2318/REAL/data_January26/Run3_2023BPix/{region}_region/{ff_process}/mc_iso_{channel}_{tau_suffix}.parquet"
-    mc_aiso_file: "/vols/cms/ia2318/REAL/data_January26/Run3_2023BPix/{region}_region/{ff_process}/mc_aiso_{channel}_{tau_suffix}.parquet"
+    data_iso_file: "/vols/cms/ia2318/REAL/data_with_pileup_January26/Run3_2023BPix/{region}_region/{ff_process}/data_iso_{channel}_{tau_suffix}.parquet"
+    data_aiso_file: "/vols/cms/ia2318/REAL/data_with_pileup_January26/Run3_2023BPix/{region}_region/{ff_process}/data_aiso_{channel}_{tau_suffix}.parquet"
+    mc_iso_file: "/vols/cms/ia2318/REAL/data_with_pileup_January26/Run3_2023BPix/{region}_region/{ff_process}/mc_iso_{channel}_{tau_suffix}.parquet"
+    mc_aiso_file: "/vols/cms/ia2318/REAL/data_with_pileup_January26/Run3_2023BPix/{region}_region/{ff_process}/mc_aiso_{channel}_{tau_suffix}.parquet"
 
 model_path: "/vols/cms/ia2318/REAL/TAU-25-001/trainings/best_model_{channel}_{ff_process}.pkl"
 train_test_split_path: "/vols/cms/ia2318/REAL/outputs/best_models/Run3_2024_{global_str}/{channel}_{ff_process}/test_event_ids.csv"
 classical_ff_path: "/vols/cms/ia2318/REAL/TAU-25-001/classical/{year}_fake_factors_{channel}_{ff_process}.json"
 optimal_temperature_path: "/vols/cms/ia2318/REAL/TAU-25-001/trainings/temperature_scaling_results_{channel}_{ff_process}.json"
-output_dir: "/vols/cms/ia2318/REAL/outputs/plots/TAU-25-001_Preservation/{channel}_{ff_process}"
+output_dir: "/vols/cms/ia2318/REAL/outputs/plots/TAU-25-001_Preservation/{channel}_{ff_process}/pileup_studies"
 lead_tau: 
   - "decayMode_1"
   - "jpt_pt_1"
@@ -56,7 +56,7 @@ features_to_plot:
     # - 'phi_other'
     - 'pt_tt'
     - 'dR'
-    # - 'n_jets'
+    - 'n_jets'
     # - 'n_bjets'
     # - 'n_prebjets'
     - 'm_vis'
@@ -71,6 +71,7 @@ features_to_plot:
     # - 'met_phi'
     # - 'met_dphi'
     # - 'met_dphi_other'
+    - 'pileup'
 
 latex_names_lead:
     'decayMode': '$\tau_h^{lead}$ decay mode'
@@ -106,7 +107,7 @@ latex_names_lead:
     'BDT_raw_score_tau': '$\tau_h$ BDT score'
     'BDT_raw_score_higgs': 'Higgs BDT score'
     'BDT_raw_score_fake': 'Misidentified $\tau_h$ BDT score'
-
+    'pileup': '$N_{PU}$'
 latex_names_sublead: ## this is only for the semi-leptonic channels so far
     'decayMode': '$\tau_h$ decay mode'
     'jpt_pt': 'Ratio of $p_{T}^{jet}$ to $p_{T}^{\tau_h}$'
@@ -131,6 +132,7 @@ latex_names_sublead: ## this is only for the semi-leptonic channels so far
     'BDT_raw_score_tau': '$\tau_h$ BDT score'
     'BDT_raw_score_higgs': 'Higgs BDT score'
     'BDT_raw_score_fake': 'Misidentified $\tau_h$ BDT score'
+    'pileup': '$N_{PU}$'
 
 plot_params:
   bins:
@@ -169,6 +171,7 @@ plot_params:
     'BDT_raw_score_tau': 10
     'BDT_raw_score_higgs': 10
     'BDT_raw_score_fake': 10
+    'pileup': 10
 
   ranges:
     'decayMode': [0, 12]
@@ -204,6 +207,7 @@ plot_params:
     'BDT_raw_score_tau': [0.33, 1.]
     'BDT_raw_score_higgs': [0.33, 1.]
     'BDT_raw_score_fake': [0.33, 1.]
+    'pileup': [0.01, 70]
   
   discrete_bins_lead:
     'charge': [-2, -1, 0, 1, 2]
