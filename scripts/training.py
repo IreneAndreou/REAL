@@ -302,7 +302,7 @@ def build_xgb_params(trial, hyperparams, binary, device, seed):
         "min_child_weight": trial.suggest_int("min_child_weight", *hp["min_child_weight"]),
         "reg_alpha": trial.suggest_float("reg_alpha", *hp["reg_alpha"], log=True),
         "reg_lambda": trial.suggest_float("reg_lambda", *hp["reg_lambda"], log=True),
-        "gamma": trial.suggest_float("gamma", *hp.get("gamma", [0.0, 0.0]), log=True) if "gamma" in hp else 0.0,
+        "gamma": trial.suggest_float("gamma", 1e-8, hp["gamma"][1], log=True) if "gamma" in hp and hp["gamma"][1] > 0 else 0.0,
         "max_delta_step": 1.0,
         "objective": "binary:logistic" if binary else "multi:softprob",
         "eval_metric": "logloss" if binary else "mlogloss",
