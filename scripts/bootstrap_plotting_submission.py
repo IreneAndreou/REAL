@@ -57,7 +57,7 @@ def main():
         "--train_script",
         type=str,
         default="/vols/cms/ia2318/REAL/scripts/bootstrap_fake_factors.py",
-        help="Path to bootstrap_training.py (default: %(default)s).",
+        help="Path to bootstrap_fake_factors.py (default: %(default)s).",
     )
     parser.add_argument(
         "--ref_model",
@@ -74,7 +74,7 @@ def main():
     parser.add_argument(
         "--no_submit",
         action="store_true",
-        help="Generate .sh and .sub files but do NOT submit them to Condor.",
+        help="Run interactively instead of submitting jobs to Condor.",
     )
 
     args = parser.parse_args()
@@ -174,7 +174,19 @@ Queue 1
 
     # ---------------- Optionally submit jobs ----------------
     if args.no_submit:
-        logging.info("no_submit flag set; not submitting jobs to Condor.")
+        logging.info("Interactive mode enabled; running jobs interactively.")
+        for i in range(-1, num_bootstrap_samples):
+            if i == -1:
+                logging.info("Running nominal (non-bootstrap) job interactively.")
+            else:
+                logging.info(f"Running bootstrap job index: {i} interactively.")
+
+            sh_script_path = logs_dir / f"bootstrap_ff_script_{i}.sh"
+            cmd = ["bash", str(sh_script_path), str(i), str(output_dir)]
+            logging.info(f"Executing: {' '.join(cmd)}")
+            subprocess.run(cmd, check=True)
+
+        logging.info("All interactive jobs completed.")
         return
 
     logging.info("Submitting jobs to Condor...")

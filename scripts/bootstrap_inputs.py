@@ -254,7 +254,6 @@ def build_bootstrap_combined_df(full_config, era_key, channel, ff_process, tau_o
         else:
             combined_dfs.append(this_tau_df)
 
-        
         # Start from here -- need to add channels, tau_per_channel from other scripts
         if output_dir is None:
             global_prefix = "global_" if global_setting == "True" else "no_global_"
@@ -380,7 +379,7 @@ dtest.save_binary(dtest_path)
 logging.info(f"Saved dtest DMatrix to {dtest_path}")
 
 # Generate bootstrap samples from the training set
-n_bootstrap = 50  # you can make this a CLI arg later if you want
+n_bootstrap = 50  # TODO: can make this a CLI arg later
 logging.info(f"Generating {n_bootstrap} bootstrap samples from training set")
 
 for i in range(n_bootstrap):

@@ -72,7 +72,7 @@ def main():
     parser.add_argument(
         "--no_submit",
         action="store_true",
-        help="Generate .sh and .sub files but do NOT submit them to Condor.",
+        help="Generate .sh and .sub files but do NOT submit them to Condor. Runs the jobs interactively instead.",
     )
 
     args = parser.parse_args()
@@ -173,6 +173,15 @@ Queue 1
     # ---------------- Optionally submit jobs ----------------
     if args.no_submit:
         logging.info("no_submit flag set; not submitting jobs to Condor.")
+        logging.info("Running jobs interactively...")
+
+        for i in range(0, num_bootstrap_samples):
+            sh_script_path = logs_dir / f"bootstrap_script_{i}.sh"
+            cmd = ["bash", str(sh_script_path), str(i), str(output_dir)]
+            logging.info(f"Running interactively: {' '.join(cmd)}")
+            subprocess.run(cmd, check=True)
+
+        logging.info("All bootstrap jobs run interactively.")
         return
 
     logging.info("Submitting jobs to Condor...")

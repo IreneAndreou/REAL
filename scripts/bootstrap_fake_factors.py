@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
+# Example usage:
+# python scripts/plot_statistical_uncertainty.py --output_dir  /vols/cms/ia2318/REAL/outputs/best_models/Run3_2024Thesis_withGlobal/
 
 """
 Per-bootstrap worker to compute binned ML fake factors (FF) for plotting.
@@ -224,11 +225,11 @@ def main():
     channel_process = os.path.basename(ref_dir)
     channel, process = channel_process.split('_')
 
-    # Load config to get eras
-    config_path = f"configs/{process}.yaml"
-    with open(config_path, 'r') as f:
-        config = yaml.safe_load(f)
-    eras = list(config['categories'].keys())
+    # Get eras
+    if "2024" in args.ref_model:
+        eras = ["Run3_2024"]
+    else:
+        eras = ["Run3_2022", "Run3_2022EE", "Run3_2023", "Run3_2023BPix"]
 
     # Data paths (build dynamically from config eras)
     iso_type = 'mc_aiso' if process in ['WjetsMC', 'ttbarMC'] else 'data_aiso'
