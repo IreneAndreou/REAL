@@ -1897,7 +1897,7 @@ for channel in channels:
                 # Add features for plotting
                 for feat in ["dR", "n_jets", "n_bjets", "n_prebjets", "pt_tt", "m_vis", "mt_tot", "met_pt", "met_phi", "met_dphi_1", "met_dphi_2", "FastMTT_mass", "BDT_raw_score_tau", "BDT_raw_score_higgs", "BDT_raw_score_fake", "mjj", "pileup"]:
                     if feat not in features_cfg:
-                        if plotting_config['era'].get('Run3_2024', False) and feat in ["BDT_raw_score_tau", "BDT_raw_score_higgs", "BDT_raw_score_fake"]:
+                        if plotting_config['era'].get('Run3_2024', False) and feat in ["BDT_raw_score_tau", "BDT_raw_score_higgs", "BDT_raw_score_fake", "pileup"]:
                             logger.warning(f"Skipping feature '{feat}' for 2024 era as it's not available in the data")
                             continue
                         features_cfg.append(feat)  # TODO: fix this for semi-leptonic channels

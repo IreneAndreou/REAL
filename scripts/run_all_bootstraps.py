@@ -26,4 +26,4 @@ for config in to_run:
     global_variables = config["global_variables"]
     binary = "" if not config["binary"] else "--binary"
     os.system(f"python scripts/bootstrap_inputs.py --config {config_file} --channel {channel} --process {process} --global_variables {str(global_variables)} {binary}")
-    os.system(f"python scripts/bootstrap_submission.py --output_dir /vols/cms/ia2318/REAL/outputs/best_models/Run3_2024Thesis_withGlobal/{channel}_{process}/ --ref_model /vols/cms/ia2318/REAL/outputs/best_models/Run3_2024ThesisNew_withGlobal/{channel}_{process}/best_model.pkl")
+    os.system(f"python scripts/bootstrap_submission.py --output_dir /vols/cms/ia2318/REAL/outputs/best_models/Run3_2024Thesis_withGlobal/{channel}_{process}/ --ref_model /vols/cms/ia2318/REAL/outputs/best_models/Run3_2024Thesis_withGlobal/{channel}_{process}/best_model.pkl")
