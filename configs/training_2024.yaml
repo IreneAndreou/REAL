@@ -28,14 +28,15 @@ training:
 
 
 hyperparameters:
-  max_depth: [3, 10]
-  learning_rate: [0.01, 0.3]
-  subsample: [0.5, 1.0]
+  max_depth: [3, 7]
+  learning_rate: [0.01, 0.1]
+  subsample: [0.8, 1.0]
   colsample_bytree: [0.5, 1.0]
   min_child_weight: [1, 10]
-  reg_alpha: [1e-8, 1.0]
-  reg_lambda: [1e-8, 1.0]
+  reg_alpha: [1e-4, 1.0]
+  reg_lambda: [1e-3, 10.0]
+  gamma: [1e-8, 5.0]  # Allows the model to prune unstable branches
   n_trials: 50
-  n_jobs: 4
+  n_jobs: 3
   early_stopping_rounds: 20
   num_boost_round: 10000

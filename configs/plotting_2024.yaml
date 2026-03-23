@@ -6,9 +6,9 @@ era:
     mc_aiso_file: "/vols/cms/ia2318/REAL/data_January26/Run3_2024/{region}_region/{ff_process}/mc_aiso_{channel}_{tau_suffix}.parquet"
 
 model_path: "/vols/cms/ia2318/REAL/outputs/best_models/Run3_2024Thesis_{global_str}/{channel}_{ff_process}/best_model.pkl"
-train_test_split_path: "/vols/cms/ia2318/REAL/outputs/best_models/Run3_2024_{global_str}/{channel}_{ff_process}/test_event_ids.csv"
+train_test_split_path: "/vols/cms/ia2318/REAL/outputs/best_models/Run3_2024Thesis_{global_str}/{channel}_{ff_process}/test_event_ids.csv"
 classical_ff_path: "/vols/cms/ia2318/HiggsDNA/Run3FakeFactors/{channel}/{year}_fake_factors_{ff_process}.json"
-optimal_temperature_path: "/vols/cms/ia2318/REAL/outputs/best_models/Run3_2024_{global_str}/{channel}_{ff_process}/temperature_scaling_results.json"
+optimal_temperature_path: "/vols/cms/ia2318/REAL/outputs/best_models/Run3_2024Thesis_{global_str}/{channel}_{ff_process}/temperature_scaling_results.json"
 output_dir: "/vols/cms/ia2318/REAL/outputs/plots/Run3_2024Thesis_{global_str}/{channel}_{ff_process}"
 lead_tau: 
   - "decayMode_1"
