@@ -124,3 +124,5 @@ The recommended minimum bias cross section is used:
 A valid grid proxy is required to run brilcalc
 
 The normtag must always be specified to obtain calibrated luminosity
+
+### In the future, studies can be performed on including `pileup` as a training variable
