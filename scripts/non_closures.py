@@ -63,6 +63,7 @@ def read_metrics_txt(path):
 
 def plot_nonclosure_centered(feature, r_ml, e_ml, r_cl, e_cl, bin_centers=None, bin_widths=None, outpath=None, const_ml=None, const_cl=None, tau_suffix="sublead"):
     # Non-closure defined as 1 - ratio (centered at 0)
+    feature_key = feature
     d_ml = 1.0 - r_ml
     d_cl = 1.0 - r_cl
 
@@ -119,16 +120,16 @@ def plot_nonclosure_centered(feature, r_ml, e_ml, r_cl, e_cl, bin_centers=None, 
 
     ax.fill_between(x_step_plot, 0, to_step(d_ml_quad), step="post", color="#5790fc", alpha=0.15, zorder=1)
     ax.fill_between(x_step_plot, 0, to_step(d_cl_quad), step="post", color="#fc5757", alpha=0.15, zorder=1)
-    ax.step(x_step_plot, to_step(d_ml_quad), color="#5790fc", linewidth=1.8, where="post", label="MUFFIN Method", zorder=2)
-    ax.step(x_step_plot, to_step(d_cl_quad), color="#fc5757", linewidth=1.8, where="post", label=r"$\text{F}_{\text{F}}$ Method", zorder=2)
+    ax.step(x_step_plot, to_step(d_ml_quad), color="#5790fc", linewidth=1.8, where="post", label="MUFFIN Method", linestyle="-", zorder=2)
+    ax.step(x_step_plot, to_step(d_cl_quad), color="#fc5757", linewidth=1.8, where="post", label=r"$\text{F}_{\text{F}}$ Method", linestyle="--", zorder=2)
     ax.plot(x, d_ml_quad, "o", color="#5790fc", markersize=5, zorder=3)
     ax.plot(x, d_cl_quad, "o", color="#fc5757", markersize=5, zorder=3)
 
     # Dashed lines showing pure statistical uncertainty per bin
     ax.step(x_step_plot, to_step(e_ml_plot), color="#5790fc", linewidth=1.2, where="post",
-            linestyle="--", zorder=2)
+            linestyle="-.", zorder=2)
     ax.step(x_step_plot, to_step(e_cl_plot), color="#fc5757", linewidth=1.2, where="post",
-            linestyle="--", zorder=2)
+            linestyle="-.", zorder=2)
 
     # Add to legend entry for stat-only uncertainty
     stat_line_handle = Line2D([0], [0], color="black", linewidth=1.5, 
@@ -163,11 +164,11 @@ def plot_nonclosure_centered(feature, r_ml, e_ml, r_cl, e_cl, bin_centers=None, 
     }
     feature = latex_feature_names.get(feature, feature)
 
-    ax.set_ylabel(r"Total Uncertainty ($\sqrt{(1-r)^2 + \sigma_r^2}$)", fontsize=28)
-    ax.set_xlabel(feature, fontsize=28)
+    ax.set_ylabel(r"Total Uncertainty ($\sqrt{(1-r)^2 + \sigma_r^2}$)", fontsize=32)
+    ax.set_xlabel(feature, fontsize=32)
     # make sure x-axis and y-axis ticks do not overlap
-    ax.tick_params(axis='x', which='major', pad=10)
-    ax.tick_params(axis='y', which='major', pad=10)
+    ax.tick_params(axis='x', which='major', pad=10, labelsize=32)
+    ax.tick_params(axis='y', which='major', pad=10, labelsize=32)
 
 
     ymax = max(ymax * 1.2, 0.05)  # add some headroom, but enforce a minimum for visibility
@@ -176,16 +177,41 @@ def plot_nonclosure_centered(feature, r_ml, e_ml, r_cl, e_cl, bin_centers=None, 
     ax.set_yticks(yticks)
     ax.set_yticklabels([f"{int(tick*100)}%" for tick in yticks])
 
-    ml_solid = Line2D([0], [0], color="#5790fc", linewidth=1.8, label="MUFFIN Method")
-    cl_solid = Line2D([0], [0], color="#fc5757", linewidth=1.8, label=r"$\text{F}_{\text{F}}$ Method")
+    ml_solid = Line2D([0], [0], color="#5790fc", linewidth=1.8, label="MUFFIN Method", linestyle="-")
+    cl_solid = Line2D([0], [0], color="#fc5757", linewidth=1.8, label=r"$\text{F}_{\text{F}}$ Method", linestyle="--")
     stat_line_handle = Line2D([0], [0], color="black", linewidth=1.5,
-                              linestyle="--", label=r"Statistical Uncertainty ($\sigma_{\mathrm{r}}$)")
+                              linestyle="-.", label="Statistical\n" + r"Uncertainty ($\sigma_{\mathrm{r}}$)")
 
     # Add space at top for legend
-    ax.set_ylim(0.0, ymax * 1.2)  # extend y-axis to make room for legend
-    ax.legend(handles=[ml_solid, cl_solid, stat_line_handle], fontsize=26, loc="upper right", frameon=False)
+    ax.set_ylim(0.0, ymax * 1.35)  # extend y-axis to make room for legend
+    ax.legend(handles=[ml_solid, cl_solid, stat_line_handle], fontsize=30, loc="upper right", frameon=False)
     ax.grid(True, axis="y", alpha=0.2)
-    hep.cms.label(**CMS_LABEL, ax=ax, fontsize=28)
+    hep.cms.label(**CMS_LABEL, ax=ax, fontsize=32)
+
+    # Add region text labels in top-left corner
+    region_text = {
+        "determination": "Determination region",
+        "validation": "Validation region",
+    }.get(args.region, f"{str(args.region).capitalize()} region")
+
+    ax.text(
+        0.02, 0.95, region_text,
+        ha="left", va="top", fontsize=30, transform=ax.transAxes,
+        fontweight="bold"
+    )
+
+    bdt_region_text = {
+        "BDT_raw_score_higgs": r"$H \to \tau\tau$ enriched region",
+        "BDT_raw_score_tau": r"$Z \to \tau\tau$ enriched region",
+        "BDT_raw_score_fake": r"$j \to \tau_h$ enriched region",
+    }.get(feature_key)
+
+    if bdt_region_text is not None:
+        ax.text(
+            0.02, 0.85, bdt_region_text,
+            ha="left", va="top", fontsize=30, transform=ax.transAxes,
+            fontweight="bold"
+        )
 
     plt.tight_layout()
     if outpath:

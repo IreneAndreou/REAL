@@ -107,7 +107,7 @@ latex_names_lead:
     'BDT_raw_score_tau': '$\tau_h$ BDT score'
     'BDT_raw_score_higgs': 'Higgs BDT score'
     'BDT_raw_score_fake': 'Misidentified $\tau_h$ BDT score'
-    'pileup': '$N_{PU}$'
+    'pileup': '$\langle \mu \rangle$'
 latex_names_sublead: ## this is only for the semi-leptonic channels so far
     'decayMode': '$\tau_h$ decay mode'
     'jpt_pt': 'Ratio of $p_{T}^{jet}$ to $p_{T}^{\tau_h}$'
@@ -132,7 +132,7 @@ latex_names_sublead: ## this is only for the semi-leptonic channels so far
     'BDT_raw_score_tau': '$\tau_h$ BDT score'
     'BDT_raw_score_higgs': 'Higgs BDT score'
     'BDT_raw_score_fake': 'Misidentified $\tau_h$ BDT score'
-    'pileup': '$N_{PU}$'
+    'pileup': '$\langle \mu \rangle$'
 
 plot_params:
   bins:

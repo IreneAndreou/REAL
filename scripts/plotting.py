@@ -943,7 +943,7 @@ def plot_subtraction_reweighting(feature, bins, ranges, df_data_iso, df_data_ais
         axs[0].hist(plot_bin_edges[:-1], bins=plot_bin_edges, weights=h_aiso_rw, histtype="step", label="ML Reweighting", color="#f89c20", linewidth=2)
         axs[0].hist(plot_bin_edges[:-1], bins=plot_bin_edges, weights=h_aiso_rw_alt, histtype="step", label="ML Reweighting \n (withGlobal)", color="#5790fc", linewidth=2)
         axs[0].hist(plot_bin_edges[:-1], bins=plot_bin_edges, weights=h_aiso_classical, histtype="step", label="Classical \n Reweighting", color="#e42536", linewidth=2)
-        axs[0].scatter(bin_centers, h_iso, label="Target \n Distribution", color="black", marker="o", s=144)
+        axs[0].scatter(bin_centers, h_iso, label="Target data", color="black", marker="o", s=144)
         axs[0].set_ylabel("Events / bin")
         # Use scientific notation for y-axis (e.g. 1eN / 10^N)
         fmt = ScalarFormatter(useMathText=True)
@@ -995,7 +995,7 @@ def plot_subtraction_reweighting(feature, bins, ranges, df_data_iso, df_data_ais
             err_ratio_rw_alt = err_ratio_rw_alt[decay_modes]
             err_ratio_classical = err_ratio_classical[decay_modes]
             axs[1].set_xticks(x_indices)
-            axs[1].set_xticklabels(labels, fontsize=28)
+            axs[1].set_xticklabels(labels, fontsize=32)
             # # Print yields
             # print(f"Yields for {feature} (decayMode) after reweighting:")
             # for i in range(len(decay_modes)):
@@ -1010,24 +1010,28 @@ def plot_subtraction_reweighting(feature, bins, ranges, df_data_iso, df_data_ais
             # print(f"Target Distribution: {h_iso.sum()}")
             # print(f"ML Ratio (withGlobal): {h_iso.sum()/h_aiso_rw_alt.sum()}")
             # print(f"Classical Ratio: {h_iso.sum()/h_aiso_classical.sum()}")
-        axs[0].hist(plot_bin_edges[:-1], bins=plot_bin_edges, weights=h_aiso_rw_alt, histtype="step", color="#5790fc", linewidth=2)
-        axs[0].errorbar(bin_centers, h_aiso_rw_alt, yerr=err_aiso_rw_alt, color="#5790fc", capsize=3, linewidth=1.2, linestyle="None", marker="x", markersize=14, label="MUFFIN method")
-        axs[0].hist(plot_bin_edges[:-1], bins=plot_bin_edges, weights=h_aiso_classical, histtype="step", color="#e42536", linewidth=2)
-        axs[0].errorbar(bin_centers, h_aiso_classical, yerr=err_aiso_classical, color="#e42536", capsize=3, linewidth=1.2, linestyle="None", marker="x", markersize=14, label=r"$\text{F}_{\text{F}}$ method")
-        axs[0].errorbar(bin_centers, h_iso, yerr=err_iso, label="Target \n Distribution", color="black", marker="o", markersize=14, linestyle="None")
+        axs[0].hist(plot_bin_edges[:-1], bins=plot_bin_edges, weights=h_aiso_rw_alt, histtype="step", color="#5790fc", linestyle="-", linewidth=2, label="MUFFIN method")
+        axs[0].errorbar(bin_centers, h_aiso_rw_alt, yerr=err_aiso_rw_alt, color="#5790fc", capsize=3, linewidth=1.2, linestyle="None", marker="+", markersize=14)
+        axs[0].hist(plot_bin_edges[:-1], bins=plot_bin_edges, weights=h_aiso_classical, histtype="step", color="#e42536", linestyle="--", linewidth=2, label=r"$\text{F}_{\text{F}}$ method")
+        axs[0].errorbar(bin_centers, h_aiso_classical, yerr=err_aiso_classical, color="#e42536", capsize=3, linewidth=1.2, linestyle="None", marker="+", markersize=14)
+        axs[0].errorbar(bin_centers, h_iso, yerr=err_iso, label="Target data", color="black", marker="o", markersize=14, linestyle="None")
         axs[0].set_ylabel("Events / bin", fontsize=28)
+        target_handle = axs[0].errorbar(
+            bin_centers, h_iso, yerr=err_iso, label="Target data",
+            color="black", marker="o", markersize=14, linestyle="None", capsize=3
+        )
         fmt = ScalarFormatter(useMathText=True)
         fmt.set_powerlimits((0, 0))
         axs[0].yaxis.set_major_formatter(fmt)
         offs = axs[0].yaxis.get_offset_text()
-        offs.set_fontsize(28)
+        offs.set_fontsize(32)
         offs.set_x(-0.05)
         # if feature in ["pt", "mt_tot", "pt_tt"]:
         #     axs[0].legend(handles=axs[0].get_legend_handles_labels()[0] + [overflow_patch],
         #         labels=axs[0].get_legend_handles_labels()[1] + ["Overflow"],
         #         loc="upper right", fontsize=24)
         # else:
-        axs[0].legend(fontsize=28)
+        axs[0].legend(fontsize=30)
         axs[0].set_yscale("log")
 
 
@@ -1037,7 +1041,7 @@ def plot_subtraction_reweighting(feature, bins, ranges, df_data_iso, df_data_ais
             ticks = list(plot_bin_edges[:-1]) + [axs[0].get_xlim()[1]]
             labels = [f"{x:g}" for x in bin_edges[:-1]] + [rf"$\infty$"]
             axs[0].set_xticks(ticks)
-            axs[0].set_xticklabels(labels, fontsize=28)
+            axs[0].set_xticklabels(labels, fontsize=32)
 
     if validation_indices_main is not None:
         if not binary:
@@ -1129,9 +1133,9 @@ def plot_subtraction_reweighting(feature, bins, ranges, df_data_iso, df_data_ais
 
     else:
         axs[1].axhline(1, color="black", linestyle="--")
-        axs[1].set_ylabel("Ratio", fontsize=28)
+        axs[1].set_ylabel("Ratio", fontsize=32)
         axs[1].set_ylim(0.75, 1.25)
-        axs[1].set_yticks([0.8, 1.0, 1.2], labels=[0.8, 1.0, 1.2], fontsize=28)
+        axs[1].set_yticks([0.8, 1.0, 1.2], labels=[0.8, 1.0, 1.2], fontsize=32)
         # if feature.startswith("decayMode"):
         #     # Set the desired decay modes and their labels
         #     xticks = [0, 1, 10, 11]
@@ -1168,7 +1172,7 @@ def plot_subtraction_reweighting(feature, bins, ranges, df_data_iso, df_data_ais
 
         axs[1].errorbar(bin_centers, ratio_rw_alt_plot,    yerr=err_ratio_rw_alt_plot,    xerr=bin_widths/2, fmt="o", fillstyle="none", color="#5790fc", label=labels[1])
         axs[1].errorbar(bin_centers, ratio_classical_plot, yerr=err_ratio_classical_plot, xerr=bin_widths/2, fmt="o", fillstyle="none", color="#e42536", label=labels[2])
-        leg = axs[1].legend(loc="lower right", ncols=2, bbox_to_anchor=(1.0, 0.95), fontsize=24)
+        leg = axs[1].legend(loc="lower right", ncols=2, bbox_to_anchor=(1.0, 0.95), fontsize=32)
 
         for xi, xc in enumerate(bin_centers):
             rv_ml = ratio_rw_alt_arr[xi]   if xi < len(ratio_rw_alt_arr)   else np.nan
@@ -1358,13 +1362,13 @@ def plot_subtraction_reweighting(feature, bins, ranges, df_data_iso, df_data_ais
     cms_label = CMS_LABEL.copy()
     if process in ["WjetsMC", "ttbarMC"]:
         cms_label["label"] = "Simulation"
-    hep.cms.label(**cms_label, lumi=lumis[era_map[era_id]], ax=axs[0], fontsize=28)
-    axs[0].tick_params(axis='both', which='major', labelsize=28)
-    axs[1].tick_params(axis='both', which='major', labelsize=28)
+    hep.cms.label(**cms_label, lumi=lumis[era_map[era_id]], ax=axs[0], fontsize=32)
+    axs[0].tick_params(axis='both', which='major', labelsize=32)
+    axs[1].tick_params(axis='both', which='major', labelsize=32)
 
-    axs[0].yaxis.get_offset_text().set_fontsize(28)
+    axs[0].yaxis.get_offset_text().set_fontsize(32)
 
-    axs[0].set_ylabel("Events / bin", fontsize=28)
+    axs[0].set_ylabel("Events / bin", fontsize=32)
     # Make space at the top of the figure for the legend
     y_max = float(np.nanmax([
         np.nanmax(h_aiso_rw_alt[np.isfinite(h_aiso_rw_alt)]) if np.any(np.isfinite(h_aiso_rw_alt)) else 0,
@@ -1375,9 +1379,43 @@ def plot_subtraction_reweighting(feature, bins, ranges, df_data_iso, df_data_ais
         axs[0].set_ylim(bottom=axs[0].get_ylim()[0], top=y_max * 20)  # extra decade for legend
     else:
         axs[0].set_ylim(bottom=0, top=y_max * 1.4)
-    axs[0].legend(loc="best", fontsize=26)
-    axs[1].set_ylabel("Ratio", fontsize=28)
-    axs[1].set_xlabel(plotting_config[f"latex_names_{tau_suffix}"].get(feature, feature), fontsize=28)
+    if args.paper_plots:
+        legend_handles = [
+            target_handle,
+            Line2D([0], [0], color="#5790fc", lw=2.5, linestyle="-", label="MUFFIN method"),
+            Line2D([0], [0], color="#e42536", lw=2.5, linestyle="--", label=r"$\mathrm{F_F}$ method"),
+        ]
+        # make space for legend on the top
+        axs[0].set_ylim(bottom=axs[0].get_ylim()[0], top=y_max * 1000)
+        axs[0].legend(handles=legend_handles, loc="upper right", fontsize=32, frameon=False)
+        region_text = {
+            "determination": "Determination region",
+            "validation": "Validation region",
+        }.get(region, f"{str(region).capitalize()} region")
+
+        axs[0].text(
+            0.02, 0.95, region_text,
+            ha="left", va="top", fontsize=32, transform=axs[0].transAxes,
+            fontweight="bold"
+        )
+
+        bdt_region_text = {
+            "BDT_raw_score_higgs": r"$H \to \tau\tau$ enriched region",
+            "BDT_raw_score_tau": r"$Z \to \tau\tau$ enriched region",
+            "BDT_raw_score_fake": r"$j \to \tau_h$ enriched region",
+        }.get(feature)
+
+        if bdt_region_text is not None:
+            axs[0].text(
+                0.02, 0.85, bdt_region_text,
+                ha="left", va="top", fontsize=32, transform=axs[0].transAxes,
+                fontweight="bold"
+            )
+    else:
+        axs[0].legend(loc="best", fontsize=32)
+    axs[1].set_ylabel("Ratio", fontsize=32)
+    axs[1].set_ylabel("Ratio", fontsize=32)
+    axs[1].set_xlabel(plotting_config[f"latex_names_{tau_suffix}"].get(feature, feature), fontsize=32)
     plt.tight_layout()
     plt.savefig(output_path)
     plt.subplots_adjust(hspace=0.08)  # keep panels close but not overlapping
@@ -1439,6 +1477,17 @@ def stxs_plot(yields, output_dir, title=""):
     """Create STXS bin yield comparison plots between ML reweighting and classical FF method."""
     keys = list(yields.keys())
 
+    # Visual scaling
+    scale = 2.0 if args.paper_plots else 1.20
+    fs_tick = int(19 * scale)
+    fs_label = int(17 * scale)
+    fs_legend = int(17 * scale)
+    fs_text = int(17 * scale)
+    fs_cms = int(18 * scale)
+    ms = 6.8 * scale
+    lw = 1.2 * scale
+    box_h = 0.28 * scale
+
     jet_order = ["inclusive", "0j", "1j", "2j", "mjj_1", "mjj_2", "mjj_3", "mjj_4"]
 
     # Enforce a sane STXS ordering for cut strings inside each jet category
@@ -1474,61 +1523,116 @@ def stxs_plot(yields, output_dir, title=""):
         "mjj_3": r"$\geq$2 Jet, $m_{jj}\geq700$, $p_{T}^{H}<200$",
         "mjj_4": r"$\geq$2 Jet, $m_{jj}\geq350$, $p_{T}^{H}\geq200$",
     }
+    # Subscript part: jet category (+ mjj only)
+    jetcat_sub = {
+        "inclusive": r"\mathrm{Inclusive}",
+        "0j": r"0\,\mathrm{Jet}",
+        "1j": r"1\,\mathrm{Jet}",
+        "2j": r"\geq 2\,\mathrm{Jet}",
+        "mjj_1": r"\geq 2\,\mathrm{Jet},\,m_{jj} [0,350]",
+        "mjj_2": r"\geq 2\,\mathrm{Jet},\,m_{jj} [350,700]",
+        "mjj_3": r"\geq 2\,\mathrm{Jet},\,m_{jj} [700,\infty]",
+        "mjj_4": r"\geq 2\,\mathrm{Jet},\,m_{jj} [350,\infty]",
+    }
+
+    def pth_superscript(cutstr):
+        c = cutstr.strip()
+        if c in ["(1)", "1", "( 1 )", ""]:
+            return ""
+        c = re.sub(r"\s+", " ", c)
+
+        m = re.match(r"^(\d+)\s*<=\s*pt_tt\s*<\s*(\d+)$", c)
+        if m:
+            return rf"p_{{T}}^{{H}}\in[{m.group(1)},{m.group(2)})"
+
+        m = re.match(r"^(\d+)\s*<=\s*pt_tt\s*<=\s*(\d+)$", c)
+        if m:
+            return rf"p_{{T}}^{{H}}\in[{m.group(1)},{m.group(2)}]"
+
+        m = re.match(r"^pt_tt\s*<\s*(\d+)$", c)
+        if m:
+            return rf"p_{{T}}^{{H}}\in[0,{m.group(1)})"
+
+        m = re.match(r"^pt_tt\s*>\s*(\d+)$", c)
+        if m:
+            return rf"p_{{T}}^{{H}}\in[{m.group(1)},\infty)"
+
+        return ""
 
     labels = []
     ratio_ml, err_ml = [], []
     ratio_cl, err_cl = [], []
     jetcats_in_order = []
 
+    # for (jetcat, cutstr) in keys_sorted:
+    #     d = yields[(jetcat, cutstr)]
+    #     y_iso, e_iso = d["Y_iso"], d["E_iso"]
+    #     y_ml,  e_ml  = d["Y_ml"],  d["E_ml"]
+    #     y_cl,  e_cl  = d["Y_cl"],  d["E_cl"]
+
+    #     base = jetcat_label.get(jetcat, jetcat)
+    #     if jetcat.startswith("mjj_"):
+    #         base = r"$\geq$2 Jet"
+
+    #     # ---- Uniform, mathtext-friendly cut formatting (NO effect on keys / eval) ----
+    #     c = cutstr.strip()
+    #     if c in ["(1)", "1", "( 1 )", ""]:
+    #         # For mjj_* bins, show the defining cuts in the "cut" part (uniform style)
+    #         if jetcat == "mjj_1":
+    #             cut = r"$m_{jj} [0,350)$"
+    #         elif jetcat == "mjj_2":
+    #             cut = r"$m_{jj} [350,700),\ p_{T}^{H}<200$"
+    #         elif jetcat == "mjj_3":
+    #             cut = r"$m_{jj} [700,\infty),\ p_{T}^{H}<200$"
+    #         elif jetcat == "mjj_4":
+    #             cut = r"$m_{jj} [350,\infty),\ p_{T}^{H} [200,\infty)$"
+    #         else:
+    #             cut = ""
+    #     else:
+    #         # Normalize whitespace
+    #         c = re.sub(r"\s+", " ", c)
+
+    #         # Special-case common patterns
+    #         m = re.match(r"^(\d+)\s*<=\s*pt_tt\s*<=\s*(\d+)$", c)
+    #         if m:
+    #             cut = rf"$p_{{T}}^{{H}} [{m.group(1)}, {m.group(2)}]$"
+    #         else:
+    #             m = re.match(r"^(\d+)\s*<=\s*pt_tt\s*<\s*(\d+)$", c)
+    #             if m:
+    #                 cut = rf"$p_{{T}}^{{H}} [{m.group(1)}, {m.group(2)}]$"
+    #             else:
+    #                 m = re.match(r"^pt_tt\s*<\s*(\d+)$", c)
+    #                 if m:
+    #                     cut = rf"$p_{{T}}^{{H}} [0, {m.group(1)}]$"
+    #                 else:
+    #                     m = re.match(r"^pt_tt\s*>\s*(\d+)$", c)
+    #                     if m:
+    #                         cut = rf"$p_{{T}}^{{H}} [{m.group(1)}, \infty)$"
+    #                     else:
+    #                         # Fallback: at least replace pt_tt token
+    #                         cut = c.replace("pt_tt", r"p_{T}^{H}")
+
+    #     lab = base if cut == "" else f"{base}, {cut}"
+    #     labels.append(lab)
+    #     jetcats_in_order.append(jetcat)
+
+    #     rml, sml = ratio(y_ml, e_ml, y_iso, e_iso)
+    #     rcl, scl = ratio(y_cl, e_cl, y_iso, e_iso)
+    #     ratio_ml.append(rml)
+    #     err_ml.append(sml)
+    #     ratio_cl.append(rcl)
+    #     err_cl.append(scl)
     for (jetcat, cutstr) in keys_sorted:
         d = yields[(jetcat, cutstr)]
         y_iso, e_iso = d["Y_iso"], d["E_iso"]
         y_ml,  e_ml  = d["Y_ml"],  d["E_ml"]
         y_cl,  e_cl  = d["Y_cl"],  d["E_cl"]
 
-        base = jetcat_label.get(jetcat, jetcat)
-        if jetcat.startswith("mjj_"):
-            base = r"$\geq$2 Jet"
+        sub = jetcat_sub.get(jetcat, jetcat.replace("_", r"\_"))
+        sup = pth_superscript(cutstr)
 
-        # ---- Uniform, mathtext-friendly cut formatting (NO effect on keys / eval) ----
-        c = cutstr.strip()
-        if c in ["(1)", "1", "( 1 )", ""]:
-            # For mjj_* bins, show the defining cuts in the "cut" part (uniform style)
-            if jetcat == "mjj_1":
-                cut = r"$m_{jj} [0,350)$"
-            elif jetcat == "mjj_2":
-                cut = r"$m_{jj} [350,700),\ p_{T}^{H}<200$"
-            elif jetcat == "mjj_3":
-                cut = r"$m_{jj} [700,\infty),\ p_{T}^{H}<200$"
-            elif jetcat == "mjj_4":
-                cut = r"$m_{jj} [350,\infty),\ p_{T}^{H} [200,\infty)$"
-            else:
-                cut = ""
-        else:
-            # Normalize whitespace
-            c = re.sub(r"\s+", " ", c)
-
-            # Special-case common patterns
-            m = re.match(r"^(\d+)\s*<=\s*pt_tt\s*<=\s*(\d+)$", c)
-            if m:
-                cut = rf"$p_{{T}}^{{H}} [{m.group(1)}, {m.group(2)}]$"
-            else:
-                m = re.match(r"^(\d+)\s*<=\s*pt_tt\s*<\s*(\d+)$", c)
-                if m:
-                    cut = rf"$p_{{T}}^{{H}} [{m.group(1)}, {m.group(2)}]$"
-                else:
-                    m = re.match(r"^pt_tt\s*<\s*(\d+)$", c)
-                    if m:
-                        cut = rf"$p_{{T}}^{{H}} [0, {m.group(1)}]$"
-                    else:
-                        m = re.match(r"^pt_tt\s*>\s*(\d+)$", c)
-                        if m:
-                            cut = rf"$p_{{T}}^{{H}} [{m.group(1)}, \infty)$"
-                        else:
-                            # Fallback: at least replace pt_tt token
-                            cut = c.replace("pt_tt", r"p_{T}^{H}")
-
-        lab = base if cut == "" else f"{base}, {cut}"
+        # r_{jetcat,mjj}^{pTH}
+        lab = rf"$r^{{{sup}}}_{{{sub}}}$" if sup else rf"$r_{{{sub}}}$"
         labels.append(lab)
         jetcats_in_order.append(jetcat)
 
@@ -1559,8 +1663,8 @@ def stxs_plot(yields, output_dir, title=""):
 
     # --- Figure geometry ---
     N = len(labels)
-    fig_h = max(5.2, 0.44* N + 1.0)
-    fig, ax = plt.subplots(figsize=(12, fig_h))
+    fig_h = max(8.5, 1.05 * N + 2.5) 
+    fig, ax = plt.subplots(figsize=(15, fig_h))
 
     box_h = 0.28
 
@@ -1577,10 +1681,10 @@ def stxs_plot(yields, output_dir, title=""):
         zorder=1,
         color="#5790fc"
     )
-    ax.errorbar(rml, y, xerr=sml, fmt="o", ms=4.8, capsize=0, linewidth=1.2, zorder=3, color="#5790fc")
+    ax.errorbar(rml, y, xerr=sml, fmt="o", ms=ms, capsize=0, linewidth=lw, zorder=3, color="#5790fc")
 
     # Classical (slight y-offset)
-    y2 = y - 0.25
+    y2 = y - 0.34
     ax.barh(
         y2,
         width=2.0*np.nan_to_num(scl, nan=0.0),
@@ -1592,16 +1696,19 @@ def stxs_plot(yields, output_dir, title=""):
         color="#fc5757"
     )
 
-    ax.errorbar(rcl, y2, xerr=scl, fmt="o", ms=4.8, capsize=0, linewidth=1.2, zorder=3, color="#fc5757")
+    ax.errorbar(rcl, y2, xerr=scl, fmt="o", ms=ms, capsize=0, linewidth=lw, zorder=3, color="#fc5757")
 
     # y labels (no fake extra tick)
-    ax.set_yticks(y.tolist() + [len(y)+1])
-    ax.set_yticklabels(labels + [""], fontsize=16) # make space for legend
-    ax.tick_params(axis="y", which="both", length=0)
-    ax.set_xlabel("Yield Ratio (r)", fontsize=16)
+    ax.set_yticks(y)
+    ax.set_yticklabels(labels, fontsize=fs_tick)
+    for t in ax.get_yticklabels():
+        t.set_linespacing(0.9)
+    ax.tick_params(axis="y", which="both", length=0, right=False)
+    ax.tick_params(axis="x", which="both", top=False, labeltop=False)
+    ax.set_xlabel("Yield Ratio (r)", fontsize=fs_label)
 
-    ax.axvline(1.0, linestyle="--", color="black", linewidth=1, zorder=10, ymax=(float(len(y))-1)/float(len(y)+1))
-    ax.grid(True, axis="x", alpha=0.18)
+    ax.axvline(1.0, linestyle="--", color="black", linewidth=1, zorder=10, ymax=(len(labels) + 0.5) / (len(labels) + 3.0))  # only across label region, not legend
+    ax.grid(False, axis="x")  # no vertical lines in legend/text region
 
     # separators between jet categories
     for i in range(1, len(jetcats_in_order)):
@@ -1624,7 +1731,7 @@ def stxs_plot(yields, output_dir, title=""):
         pad = 0.06 * (xmax - xmin) if xmax > xmin else 0.08
         ax.set_xlim(xmin - pad, xmax + pad)
         # Set xtick label size
-        ax.tick_params(axis='x', labelsize=16)
+        ax.tick_params(axis='x', labelsize=fs_tick)
 
     # push legend a bit further down
     ax.set_ylim(-1.0, len(labels)-1 + 3.0)
@@ -1633,17 +1740,17 @@ def stxs_plot(yields, output_dir, title=""):
         rf"Improvement in $\boldsymbol{{\chi^2}}/\boldsymbol{{\mathrm{{ndf}}}}$: {improvement:.1f}$\times$",
         transform=ax.transAxes,
         ha="center", va="top",
-        fontsize=14,
+        fontsize=fs_text,
         fontweight="bold"
     )
     ml_handle = (
         Patch(facecolor="#5790fc", alpha=0.25),
-        Line2D([0], [0], marker="o", color="#5790fc", linestyle="None", markersize=6)
+        Line2D([0], [0], marker="o", color="#5790fc", linestyle="None", markersize=6 * scale)
     )
 
     cl_handle = (
         Patch(facecolor="#fc5757", alpha=0.25),
-        Line2D([0], [0], marker="o", color="#fc5757", linestyle="None", markersize=6)
+        Line2D([0], [0], marker="o", color="#fc5757", linestyle="None", markersize=6 * scale)
     )
 
     ax.legend(
@@ -1656,12 +1763,12 @@ def stxs_plot(yields, output_dir, title=""):
         loc="upper center",
         bbox_to_anchor=(0.5, 0.975),
         frameon=False,
-        fontsize=14,
-        handlelength=2.0,
+        fontsize=fs_legend,
+        handlelength=2.6,
         ncols=2
     )
 
-    hep.cms.label(**CMS_LABEL, lumi=lumis["Run3_Combined"], ax=ax, fontsize=18)
+    hep.cms.label(**CMS_LABEL, lumi=lumis["Run3_Combined"], ax=ax, fontsize=fs_cms)
 
     fig.subplots_adjust(left=0.3, right=0.98, top=0.92, bottom=0.12)
 
@@ -1680,22 +1787,22 @@ def stxs_plot(yields, output_dir, title=""):
               (np.where(np.isfinite(nc_cl), nc_cl, 0.0) <= 0.5)
     labels_syst = [l for l, k in zip(labels, nc_keep) if k]
     jetcats_syst = [j for j, k in zip(jetcats_in_order, nc_keep) if k]
-    rml_s  = rml[nc_keep]
-    sml_s  = sml[nc_keep]
-    rcl_s  = rcl[nc_keep]
-    scl_s  = scl[nc_keep]
+    rml_s = rml[nc_keep]
+    sml_s = sml[nc_keep]
+    rcl_s = rcl[nc_keep]
+    scl_s = scl[nc_keep]
     nc_ml_s = nc_ml[nc_keep]
     nc_cl_s = nc_cl[nc_keep]
     y_s  = np.arange(len(labels_syst))[::-1].astype(float)
-    y2_s = y_s - 0.22
+    y2_s = y_s - 0.34
 
     N_syst = len(labels_syst)
-    fig_h_syst = max(5.2, 0.44 * N_syst + 1.0)
+    fig_h_syst = max(8.5, 1.05 * N_syst + 5)
 
     fig2, (ax_yield, ax_syst) = plt.subplots(
         1, 2,
-        figsize=(18, fig_h_syst),
-        gridspec_kw={"width_ratios": [2, 1]},
+        figsize=(35, fig_h_syst),
+        gridspec_kw={"width_ratios": [2, 1.4]},
         sharey=True
     )
 
@@ -1703,22 +1810,25 @@ def stxs_plot(yields, output_dir, title=""):
     ax_yield.barh(
         y_s, width=2.0*np.nan_to_num(sml_s, nan=0.0),
         left=np.nan_to_num(rml_s - sml_s, nan=0.0),
-        height=0.18, alpha=0.25, color="#5790fc", zorder=1,
+        height=0.24, alpha=0.25, color="#5790fc", zorder=1,
     )
-    ax_yield.errorbar(rml_s, y_s, xerr=sml_s, fmt="o", ms=4.8, capsize=0, linewidth=1.2, zorder=3, color="#5790fc")
+    ax_yield.errorbar(rml_s, y_s, xerr=sml_s, fmt="o", ms=ms, capsize=0, linewidth=lw, zorder=3, color="#5790fc")
     ax_yield.barh(
         y2_s, width=2.0*np.nan_to_num(scl_s, nan=0.0),
         left=np.nan_to_num(rcl_s - scl_s, nan=0.0),
-        height=0.18, alpha=0.25, color="#fc5757", zorder=1,
+        height=0.24, alpha=0.25, color="#fc5757", zorder=1,
     )
-    ax_yield.errorbar(rcl_s, y2_s, xerr=scl_s, fmt="o", ms=4.8, capsize=0, linewidth=1.2, zorder=3, color="#fc5757")
-    ax_yield.axvline(1.0, linestyle="--", color="black", linewidth=1, zorder=10)
-    ax_yield.set_xlabel("Yield Ratio (r)", fontsize=16, labelpad=13)
+    ax_yield.errorbar(rcl_s, y2_s, xerr=scl_s, fmt="o", ms=ms, capsize=0, linewidth=lw, zorder=3, color="#fc5757")
+    ax_yield.axvline(1.0, linestyle="--", color="black", linewidth=1.2, zorder=10, ymax=(len(labels_syst) + 0.5) / (len(labels_syst) + 3.0))
+    ax_yield.set_xlabel("Yield Ratio (r)", fontsize=fs_label, labelpad=16)
     ax_yield.grid(True, axis="x", alpha=0.18)
-    ax_yield.set_yticks(y_s.tolist() + [len(y_s)+1])
-    ax_yield.set_yticklabels(labels_syst + [""], fontsize=16)
+    ax_yield.set_yticks(y_s)
+    ax_yield.set_yticklabels(labels_syst, fontsize=fs_tick)
+    for t in ax_yield.get_yticklabels():
+        t.set_linespacing(0.9)
+    ax_yield.set_yticklabels(labels_syst, fontsize=fs_tick)
     ax_yield.tick_params(axis="y", which="both", length=0)
-    ax_yield.tick_params(axis="x", labelsize=14)
+    ax_yield.tick_params(axis="x", labelsize=fs_tick)
     for i in range(1, len(jetcats_syst)):
         prev = jetcats_syst[i-1]
         curr = jetcats_syst[i]
@@ -1736,9 +1846,9 @@ def stxs_plot(yields, output_dir, title=""):
         pad = 0.06 * (xmax - xmin) if xmax > xmin else 0.08
         ax_yield.set_xlim(xmin - pad, xmax + pad)
 
-    # --- Right panel: non-closure (linear, 0–20%) ---
-    x_max_syst = 0.20
-    bar_h = 0.08
+    # --- Right panel: non-closure (linear, 0–25%) ---
+    x_max_syst = 0.25
+    bar_h = 0.15
 
     for yi_arr, nc_arr, stat_arr, color in [
         (y_s,  nc_ml_s, sml_s, "#5790fc"),
@@ -1756,44 +1866,44 @@ def stxs_plot(yields, output_dir, title=""):
                 ax_syst.text(
                     x_max_syst * 0.95, yi_val,
                     f"{nc_val*100:.1f}%",
-                    ha="right", va="center", fontsize=8,
+                    ha="right", va="center", fontsize=max(12, int(10 * scale)),
                     color="black", fontweight="bold", zorder=5
                 )
 
-    ax_syst.set_xlabel(r"Total Uncertainty ($\sqrt{(1-r)^2 + \sigma_r^2}$)", fontsize=16, labelpad=5)
+    ax_syst.set_xlabel(r"Total Uncertainty ($\sqrt{(1-r)^2 + \sigma_r^2}$)", fontsize=fs_label, labelpad=5)
     ax_syst.grid(True, axis="x", alpha=0.18)
-    ax_syst.tick_params(axis="x", labelsize=14)
+    ax_syst.tick_params(axis="x", labelsize=fs_tick)
     ax_syst.xaxis.set_major_formatter(plt.FuncFormatter(lambda val, _: f"{val*100:.4g}%"))
     ax_syst.set_xlim(0, x_max_syst)
     # Legend: stat-only indicator
     stat_hatch_handle = Patch(facecolor="none", edgecolor="black", hatch="///", linewidth=0.5,
                               label=r"Statistical Uncertainty ($\sigma_{\mathrm{r}}$)")
-    ax_syst.legend(handles=[stat_hatch_handle], fontsize=11, loc="upper right", frameon=False)
+    ax_syst.legend(handles=[stat_hatch_handle], fontsize=fs_legend, loc="upper right", frameon=False)
 
     # Shared y-range
     ax_yield.set_ylim(-1.0, len(labels_syst) - 1 + 3.0)
 
     # Legend on left panel
-    ml_handle = (Patch(facecolor="#5790fc", alpha=0.25), Line2D([0], [0], marker="o", color="#5790fc", linestyle="None", markersize=6))
-    cl_handle = (Patch(facecolor="#fc5757", alpha=0.25), Line2D([0], [0], marker="o", color="#fc5757", linestyle="None", markersize=6))
+    ml_handle = (Patch(facecolor="#5790fc", alpha=0.25), Line2D([0], [0], marker="o", color="#5790fc", linestyle="None", markersize=6 * scale))
+    cl_handle = (Patch(facecolor="#fc5757", alpha=0.25), Line2D([0], [0], marker="o", color="#fc5757", linestyle="None", markersize=6 * scale))
     ax_yield.legend(
         [ml_handle, cl_handle],
         [r"MUFFIN method ($\pm1\sigma_{\mathrm{r}}$)", r"$\text{F}_{\text{F}}$ method ($\pm1\sigma_{\mathrm{r}}$)"],
         handler_map={tuple: HandlerTuple(ndivide=None)},
         loc="upper center", bbox_to_anchor=(0.5, 0.975),
-        frameon=False, fontsize=13, handlelength=2.0, ncols=2
+        frameon=False, fontsize=fs_legend, handlelength=1.6, ncols=2
     )
 
     ax_yield.text(
         0.5, 0.9,
-        rf"Improvement in $\boldsymbol{{\chi^2}}/\boldsymbol{{\mathrm{{ndf}}}}$: {improvement:.1f}$\times$",
+        rf"Improvement in $\boldsymbol{{\chi^2}}/\mathbf{{ndf}}$: {improvement:.1f}$\times$",
         transform=ax_yield.transAxes, ha="center", va="top",
-        fontsize=13, fontweight="bold"
+        fontsize=fs_text, fontweight="bold"
     )
 
-    hep.cms.label(**CMS_LABEL, lumi=lumis["Run3_Combined"], ax=ax_yield, fontsize=16)
+    hep.cms.label(**CMS_LABEL, lumi=lumis["Run3_Combined"], ax=ax_yield, fontsize=fs_cms)
 
-    fig2.subplots_adjust(left=0.28, right=0.98, top=0.92, bottom=0.10, wspace=0.05)
+    fig2.subplots_adjust(left=0.30, right=0.98, top=0.93, bottom=0.10, wspace=0.10)
 
     outpath2 = os.path.join(output_dir, "stxs_yield_closure_with_systematics.pdf")
     fig2.savefig(outpath2, bbox_inches="tight")
