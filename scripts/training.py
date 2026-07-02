@@ -6,6 +6,7 @@ from sklearn.metrics import log_loss, roc_auc_score, roc_curve
 from sklearn.model_selection import train_test_split
 from types import SimpleNamespace
 import argparse
+import glob
 import joblib
 import json
 import logging
@@ -164,6 +165,20 @@ class AbsoluteEarlyStopping(xgb.callback.TrainingCallback):
 
 
 # -------------------- Helpers -------------------------
+def read_parquet_maybe_split(file_path, columns):
+    """Read a parquet file, transparently handling files that were split into
+    <name>_part0.parquet, <name>_part1.parquet, ... (e.g. to stay under GitHub's
+    2GB Git LFS per-file limit) because the original single file is missing.
+    """
+    if os.path.exists(file_path):
+        return pd.read_parquet(file_path, columns=columns)
+    stem, ext = os.path.splitext(file_path)
+    parts = sorted(glob.glob(f"{stem}_part*{ext}"))
+    if not parts:
+        raise FileNotFoundError(f"Neither '{file_path}' nor any '{stem}_part*{ext}' files were found.")
+    return pd.concat([pd.read_parquet(part, columns=columns) for part in parts], ignore_index=True)
+
+
 def load_data(file_paths, branches, which_tau, file_format='parquet', tree_name='ntuple'):
     """
     Load files (Parquet or ROOT) from multiple eras into a single DataFrame; add era_label.
@@ -180,7 +195,7 @@ def load_data(file_paths, branches, which_tau, file_format='parquet', tree_name=
     dfs = []
     for era, file_path in file_paths.items():
         if file_format == 'parquet':
-            df = pd.read_parquet(file_path, columns=branches)
+            df = read_parquet_maybe_split(file_path, branches)
         elif file_format == 'root':
             with uproot.open(file_path) as f:
                 tree = f[tree_name]
@@ -436,22 +451,24 @@ def plot_reliability(y_true, probs, sample_weight=None, n_bins=15, title="", out
         conf_vals.append(np.average(confid[mask], weights=w_bin))
         p_hat = np.average(correct[mask], weights=w_bin)
         acc_vals.append(p_hat)
-        w_tot = w_bin.sum()
-        se = np.sqrt(max(p_hat * (1.0 - p_hat) / w_tot, 0.0))
-        err_low.append(p_hat - se)
-        err_high.append(p_hat + se)
+        # Wilson score 68% CI with effective sample size for weighted data
+        n_eff = w_bin.sum()**2 / (w_bin**2).sum()
+        z = 1.0
+        denom = 1.0 + z**2 / n_eff
+        center = (p_hat + z**2 / (2.0 * n_eff)) / denom
+        half = z * np.sqrt(p_hat * (1.0 - p_hat) / n_eff + z**2 / (4.0 * n_eff**2)) / denom
+        err_low.append(center - half)
+        err_high.append(center + half)
 
     # ---------- single-panel plot ----------
     fig, ax1 = plt.subplots(figsize=(12, 10))
 
     # Background: confidence histogram on secondary y-axis (right)
     ax2 = ax1.twinx()
-    total_weight = sample_weight.sum()
-    n_events = len(confid)
-    counts, _, patches = ax2.hist(
-        confid, bins=bin_edges, weights=np.ones(n_events) / n_events,
+    ax2.hist(
+        confid, bins=bin_edges, weights=sample_weight / sample_weight.sum(),
         color="lightsteelblue", alpha=0.35, edgecolor="steelblue", linewidth=0.5,
-        label="Confidence distribution\n(fraction of total events)",
+        label="Confidence distribution\n(fraction of total weight)",
         zorder=1,
     )
     ax2.set_ylabel("Fraction of total weights per bin", fontsize=28, color="steelblue")
@@ -481,7 +498,7 @@ def plot_reliability(y_true, probs, sample_weight=None, n_bins=15, title="", out
             conf_arr, acc_arr, yerr=yerr,
             fmt="o", capsize=4, lw=1.5, capthick=1.5,
             elinewidth=1.5, markersize=6, color="black",
-            label=r"Empirical accuracy ± 1$\sigma$", zorder=3,
+            label="Empirical accuracy\n(Wilson 68% confidence interval)", zorder=3,
         )
         pad = 0.05
         ylo = max(0.0, acc_arr.min() - yerr[0].max() - pad)
@@ -489,6 +506,7 @@ def plot_reliability(y_true, probs, sample_weight=None, n_bins=15, title="", out
         ax1.set_ylim(ylo, yhi)
 
     ax1.set_xlim(0, 1)
+    ax1.set_ylim(0, 1)
     ax1.set_xlabel("Confidence (maximum predicted probability)", fontsize=28)
     ax1.set_ylabel("Empirical accuracy", fontsize=28)
     ax1.set_zorder(ax2.get_zorder() + 1)

@@ -1,0 +1,39 @@
+name: real_v2
+channels:
+  - conda-forge
+dependencies:
+  - python=3.12  # or 3.12 if you want to upgrade, but 3.9 matches your current env
+  - numpy=1.26.4
+  - pandas=2.2.3
+  - matplotlib=3.9.2
+  - scikit-learn=1.5.2
+  - xgboost=2.1.3
+  - tensorflow=2.18.0
+  - pytorch=2.6.0
+  - torchvision=0.21.0
+  - uproot=5.5.0
+  - optuna=4.1.0
+  - scipy>=1.16
+  - tqdm=4.67.0
+  - mplhep=0.3.55
+  - seaborn=0.13.2
+  - mpmath=1.3.0
+  - fastparquet=2024.11.0
+  - h5py=3.12.1
+  - numba=0.59.1
+  - pip
+  - pip:
+      - joblib==1.4.2
+      - uproot4==4.0.0
+      - boost-histogram==1.5.2
+      - click==8.1.8
+      - cloudpickle==3.1.1
+      - cython==3.2.2
+      - dask==2024.8.0
+      - hist==2.8.1
+      - histoprint==2.6.0
+      - locket==1.0.0
+      - nflows==0.14
+      - partd==1.4.2
+      - pylandau==2.2.1
+      - toolz==1.0.0

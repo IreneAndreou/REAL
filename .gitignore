@@ -1,0 +1,4 @@
+# Exceeds GitHub's 2GB Git LFS per-file limit; split into
+# mc_aiso_mt_sublead_part0.parquet / _part1.parquet instead (see scripts/training.py's
+# read_parquet_maybe_split). Kept on disk for local pipeline runs but not tracked in git.
+data_with_pileup_January26/Run3_2022EE/determination_region/ttbarMC/mc_aiso_mt_sublead.parquet

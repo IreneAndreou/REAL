@@ -3,3 +3,6 @@
 *.pickle filter=lfs diff=lfs merge=lfs -text
 *.joblib filter=lfs diff=lfs merge=lfs -text
 *.json filter=lfs diff=lfs merge=lfs -text
+
+# Training data (tutorial preservation)
+*.parquet filter=lfs diff=lfs merge=lfs -text

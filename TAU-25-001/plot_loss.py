@@ -18,7 +18,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import mplhep as hep
 hep.style.use("CMS")
-CMS_LABEL = dict(data=True, label="", com=13.6, loc=0, lumi=62.4)
+CMS_LABEL = dict(data=True, label="Preliminary", com=13.6, loc=0, lumi=62.4)
 colours = ["#3f90da","#ffa90e","#bd1f01","#94a4a2","#832db6","#a96b59","#e76300","#b9ac70","#717581","#92dadd"]
 
 plot_labels = {
