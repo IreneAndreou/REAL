@@ -33,7 +33,7 @@ TAU-25-001/                    # Preservation of trainings/plots/classical FFs u
   trainings/, classical/, plot_loss.py
 
 source_root.sh                 # Sources CMS ROOT (needed by scripts/plotting.py)
-environment.yml / environment_v2.yml / real_env_full.yml   # Conda environments (see below)
+environment.yml.               # Conda environments (see below)
 ```
 
 ## Installation and Setup
@@ -45,13 +45,11 @@ cd REAL
 
 ### Environment
 Three conda environment files are provided:
-- `environment_v2.yml` (**recommended**) — Python 3.12 with pinned versions of everything used by the current scripts.
-- `environment.yml` — the original Python 3.9 environment, kept for backwards compatibility.
-- `real_env_full.yml` — a full frozen export of a known-working environment; use this as a fallback if `environment_v2.yml` fails to solve.
+- `environment.yml` — Python 3.12 environment version used during 8th CAT Hackathon
 
 ```bash
-conda env create -f environment_v2.yml
-conda activate real_v2
+conda env create -f environment.yml
+conda activate real
 ```
 
 ### ROOT
