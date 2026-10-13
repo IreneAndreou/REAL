@@ -1,0 +1,102 @@
+# BDT training settings for the EarlyRun3 and 2024 configs.
+training:
+  era:
+    Run3_2022:
+      data_iso_file: data_January26/Run3_2022/determination_region/{ff_process}/data_iso_{channel}_{tau_suffix}.parquet
+      data_aiso_file: data_January26/Run3_2022/determination_region/{ff_process}/data_aiso_{channel}_{tau_suffix}.parquet
+      mc_iso_file: data_January26/Run3_2022/determination_region/{ff_process}/mc_iso_{channel}_{tau_suffix}.parquet
+      mc_aiso_file: data_January26/Run3_2022/determination_region/{ff_process}/mc_aiso_{channel}_{tau_suffix}.parquet
+    Run3_2022EE:
+      data_iso_file: data_January26/Run3_2022EE/determination_region/{ff_process}/data_iso_{channel}_{tau_suffix}.parquet
+      data_aiso_file: data_January26/Run3_2022EE/determination_region/{ff_process}/data_aiso_{channel}_{tau_suffix}.parquet
+      mc_iso_file: data_January26/Run3_2022EE/determination_region/{ff_process}/mc_iso_{channel}_{tau_suffix}.parquet
+      mc_aiso_file: data_January26/Run3_2022EE/determination_region/{ff_process}/mc_aiso_{channel}_{tau_suffix}.parquet
+    Run3_2023:
+      data_iso_file: data_January26/Run3_2023/determination_region/{ff_process}/data_iso_{channel}_{tau_suffix}.parquet
+      data_aiso_file: data_January26/Run3_2023/determination_region/{ff_process}/data_aiso_{channel}_{tau_suffix}.parquet
+      mc_iso_file: data_January26/Run3_2023/determination_region/{ff_process}/mc_iso_{channel}_{tau_suffix}.parquet
+      mc_aiso_file: data_January26/Run3_2023/determination_region/{ff_process}/mc_aiso_{channel}_{tau_suffix}.parquet
+    Run3_2023BPix:
+      data_iso_file: data_January26/Run3_2023BPix/determination_region/{ff_process}/data_iso_{channel}_{tau_suffix}.parquet
+      data_aiso_file: data_January26/Run3_2023BPix/determination_region/{ff_process}/data_aiso_{channel}_{tau_suffix}.parquet
+      mc_iso_file: data_January26/Run3_2023BPix/determination_region/{ff_process}/mc_iso_{channel}_{tau_suffix}.parquet
+      mc_aiso_file: data_January26/Run3_2023BPix/determination_region/{ff_process}/mc_aiso_{channel}_{tau_suffix}.parquet
+  output_dir: outputs/best_models/ARCReview{global_prefix}/{channel}_{ff_process}/
+  lumi: 62.4
+  training: &id001
+    lead_tau:
+    - decayMode_1
+    - jpt_pt_1
+    - pt_1
+    - eta_1
+    - phi_1
+    sublead_tau:
+    - decayMode_2
+    - jpt_pt_2
+    - pt_2
+    - eta_2
+    - phi_2
+    global_variables:
+    - n_jets
+    - n_bjets
+  hyperparameters:
+    max_depth:
+    - 3
+    - 10
+    learning_rate:
+    - 0.01
+    - 0.3
+    subsample:
+    - 0.5
+    - 1.0
+    colsample_bytree: &id002
+    - 0.5
+    - 1.0
+    min_child_weight: &id003
+    - 1
+    - 10
+    reg_alpha:
+    - 1e-8
+    - 1.0
+    reg_lambda:
+    - 1e-8
+    - 1.0
+    n_trials: 50
+    n_jobs: 3
+    early_stopping_rounds: 20
+    num_boost_round: 10000
+training_2024:
+  era:
+    Run3_2024:
+      data_iso_file: data_January26/Run3_2024/determination_region/{ff_process}/data_iso_{channel}_{tau_suffix}.parquet
+      data_aiso_file: data_January26/Run3_2024/determination_region/{ff_process}/data_aiso_{channel}_{tau_suffix}.parquet
+      mc_iso_file: data_January26/Run3_2024/determination_region/{ff_process}/mc_iso_{channel}_{tau_suffix}.parquet
+      mc_aiso_file: data_January26/Run3_2024/determination_region/{ff_process}/mc_aiso_{channel}_{tau_suffix}.parquet
+  output_dir: outputs/best_models/Run3_2024Thesis{global_prefix}/{channel}_{ff_process}/
+  lumi: 109.08
+  training: *id001
+  hyperparameters:
+    max_depth:
+    - 3
+    - 7
+    learning_rate:
+    - 0.01
+    - 0.1
+    subsample:
+    - 0.8
+    - 1.0
+    colsample_bytree: *id002
+    min_child_weight: *id003
+    reg_alpha:
+    - 1e-4
+    - 1.0
+    reg_lambda:
+    - 1e-3
+    - 10.0
+    gamma:
+    - 1e-8
+    - 5.0
+    n_trials: 50
+    n_jobs: 3
+    early_stopping_rounds: 20
+    num_boost_round: 10000

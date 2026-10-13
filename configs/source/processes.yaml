@@ -1,0 +1,135 @@
+# Per-process analysis settings: input files, categories and selections.
+# Blocks that are identical between processes are written once and referenced with YAML aliases (&id / *id).
+QCD:
+  input_folder: data_January26/{era}/{channel}_QCD/
+  input_files: &id001
+    mc: mc_all_events_{era}.parquet
+    data: data_all_events_{era}.parquet
+  output_dir: data_January26/{era}/{region}_region/QCD/
+  categories:
+    EarlyRun3:
+      determination:
+        tt_baseline: (os == 0) & (idDeepTau2018v2p5VSjet_{tau_other_index} > 4) & (idDeepTau2018v2p5VSe_1
+          >= 2) & (idDeepTau2018v2p5VSe_2 >= 2) & (idDeepTau2018v2p5VSmu_1 >= 1) & (idDeepTau2018v2p5VSmu_2
+          >= 1) & (((trg_doubletau) & (pt_1 > 40) & (pt_2 > 40)) | ((trg_doubletauandjet) & (pt_1 > 35)
+          & (pt_2 > 35) & (pt_1 < 190) & (pt_2 < 190) & (jpt_1 > 60)) | ((trg_singletau) & (pt_1 > 190))
+          | ((trg_singletau_2) & (pt_2 > 190)))
+        mt_baseline: (os == 0) & (mt_1 < 65) & (iso_1 < 0.15) & (iso_1 > 0.05) & (idDeepTau2018v2p5VSe_2
+          >= 2) & (idDeepTau2018v2p5VSmu_2 >= 4) & ((((trg_mt_cross) & (pt_1 > 21) & (pt_1 <= 26) & (abs(eta_1)
+          < 2.1) & (pt_2 > 32) & (abs(eta_2) < 2.1)) | ((trg_singlemuon) & (pt_1 > 26) & (abs(eta_1) <
+          2.4))))
+        et_baseline: (os == 0) & (mt_1 < 65) & (e_pass90_1) & (iso_1 < 0.15) & (iso_1 > 0.05) & (idDeepTau2018v2p5VSe_2
+          >= 6) & (idDeepTau2018v2p5VSmu_2 >= 4) & (((trg_singleelectron) & (pt_1 > 31) & (abs(eta_1)
+          < 2.1)))
+      validation:
+        tt_baseline: (os == 1) & (idDeepTau2018v2p5VSjet_{tau_other_index} <= 4) & (idDeepTau2018v2p5VSe_1
+          >= 2) & (idDeepTau2018v2p5VSe_2 >= 2) & (idDeepTau2018v2p5VSmu_1 >= 1) & (idDeepTau2018v2p5VSmu_2
+          >= 1) & (((trg_doubletau) & (pt_1 > 40) & (pt_2 > 40)) | ((trg_doubletauandjet) & (pt_1 > 35)
+          & (pt_2 > 35) & (pt_1 < 190) & (pt_2 < 190) & (jpt_1 > 60)) | ((trg_singletau) & (pt_1 > 190))
+          | ((trg_singletau_2) & (pt_2 > 190)))
+        mt_baseline: (os == 0) & (mt_1 < 65) & (iso_1 < 0.5) & (iso_1 > 0.25) & (idDeepTau2018v2p5VSe_2
+          >= 2) & (idDeepTau2018v2p5VSmu_2 >= 4) & ((((trg_mt_cross) & (pt_1 > 21) & (pt_1 <= 26) & (abs(eta_1)
+          < 2.1) & (pt_2 > 32) & (abs(eta_2) < 2.1)) | ((trg_singlemuon) & (pt_1 > 26) & (abs(eta_1) <
+          2.4))))
+        et_baseline: (os == 0) & (mt_1 < 65) & (e_pass90_1 == False) & (iso_1 < 0.5) & (idDeepTau2018v2p5VSe_2
+          >= 6) & (idDeepTau2018v2p5VSmu_2 >= 4) & (((trg_singleelectron) & (pt_1 > 31) & (abs(eta_1)
+          < 2.1)))
+    Run3_2024:
+      determination:
+        tt_baseline: (os == 0) & (idDeepTau2018v2p5VSjet_{tau_other_index} > 4) & (idDeepTau2018v2p5VSe_1
+          >= 2) & (idDeepTau2018v2p5VSe_2 >= 2) & (idDeepTau2018v2p5VSmu_1 >= 1) & (idDeepTau2018v2p5VSmu_2
+          >= 1) & (((trg_doubletau) & (pt_1 > 35) & (pt_2 > 35)) | ((trg_doubletauandjet) & (pt_1 > 31)
+          & (pt_2 > 31) & (pt_1 < 140) & (pt_2 < 140) & (jpt_1 > 60)) | ((trg_singletau) & (pt_1 > 140))
+          | ((trg_singletau_2) & (pt_2 > 140)))
+        mt_baseline: (os == 0) & (mt_1 < 65) & (iso_1 < 0.15) & (iso_1 > 0.05) & (idDeepTau2018v2p5VSe_2
+          >= 2) & (idDeepTau2018v2p5VSmu_2 >= 4) & ((((trg_mt_cross) & (pt_1 > 21) & (pt_1 <= 26) & (abs(eta_1)
+          < 2.1) & (pt_2 > 32) & (abs(eta_2) < 2.1)) | ((trg_singlemuon) & (pt_1 > 26) & (abs(eta_1) <
+          2.4))))
+        et_baseline: (os == 0) & (mt_1 < 65) & (e_pass90_1) & (iso_1 < 0.15) & (iso_1 > 0.05) & (idDeepTau2018v2p5VSe_2
+          >= 6) & (idDeepTau2018v2p5VSmu_2 >= 4) & (((trg_singleelectron) & (pt_1 > 31) & (abs(eta_1)
+          < 2.1)))
+      validation:
+        tt_baseline: (os == 1) & (idDeepTau2018v2p5VSjet_{tau_other_index} <= 4) & (idDeepTau2018v2p5VSe_1
+          >= 2) & (idDeepTau2018v2p5VSe_2 >= 2) & (idDeepTau2018v2p5VSmu_1 >= 1) & (idDeepTau2018v2p5VSmu_2
+          >= 1) & (((trg_doubletau) & (pt_1 > 35) & (pt_2 > 35)) | ((trg_doubletauandjet) & (pt_1 > 31)
+          & (pt_2 > 31) & (pt_1 < 140) & (pt_2 < 140) & (jpt_1 > 60)) | ((trg_singletau) & (pt_1 > 140))
+          | ((trg_singletau_2) & (pt_2 > 140)))
+        mt_baseline: (os == 0) & (mt_1 < 65) & (iso_1 < 0.5) & (iso_1 > 0.25) & (idDeepTau2018v2p5VSe_2
+          >= 2) & (idDeepTau2018v2p5VSmu_2 >= 4) & ((((trg_mt_cross) & (pt_1 > 21) & (pt_1 <= 26) & (abs(eta_1)
+          < 2.1) & (pt_2 > 32) & (abs(eta_2) < 2.1)) | ((trg_singlemuon) & (pt_1 > 26) & (abs(eta_1) <
+          2.4))))
+        et_baseline: (os == 0) & (mt_1 < 65) & (e_pass90_1) & (iso_1 < 0.5) & (iso_1 > 0.25) & (idDeepTau2018v2p5VSe_2
+          >= 6) & (idDeepTau2018v2p5VSmu_2 >= 4) & (((trg_singleelectron) & (pt_1 > 31) & (abs(eta_1)
+          < 2.1)))
+  selections: &id002
+    data_iso:
+      condition: (idDeepTau2018v2p5VSjet_{tau_index} > 4) & {baseline}
+    data_aiso:
+      condition: (idDeepTau2018v2p5VSjet_{tau_index} <= 4) & (idDeepTau2018v2p5VSjet_{tau_index} >= 0)
+        & {baseline}
+    mc_iso:
+      condition: (idDeepTau2018v2p5VSjet_{tau_index} > 4) & (wt_sf > 0.0) & (genPartFlav_{tau_index} !=
+        0) & {baseline}
+    mc_aiso:
+      condition: (idDeepTau2018v2p5VSjet_{tau_index} <= 4) & (idDeepTau2018v2p5VSjet_{tau_index} >= 0)
+        & (wt_sf > 0.0) & (genPartFlav_{tau_index} != 0) & {baseline}
+    mc_iso_neg:
+      condition: (idDeepTau2018v2p5VSjet_{tau_index} > 4) & (wt_sf < 0.0) & (genPartFlav_{tau_index} !=
+        0) & {baseline}
+    mc_aiso_neg:
+      condition: (idDeepTau2018v2p5VSjet_{tau_index} <= 4) & (idDeepTau2018v2p5VSjet_{tau_index} >= 0)
+        & (wt_sf < 0.0) & (genPartFlav_{tau_index} != 0) & {baseline}
+Wjets:
+  input_folder: data_January26/{era}/{channel}_Wjets/
+  input_files: *id001
+  output_dir: data_January26/{era}/{region}_region/Wjets/
+  categories:
+    determination: &id003
+      mt_baseline: (os == 1) & ((Wjets_pred_score > 0.15)) & (mt_1 > 65) & (n_bjets == 0) & (iso_1 < 0.15)
+        & (idDeepTau2018v2p5VSe_2 >= 2) & (idDeepTau2018v2p5VSmu_2 >= 4) & ((((trg_mt_cross) & (pt_1 >
+        21) & (pt_1 <= 26) & (abs(eta_1) < 2.1) & (pt_2 > 32) & (abs(eta_2) < 2.1)) | ((trg_singlemuon)
+        & (pt_1 > 26) & (abs(eta_1) < 2.4))))
+      et_baseline: (os == 1) & ((Wjets_pred_score > 0.15)) & (e_pass90_1) & (mt_1 > 65) & (n_bjets ==
+        0) & (iso_1 < 0.15) & (idDeepTau2018v2p5VSe_2 >= 6) & (idDeepTau2018v2p5VSmu_2 >= 4) & (((trg_singleelectron)
+        & (pt_1 > 31) & (abs(eta_1) < 2.1)))
+  selections: *id002
+WjetsMC:
+  input_folder: data_January26/{era}/{channel}_WjetsMC/
+  input_files: &id004
+    mc: mc_all_events_{era}.parquet
+  output_dir: data_January26/{era}/{region}_region/WjetsMC/
+  categories:
+    determination: *id003
+    validation:
+      mt_baseline: (os == 1) & ((Wjets_pred_score > 0.15)) & (mt_1 < 65) & (n_bjets == 0) & (iso_1 < 0.15)
+        & (idDeepTau2018v2p5VSe_2 >= 2) & (idDeepTau2018v2p5VSmu_2 >= 4) & ((((trg_mt_cross) & (pt_1 >
+        21) & (pt_1 <= 26) & (abs(eta_1) < 2.1) & (pt_2 > 32) & (abs(eta_2) < 2.1)) | ((trg_singlemuon)
+        & (pt_1 > 26) & (abs(eta_1) < 2.4))))
+      et_baseline: (os == 1) & ((Wjets_pred_score > 0.15)) & (e_pass90_1) & (mt_1 < 65) & (n_bjets ==
+        0) & (iso_1 < 0.15) & (idDeepTau2018v2p5VSe_2 >= 6) & (idDeepTau2018v2p5VSmu_2 >= 4) & (((trg_singleelectron)
+        & (pt_1 > 31) & (abs(eta_1) < 2.1)))
+  selections: &id005
+    mc_iso:
+      condition: (idDeepTau2018v2p5VSjet_{tau_index} > 4) & (wt_sf > 0.0) & (genPartFlav_{tau_index} ==
+        0) & {baseline}
+    mc_aiso:
+      condition: (idDeepTau2018v2p5VSjet_{tau_index} <= 4) & (idDeepTau2018v2p5VSjet_{tau_index} >= 0)
+        & (wt_sf > 0.0) & (genPartFlav_{tau_index} == 0) & {baseline}
+    mc_iso_neg:
+      condition: (idDeepTau2018v2p5VSjet_{tau_index} > 4) & (wt_sf < 0.0) & (genPartFlav_{tau_index} ==
+        0) & {baseline}
+    mc_aiso_neg:
+      condition: (idDeepTau2018v2p5VSjet_{tau_index} <= 4) & (idDeepTau2018v2p5VSjet_{tau_index} >= 0)
+        & (wt_sf < 0.0) & (genPartFlav_{tau_index} == 0) & {baseline}
+ttbarMC:
+  input_folder: data_January26/{era}/{channel}_ttbarMC/
+  input_files: *id004
+  output_dir: data_January26/{era}/{region}_region/ttbarMC
+  categories:
+    determination:
+      mt_baseline: (os == 1) & (iso_1 < 0.15) & (idDeepTau2018v2p5VSe_2 >= 2) & (idDeepTau2018v2p5VSmu_2
+        >= 4) & ((((trg_mt_cross) & (pt_1 > 21) & (pt_1 <= 26) & (abs(eta_1) < 2.1) & (pt_2 > 32) & (abs(eta_2)
+        < 2.1)) | ((trg_singlemuon) & (pt_1 > 26) & (abs(eta_1) < 2.4))))
+      et_baseline: (os == 1) & (iso_1 < 0.15) & (idDeepTau2018v2p5VSe_2 >= 6) & (idDeepTau2018v2p5VSmu_2
+        >= 4) & (((trg_singleelectron) & (pt_1 > 31) & (abs(eta_1) < 2.1)))
+  selections: *id005

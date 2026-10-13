@@ -1,0 +1,253 @@
+# Storage locations, eras and sample names. Analysis settings are in configs/source/.
+# scripts/make_configs.py builds configs/ from this file and configs/source/*.yaml.
+# Relative path values under configs/source/ are resolved against storage.real_base.
+# real_base "./" means the REAL repository this file is in.
+storage:
+  real_base: /eos/user/i/irandreo/REAL
+  ntuple_base: path_to_ntuple_production
+  fake_factor_base: path_to_classical_fake_factor # if this is not set, the classical fake factor method is disabled -- need to add to MUFFIN tools to make this work
+eras:
+  Run3_2022:
+    ntuple_dir: path_to_ntuple_production_Run3_2022
+    data:
+      tt:
+      - Tau_Run2022C
+      - Tau_Run2022D
+      mt:
+      - SingleMuon_Run2022C
+      - Muon_Run2022C
+      - Muon_Run2022D
+      et:
+      - EGamma_Run2022C
+      - EGamma_Run2022D
+    mc:
+    - DYto2L_M_50_amcatnloFXFX
+    - DYto2L_M_50_amcatnloFXFX_ext1
+    - DYto2L_M_50_0J_amcatnloFXFX
+    - DYto2L_M_50_1J_amcatnloFXFX
+    - DYto2L_M_50_2J_amcatnloFXFX
+    - DYto2Tau_MLL_50_0J_amcatnloFXFX
+    - DYto2Tau_MLL_50_1J_amcatnloFXFX
+    - DYto2Tau_MLL_50_2J_amcatnloFXFX
+    - ST_t_channel_antitop_4f_InclusiveDecays
+    - ST_t_channel_top_4f_InclusiveDecays
+    - ST_tW_antitop_2L2Nu
+    - ST_tW_antitop_2L2Nu_ext1
+    - ST_tW_antitop_LNu2Q
+    - ST_tW_antitop_LNu2Q_ext1
+    - ST_tW_top_2L2Nu
+    - ST_tW_top_2L2Nu_ext1
+    - ST_tW_top_LNu2Q
+    - ST_tW_top_LNu2Q_ext1
+    - TTto2L2Nu
+    - TTto2L2Nu_ext1
+    - TTtoLNu2Q
+    - TTtoLNu2Q_ext1
+    - WtoLNu_1J_madgraphMLM
+    - WtoLNu_2J_madgraphMLM
+    - WtoLNu_3J_madgraphMLM
+    - WtoLNu_4J_madgraphMLM
+    - WtoLNu_madgraphMLM
+    - WtoLNu_madgraphMLM_ext1
+    - WW
+    - WZ
+    - ZZ
+  Run3_2022EE:
+    ntuple_dir: path_to_ntuple_production_Run3_2022EE
+    data:
+      tt:
+      - Tau_Run2022E
+      - Tau_Run2022F
+      - Tau_Run2022G
+      mt:
+      - Muon_Run2022E
+      - Muon_Run2022F
+      - Muon_Run2022G
+      et:
+      - EGamma_Run2022E
+      - EGamma_Run2022F
+      - EGamma_Run2022G
+    mc:
+    - DYto2L_M_50_amcatnloFXFX
+    - DYto2L_M_50_amcatnloFXFX_ext1
+    - DYto2L_M_50_0J_amcatnloFXFX
+    - DYto2L_M_50_1J_amcatnloFXFX
+    - DYto2L_M_50_2J_amcatnloFXFX
+    - DYto2Tau_MLL_50_0J_amcatnloFXFX
+    - DYto2Tau_MLL_50_1J_amcatnloFXFX
+    - DYto2Tau_MLL_50_2J_amcatnloFXFX
+    - ST_t_channel_antitop_4f_InclusiveDecays
+    - ST_t_channel_top_4f_InclusiveDecays
+    - ST_tW_antitop_2L2Nu
+    - ST_tW_antitop_2L2Nu_ext1
+    - ST_tW_antitop_LNu2Q
+    - ST_tW_antitop_LNu2Q_ext1
+    - ST_tW_top_2L2Nu
+    - ST_tW_top_2L2Nu_ext1
+    - ST_tW_top_LNu2Q
+    - ST_tW_top_LNu2Q_ext1
+    - TTto2L2Nu
+    - TTto2L2Nu_ext1
+    - TTtoLNu2Q
+    - TTtoLNu2Q_ext1
+    - WtoLNu_1J_madgraphMLM
+    - WtoLNu_2J_madgraphMLM
+    - WtoLNu_3J_madgraphMLM
+    - WtoLNu_4J_madgraphMLM
+    - WtoLNu_madgraphMLM
+    - WtoLNu_madgraphMLM_ext1
+    - WW
+    - WZ
+    - ZZ
+  Run3_2023:
+    ntuple_dir: path_to_ntuple_production_Run3_2023
+    data:
+      tt:
+      - Tau_Run2023C_v1
+      - Tau_Run2023C_v2
+      - Tau_Run2023C_v3
+      - Tau_Run2023C_v4
+      mt:
+      - Muon0_Run2023C_v1
+      - Muon0_Run2023C_v2
+      - Muon0_Run2023C_v3
+      - Muon0_Run2023C_v4
+      - Muon1_Run2023C_v1
+      - Muon1_Run2023C_v2
+      - Muon1_Run2023C_v3
+      - Muon1_Run2023C_v4
+      et:
+      - EGamma0_Run2023C_v1
+      - EGamma0_Run2023C_v2
+      - EGamma0_Run2023C_v3
+      - EGamma0_Run2023C_v4
+      - EGamma1_Run2023C_v1
+      - EGamma1_Run2023C_v2
+      - EGamma1_Run2023C_v3
+      - EGamma1_Run2023C_v4
+    mc:
+    - DYto2L_M_50_amcatnloFXFX
+    - DYto2L_M_50_0J_amcatnloFXFX
+    - DYto2L_M_50_1J_amcatnloFXFX
+    - DYto2L_M_50_2J_amcatnloFXFX
+    - DYto2Tau_MLL_50_0J_amcatnloFXFX
+    - DYto2Tau_MLL_50_1J_amcatnloFXFX
+    - DYto2Tau_MLL_50_2J_amcatnloFXFX
+    - ST_t_channel_antitop_4f_InclusiveDecays
+    - ST_t_channel_top_4f_InclusiveDecays
+    - ST_tW_antitop_2L2Nu
+    - ST_tW_antitop_LNu2Q
+    - ST_tW_top_2L2Nu
+    - ST_tW_top_LNu2Q
+    - TTto2L2Nu
+    - TTtoLNu2Q
+    - WtoLNu_1J_madgraphMLM
+    - WtoLNu_2J_madgraphMLM
+    - WtoLNu_3J_madgraphMLM
+    - WtoLNu_4J_madgraphMLM
+    - WtoLNu_madgraphMLM
+    - WW
+    - WZ
+    - ZZ
+  Run3_2023BPix:
+    ntuple_dir: path_to_ntuple_production_Run3_2023BPix
+    data:
+      tt:
+      - Tau_Run2023D_v1
+      - Tau_Run2023D_v2
+      mt:
+      - Muon0_Run2023D_v1
+      - Muon0_Run2023D_v2
+      - Muon1_Run2023D_v1
+      - Muon1_Run2023D_v2
+      et:
+      - EGamma0_Run2023D_v1
+      - EGamma0_Run2023D_v2
+      - EGamma1_Run2023D_v1
+      - EGamma1_Run2023D_v2
+    mc:
+    - DYto2L_M_50_amcatnloFXFX
+    - DYto2L_M_50_0J_amcatnloFXFX
+    - DYto2L_M_50_1J_amcatnloFXFX
+    - DYto2L_M_50_2J_amcatnloFXFX
+    - DYto2Tau_MLL_50_0J_amcatnloFXFX
+    - DYto2Tau_MLL_50_1J_amcatnloFXFX
+    - DYto2Tau_MLL_50_2J_amcatnloFXFX
+    - ST_t_channel_antitop_4f_InclusiveDecays
+    - ST_t_channel_top_4f_InclusiveDecays
+    - ST_tW_antitop_2L2Nu
+    - ST_tW_antitop_LNu2Q
+    - ST_tW_top_2L2Nu
+    - ST_tW_top_LNu2Q
+    - TTto2L2Nu
+    - TTtoLNu2Q
+    - WtoLNu_1J_madgraphMLM
+    - WtoLNu_2J_madgraphMLM
+    - WtoLNu_3J_madgraphMLM
+    - WtoLNu_4J_madgraphMLM
+    - WtoLNu_madgraphMLM
+    - WW
+    - WZ
+    - ZZ
+  Run3_2024:
+    ntuple_dir: path_to_ntuple_production_Run3_2024
+    data:
+      tt:
+      - Tau_Run2024C
+      - Tau_Run2024D
+      - Tau_Run2024E
+      - Tau_Run2024F
+      - Tau_Run2024G
+      - Tau_Run2024H
+      - Tau_Run2024I_v1
+      - Tau_Run2024I_v2
+      mt:
+      - Muon0_Run2024C
+      - Muon0_Run2024D
+      - Muon0_Run2024E
+      - Muon0_Run2024F
+      - Muon0_Run2024G
+      - Muon0_Run2024H
+      - Muon0_Run2024I_v1
+      - Muon0_Run2024I_v2
+      - Muon1_Run2024C
+      - Muon1_Run2024D
+      - Muon1_Run2024E
+      - Muon1_Run2024F
+      - Muon1_Run2024G
+      - Muon1_Run2024H
+      - Muon1_Run2024I_v1
+      - Muon1_Run2024I_v2
+      et:
+      - EGamma0_Run2024C
+      - EGamma0_Run2024D
+      - EGamma0_Run2024E
+      - EGamma0_Run2024F
+      - EGamma0_Run2024G
+      - EGamma0_Run2024H
+      - EGamma0_Run2024I_v1
+      - EGamma0_Run2024I_v2
+      - EGamma1_Run2024C
+      - EGamma1_Run2024D
+      - EGamma1_Run2024E
+      - EGamma1_Run2024F
+      - EGamma1_Run2024G
+      - EGamma1_Run2024H
+      - EGamma1_Run2024I_v1
+      - EGamma1_Run2024I_v2
+    mc:
+    - DYto2E_MLL_50_amcatnloFXFX
+    - DYto2Mu_MLL_50_amcatnloFXFX
+    - DYto2Tau_MLL_50_amcatnloFXFX
+    - WtoENu_madgraphMLM
+    - WtoMuNu_madgraphMLM
+    - WtoTauNu_madgraphMLM
+    - TTto2L2Nu
+    - TTtoLNu2Q
+    - WW
+    - WZ
+    - ZZ
+    - ST_tW_top_2L2Nu
+    - ST_tW_antitop_2L2Nu
+    - ST_tW_top_LNu2Q
+    - ST_tW_antitop_LNu2Q

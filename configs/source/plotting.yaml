@@ -1,0 +1,745 @@
+# Plotting settings for the EarlyRun3 and 2024 configs.
+plotting:
+  era:
+    Run3_2022:
+      data_iso_file: data_with_pileup_January26/Run3_2022/{region}_region/{ff_process}/data_iso_{channel}_{tau_suffix}.parquet
+      data_aiso_file: data_with_pileup_January26/Run3_2022/{region}_region/{ff_process}/data_aiso_{channel}_{tau_suffix}.parquet
+      mc_iso_file: data_with_pileup_January26/Run3_2022/{region}_region/{ff_process}/mc_iso_{channel}_{tau_suffix}.parquet
+      mc_aiso_file: data_with_pileup_January26/Run3_2022/{region}_region/{ff_process}/mc_aiso_{channel}_{tau_suffix}.parquet
+    Run3_2022EE:
+      data_iso_file: data_with_pileup_January26/Run3_2022EE/{region}_region/{ff_process}/data_iso_{channel}_{tau_suffix}.parquet
+      data_aiso_file: data_with_pileup_January26/Run3_2022EE/{region}_region/{ff_process}/data_aiso_{channel}_{tau_suffix}.parquet
+      mc_iso_file: data_with_pileup_January26/Run3_2022EE/{region}_region/{ff_process}/mc_iso_{channel}_{tau_suffix}.parquet
+      mc_aiso_file: data_with_pileup_January26/Run3_2022EE/{region}_region/{ff_process}/mc_aiso_{channel}_{tau_suffix}.parquet
+    Run3_2023:
+      data_iso_file: data_with_pileup_January26/Run3_2023/{region}_region/{ff_process}/data_iso_{channel}_{tau_suffix}.parquet
+      data_aiso_file: data_with_pileup_January26/Run3_2023/{region}_region/{ff_process}/data_aiso_{channel}_{tau_suffix}.parquet
+      mc_iso_file: data_with_pileup_January26/Run3_2023/{region}_region/{ff_process}/mc_iso_{channel}_{tau_suffix}.parquet
+      mc_aiso_file: data_with_pileup_January26/Run3_2023/{region}_region/{ff_process}/mc_aiso_{channel}_{tau_suffix}.parquet
+    Run3_2023BPix:
+      data_iso_file: data_with_pileup_January26/Run3_2023BPix/{region}_region/{ff_process}/data_iso_{channel}_{tau_suffix}.parquet
+      data_aiso_file: data_with_pileup_January26/Run3_2023BPix/{region}_region/{ff_process}/data_aiso_{channel}_{tau_suffix}.parquet
+      mc_iso_file: data_with_pileup_January26/Run3_2023BPix/{region}_region/{ff_process}/mc_iso_{channel}_{tau_suffix}.parquet
+      mc_aiso_file: data_with_pileup_January26/Run3_2023BPix/{region}_region/{ff_process}/mc_aiso_{channel}_{tau_suffix}.parquet
+  model_path: TAU-25-001/trainings/best_model_{channel}_{ff_process}.pkl
+  train_test_split_path: outputs/best_models/Run3_2024_{global_str}/{channel}_{ff_process}/test_event_ids.csv
+  classical_ff_path: TAU-25-001/classical/{year}_fake_factors_{channel}_{ff_process}.json
+  optimal_temperature_path: TAU-25-001/trainings/temperature_scaling_results_{channel}_{ff_process}.json
+  output_dir: outputs/plots/TAU-25-001_Preservation/{channel}_{ff_process}/pileup_studies
+  lead_tau: &id001
+  - decayMode_1
+  - jpt_pt_1
+  - pt_1
+  - eta_1
+  - phi_1
+  sublead_tau: &id002
+  - decayMode_2
+  - jpt_pt_2
+  - pt_2
+  - eta_2
+  - phi_2
+  global_variables: &id003
+  - n_jets
+  - n_bjets
+  features_to_plot:
+  - decayMode
+  - pt
+  - eta
+  - pt_tt
+  - dR
+  - n_jets
+  - m_vis
+  - mt_tot
+  - met_pt
+  - BDT_raw_score_tau
+  - BDT_raw_score_higgs
+  - BDT_raw_score_fake
+  - pileup
+  latex_names_lead:
+    decayMode: $\tau_h^{lead}$ decay mode
+    decayMode_other: $\tau_h^{sublead}$ decay mode
+    jpt_pt: Ratio of $p_{T}^{jet}$ to $p_{T}^{\tau_h^{lead}}$
+    jpt_pt_other: Ratio of $p_{T}^{jet}$ to $p_{T}^{\tau_h^{sublead}}$
+    pt: $p_{T}^{\tau_h^{lead}}$ (GeV)
+    pt_other: $p_{T}^{\tau_h^{sublead}}$ (GeV)
+    pt_tt: $p_{T}^{\tau_h\tau_h}$ (GeV)
+    eta: $\eta^{\tau_h^{lead}}$
+    eta_other: $\eta^{\tau_h^{sublead}}$
+    charge: $\tau_h^{lead}$ charge
+    charge_other: $\tau_h^{sublead}$ charge
+    phi: $\tau_h^{lead} \phi$
+    phi_other: $\tau_h^{sublead} \phi$
+    dR: $\Delta R(\tau_h^{lead}, \tau_h^{sublead})$
+    n_jets: Number of jets
+    n_bjets: Number of b-jets
+    n_prebjets: Number of pre-b-jets
+    m_vis: $m_{vis}$ (GeV)
+    mt_tot: $m^{total}_T$ (GeV)
+    FastMTT_mass: FastMTT mass (GeV)
+    met_pt: MET $p_T$ (GeV)
+    met_phi: MET $\phi$
+    met_dphi: MET $\Delta \phi$ with $\tau_h^{lead}$
+    met_dphi_other: MET $\Delta \phi$ with $\tau_h^{sublead}$
+    met_var_qcd_1: $C_{\\text{QCD}} = \\frac{\\MET}{p_{T}^{\\tau_h^{lead}}}\\cos\\Delta\\phi(\\vec{\\MET},\\vec{p}_{T}^{\\tau_h^{lead}})$
+    met_var_qcd_2: $C_{\\text{QCD}} = \\frac{\\MET}{p_{T}^{\\tau_h^{sublead}}}\\cos\\Delta\\phi(\\vec{\\MET},\\vec{p}_{T}^{\\tau_h^{sublead}})$
+    met_var_w_1: $C_{\\text{W}} = \\frac{\\left\\lvert\\vec{\\MET}+\\vec{p}_T^{\\ell}\\right\\rvert}{p_{T}^{\\tau_h^{lead}}}\\cos\\Delta\\phi(\\vec{\\MET}+\\vec{p}_T^{\\ell},\\vec{p}_{T}^{\\tau_h^{lead}})$
+    met_var_w_2: $C_{\\text{W}} = \\frac{\\left\\lvert\\vec{\\MET}+\\vec{p}_T^{\\ell}\\right\\rvert}{p_{T}^{\\tau_h^{sublead}}}\\cos\\Delta\\phi(\\vec{\\MET}+\\vec{p}_T^{\\ell},\\vec{p}_{T}^{\\tau_h^{sublead}})$
+    decayModePNet: $\tau_h^{lead}$ PNet decay mode
+    decayModePNet_other: $\tau_h^{sublead}$ PNet decay mode
+    BDT_raw_score_tau: $\tau_h$ BDT score
+    BDT_raw_score_higgs: Higgs BDT score
+    BDT_raw_score_fake: Misidentified $\tau_h$ BDT score
+    pileup: $\langle \mu \rangle$
+  latex_names_sublead:
+    decayMode: $\tau_h$ decay mode
+    jpt_pt: Ratio of $p_{T}^{jet}$ to $p_{T}^{\tau_h}$
+    pt: $p_{T}^{\tau_h}$ (GeV)
+    pt_tt: $p_{T}^{\tau_h\tau_h}$ (GeV)
+    eta: $\eta^{\tau_h}$
+    charge: $\tau_h$ charge
+    phi: $\tau_h \phi$
+    dR: $\Delta R(\ell, \tau_h)$
+    n_jets: Number of jets
+    n_bjets: Number of b-jets
+    n_prebjets: Number of pre-b-jets
+    m_vis: $m_{vis}$ (GeV)
+    mt_tot: $m^{total}_T$ (GeV)
+    FastMTT_mass: FastMTT mass (GeV)
+    met_pt: MET $p_T$ (GeV)
+    met_phi: MET $\phi$
+    met_dphi: MET $\Delta \phi$ with $\tau_h$
+    met_var_qcd_1: $C_{\\text{QCD}} = \\frac{\\MET}{p_{T}^{\\tau_h}}\\cos\\Delta\\phi(\\vec{\\MET},\\vec{p}_{T}^{\\tau_h})$
+    met_var_w_1: $C_{\\text{W}} = \\frac{\\left\\lvert\\vec{\\MET}+\\vec{p}_T^{\\ell}\\right\\rvert}{p_{T}^{\\tau_h}}\\cos\\Delta\\phi(\\vec{\\MET}+\\vec{p}_T^{\\ell},\\vec{p}_{T}^{\\tau_h})$
+    decayModePNet: $\tau_h^{lead}$ PNet decay mode
+    BDT_raw_score_tau: $\tau_h$ BDT score
+    BDT_raw_score_higgs: Higgs BDT score
+    BDT_raw_score_fake: Misidentified $\tau_h$ BDT score
+    pileup: $\langle \mu \rangle$
+  plot_params:
+    bins:
+      pt: 100
+      pt_other: 100
+      decayMode: 12
+      decayMode_other: 12
+      jpt_pt: 100
+      jpt_pt_other: 100
+      pt_tt: 100
+      eta: 15
+      eta_other: 15
+      phi: 30
+      phi_other: 30
+      dR: 15
+      charge: 4
+      charge_other: 4
+      n_jets: 10
+      n_bjets: 4
+      n_prebjets: 4
+      m_vis: 15
+      mt_tot: 15
+      FastMTT_mass: 15
+      met_pt: 15
+      met_phi: 30
+      met_dphi: 30
+      met_dphi_other: 30
+      met_var_qcd_1: 50
+      met_var_qcd_2: 50
+      decayModePNet: 12
+      decayModePNet_other: 12
+      BDT_raw_score_tau: 10
+      BDT_raw_score_higgs: 10
+      BDT_raw_score_fake: 10
+      pileup: 10
+    ranges:
+      decayMode: &id004
+      - 0
+      - 12
+      decayMode_other: &id005
+      - 0
+      - 12
+      jpt_pt: &id006
+      - 0
+      - 3
+      jpt_pt_other: &id007
+      - 0
+      - 3
+      pt: &id008
+      - 35
+      - 1200
+      pt_other: &id009
+      - 35
+      - 600
+      pt_tt: &id010
+      - 0
+      - 800
+      eta: &id011
+      - -2.3
+      - 2.3
+      eta_other: &id012
+      - -2.3
+      - 2.3
+      phi: &id013
+      - -3.2
+      - 3.2
+      phi_other: &id014
+      - -3.2
+      - 3.2
+      dR: &id015
+      - 0
+      - 5
+      charge: &id016
+      - -2
+      - 2
+      charge_other: &id017
+      - -2
+      - 2
+      n_jets: &id018
+      - 0
+      - 10
+      n_bjets: &id019
+      - 0
+      - 4
+      n_prebjets: &id020
+      - 0
+      - 4
+      m_vis: &id021
+      - 0
+      - 1200
+      mt_tot: &id022
+      - 0
+      - 1200
+      FastMTT_mass: &id023
+      - 0
+      - 1200
+      met_pt: &id024
+      - 0
+      - 1200
+      met_phi: &id025
+      - -3.2
+      - 3.2
+      met_dphi: &id026
+      - -3.2
+      - 3.2
+      met_dphi_other: &id027
+      - -3.2
+      - 3.2
+      met_var_qcd_1: &id028
+      - -10
+      - 10
+      met_var_qcd_2: &id029
+      - -10
+      - 10
+      decayModePNet: &id030
+      - 0
+      - 12
+      decayModePNet_other: &id031
+      - 0
+      - 12
+      BDT_raw_score_tau: &id032
+      - 0.33
+      - 1.0
+      BDT_raw_score_higgs: &id033
+      - 0.33
+      - 1.0
+      BDT_raw_score_fake: &id034
+      - 0.33
+      - 1.0
+      pileup:
+      - 0.01
+      - 70
+    discrete_bins_lead: &id035
+      charge:
+      - -2
+      - -1
+      - 0
+      - 1
+      - 2
+      charge_other:
+      - -2
+      - -1
+      - 0
+      - 1
+      - 2
+      jpt_pt:
+      - 0
+      - 0.5
+      - 1
+      - 1.5
+      - 2
+      - 2.5
+      - 3
+      jpt_pt_other:
+      - 0
+      - 0.5
+      - 1
+      - 1.5
+      - 2
+      - 2.5
+      - 3
+      pt:
+      - 0
+      - 50
+      - 100
+      - 150
+      - 200
+      - 250
+      - 300
+      - 350
+      - 400
+      - 800
+      pt_other:
+      - 35
+      - 50
+      - 100
+      - 150
+      - 200
+      - 250
+      - 300
+      - 400
+      - 800
+      pt_tt:
+      - 0
+      - 35
+      - 50
+      - 100
+      - 150
+      - 200
+      - 250
+      - 300
+      - 350
+      - 400
+      - 800
+      mt_tot:
+      - 0
+      - 100
+      - 200
+      - 300
+      - 400
+      - 500
+      - 1200
+      m_vis:
+      - 0
+      - 100
+      - 200
+      - 300
+      - 400
+      - 500
+      - 1200
+      FastMTT_mass:
+      - 0
+      - 50
+      - 100
+      - 150
+      - 200
+      - 250
+      - 300
+      - 400
+      - 500
+      - 600
+      - 700
+      - 1200
+      met_pt:
+      - 0
+      - 20
+      - 40
+      - 60
+      - 80
+      - 100
+      - 400
+      decayMode:
+      - 0
+      - 1
+      - 2
+      - 3
+      - 4
+      - 5
+      - 6
+      - 7
+      - 8
+      - 9
+      - 10
+      - 11
+      - 12
+      decayMode_other:
+      - 0
+      - 1
+      - 2
+      - 3
+      - 4
+      - 5
+      - 6
+      - 7
+      - 8
+      - 9
+      - 10
+      - 11
+      - 12
+      decayModePNet:
+      - 0
+      - 1
+      - 2
+      - 3
+      - 4
+      - 5
+      - 6
+      - 7
+      - 8
+      - 9
+      - 10
+      - 11
+      - 12
+      decayModePNet_other:
+      - 0
+      - 1
+      - 2
+      - 3
+      - 4
+      - 5
+      - 6
+      - 7
+      - 8
+      - 9
+      - 10
+      - 11
+      - 12
+      BDT_raw_score_higgs:
+      - 0.33
+      - 0.4
+      - 0.5
+      - 0.6
+      - 0.7
+      - 0.8
+      - 0.9
+      - 1.0
+      BDT_raw_score_tau:
+      - 0.33
+      - 0.4
+      - 0.5
+      - 0.6
+      - 0.7
+      - 0.8
+      - 0.9
+      - 1.0
+      BDT_raw_score_fake:
+      - 0.33
+      - 0.4
+      - 0.5
+      - 0.6
+      - 0.7
+      - 0.8
+      - 0.9
+      - 1.0
+    discrete_bins_sublead: &id036
+      charge:
+      - -2
+      - -1
+      - 0
+      - 1
+      - 2
+      charge_other:
+      - -2
+      - -1
+      - 0
+      - 1
+      - 2
+      jpt_pt:
+      - 0
+      - 0.5
+      - 1
+      - 1.5
+      - 2
+      - 2.5
+      - 3
+      jpt_pt_other:
+      - 0
+      - 0.5
+      - 1
+      - 1.5
+      - 2
+      - 2.5
+      - 3
+      pt:
+      - 0
+      - 50
+      - 100
+      - 150
+      - 200
+      - 500
+      pt_other:
+      - 35
+      - 50
+      - 100
+      - 150
+      - 200
+      - 500
+      pt_tt:
+      - 0
+      - 35
+      - 50
+      - 100
+      - 150
+      - 200
+      - 800
+      mt_tot:
+      - 0
+      - 50
+      - 100
+      - 150
+      - 200
+      - 250
+      - 1200
+      m_vis:
+      - 0
+      - 50
+      - 100
+      - 150
+      - 200
+      - 250
+      - 1200
+      FastMTT_mass:
+      - 0
+      - 50
+      - 100
+      - 150
+      - 200
+      - 250
+      - 300
+      - 1200
+      met_pt:
+      - 0
+      - 20
+      - 40
+      - 60
+      - 80
+      - 100
+      - 200
+      decayMode:
+      - 0
+      - 1
+      - 2
+      - 3
+      - 4
+      - 5
+      - 6
+      - 7
+      - 8
+      - 9
+      - 10
+      - 11
+      - 12
+      decayMode_other:
+      - 0
+      - 1
+      - 2
+      - 3
+      - 4
+      - 5
+      - 6
+      - 7
+      - 8
+      - 9
+      - 10
+      - 11
+      - 12
+      decayModePNet:
+      - 0
+      - 1
+      - 2
+      - 3
+      - 4
+      - 5
+      - 6
+      - 7
+      - 8
+      - 9
+      - 10
+      - 11
+      - 12
+      decayModePNet_other:
+      - 0
+      - 1
+      - 2
+      - 3
+      - 4
+      - 5
+      - 6
+      - 7
+      - 8
+      - 9
+      - 10
+      - 11
+      - 12
+      BDT_raw_score_higgs:
+      - 0.33
+      - 0.4
+      - 0.5
+      - 0.6
+      - 0.7
+      - 0.8
+      - 1.0
+      BDT_raw_score_tau:
+      - 0.33
+      - 0.4
+      - 0.5
+      - 0.6
+      - 0.7
+      - 0.8
+      - 1.0
+      BDT_raw_score_fake:
+      - 0.33
+      - 0.4
+      - 0.5
+      - 0.6
+      - 0.7
+      - 0.8
+      - 0.9
+      - 0.95
+      - 1.0
+plotting_2024:
+  era:
+    Run3_2024:
+      data_iso_file: data_January26/Run3_2024/{region}_region/{ff_process}/data_iso_{channel}_{tau_suffix}.parquet
+      data_aiso_file: data_January26/Run3_2024/{region}_region/{ff_process}/data_aiso_{channel}_{tau_suffix}.parquet
+      mc_iso_file: data_January26/Run3_2024/{region}_region/{ff_process}/mc_iso_{channel}_{tau_suffix}.parquet
+      mc_aiso_file: data_January26/Run3_2024/{region}_region/{ff_process}/mc_aiso_{channel}_{tau_suffix}.parquet
+  model_path: outputs/best_models/Run3_2024Thesis_{global_str}/{channel}_{ff_process}/best_model.pkl
+  train_test_split_path: outputs/best_models/Run3_2024Thesis_{global_str}/{channel}_{ff_process}/test_event_ids.csv
+  classical_ff_path: path_to_classical_fake_factor/Run3FakeFactors/{channel}/{year}_fake_factors_{ff_process}.json
+  optimal_temperature_path: outputs/best_models/Run3_2024Thesis_{global_str}/{channel}_{ff_process}/temperature_scaling_results.json
+  output_dir: outputs/plots/Run3_2024Thesis_{global_str}/{channel}_{ff_process}
+  lead_tau: *id001
+  sublead_tau: *id002
+  global_variables: *id003
+  features_to_plot:
+  - decayMode
+  - pt
+  - eta
+  - pt_tt
+  - dR
+  - m_vis
+  - mt_tot
+  - met_pt
+  latex_names_lead:
+    decayMode: $\tau_h^{lead}$ decay mode
+    decayMode_other: $\tau_h^{sublead}$ decay mode
+    jpt_pt: Ratio of $p_{T}^{jet}$ to $p_{T}^{\tau_h^{lead}}$
+    jpt_pt_other: Ratio of $p_{T}^{jet}$ to $p_{T}^{\tau_h^{sublead}}$
+    pt: $p_{T}^{\tau_h^{lead}}$ (GeV)
+    pt_other: $p_{T}^{\tau_h^{sublead}}$ (GeV)
+    pt_tt: $p_{T}^{\tau_h\tau_h}$ (GeV)
+    eta: $\eta^{\tau_h^{lead}}$
+    eta_other: $\eta^{\tau_h^{sublead}}$
+    charge: $\tau_h^{lead}$ charge
+    charge_other: $\tau_h^{sublead}$ charge
+    phi: $\tau_h^{lead} \phi$
+    phi_other: $\tau_h^{sublead} \phi$
+    dR: $\Delta R(\tau_h^{lead}, \tau_h^{sublead})$
+    n_jets: Number of jets
+    n_bjets: Number of b-jets
+    n_prebjets: Number of pre-b-jets
+    m_vis: $m_{vis}$ (GeV)
+    mt_tot: $m^{total}_T$ (GeV)
+    FastMTT_mass: FastMTT mass (GeV)
+    met_pt: MET $p_T$ (GeV)
+    met_phi: MET $\phi$
+    met_dphi: MET $\Delta \phi$ with $\tau_h^{lead}$
+    met_dphi_other: MET $\Delta \phi$ with $\tau_h^{sublead}$
+    met_var_qcd_1: $C_{\\text{QCD}} = \\frac{\\MET}{p_{T}^{\\tau_h^{lead}}}\\cos\\Delta\\phi(\\vec{\\MET},\\vec{p}_{T}^{\\tau_h^{lead}})$
+    met_var_qcd_2: $C_{\\text{QCD}} = \\frac{\\MET}{p_{T}^{\\tau_h^{sublead}}}\\cos\\Delta\\phi(\\vec{\\MET},\\vec{p}_{T}^{\\tau_h^{sublead}})$
+    met_var_w_1: $C_{\\text{W}} = \\frac{\\left\\lvert\\vec{\\MET}+\\vec{p}_T^{\\ell}\\right\\rvert}{p_{T}^{\\tau_h^{lead}}}\\cos\\Delta\\phi(\\vec{\\MET}+\\vec{p}_T^{\\ell},\\vec{p}_{T}^{\\tau_h^{lead}})$
+    met_var_w_2: $C_{\\text{W}} = \\frac{\\left\\lvert\\vec{\\MET}+\\vec{p}_T^{\\ell}\\right\\rvert}{p_{T}^{\\tau_h^{sublead}}}\\cos\\Delta\\phi(\\vec{\\MET}+\\vec{p}_T^{\\ell},\\vec{p}_{T}^{\\tau_h^{sublead}})$
+    decayModePNet: $\tau_h^{lead}$ PNet decay mode
+    decayModePNet_other: $\tau_h^{sublead}$ PNet decay mode
+    BDT_raw_score_tau: $\tau_h$ BDT score
+    BDT_raw_score_higgs: Higgs BDT score
+    BDT_raw_score_fake: Misidentified $\tau_h$ BDT score
+  latex_names_sublead:
+    decayMode: $\tau_h$ decay mode
+    jpt_pt: Ratio of $p_{T}^{jet}$ to $p_{T}^{\tau_h}$
+    pt: $p_{T}^{\tau_h}$ (GeV)
+    pt_tt: $p_{T}^{\tau_h\tau_h}$ (GeV)
+    eta: $\eta^{\tau_h}$
+    charge: $\tau_h$ charge
+    phi: $\tau_h \phi$
+    dR: $\Delta R(\ell, \tau_h)$
+    n_jets: Number of jets
+    n_bjets: Number of b-jets
+    n_prebjets: Number of pre-b-jets
+    m_vis: $m_{vis}$ (GeV)
+    mt_tot: $m^{total}_T$ (GeV)
+    FastMTT_mass: FastMTT mass (GeV)
+    met_pt: MET $p_T$ (GeV)
+    met_phi: MET $\phi$
+    met_dphi: MET $\Delta \phi$ with $\tau_h$
+    met_var_qcd_1: $C_{\\text{QCD}} = \\frac{\\MET}{p_{T}^{\\tau_h}}\\cos\\Delta\\phi(\\vec{\\MET},\\vec{p}_{T}^{\\tau_h})$
+    met_var_w_1: $C_{\\text{W}} = \\frac{\\left\\lvert\\vec{\\MET}+\\vec{p}_T^{\\ell}\\right\\rvert}{p_{T}^{\\tau_h}}\\cos\\Delta\\phi(\\vec{\\MET}+\\vec{p}_T^{\\ell},\\vec{p}_{T}^{\\tau_h})$
+    decayModePNet: $\tau_h^{lead}$ PNet decay mode
+    BDT_raw_score_tau: $\tau_h$ BDT score
+    BDT_raw_score_higgs: Higgs BDT score
+    BDT_raw_score_fake: Misidentified $\tau_h$ BDT score
+  plot_params:
+    bins:
+      pt: 100
+      pt_other: 100
+      decayMode: 12
+      decayMode_other: 12
+      jpt_pt: 100
+      jpt_pt_other: 100
+      pt_tt: 100
+      eta: 15
+      eta_other: 15
+      phi: 30
+      phi_other: 30
+      dR: 15
+      charge: 4
+      charge_other: 4
+      n_jets: 10
+      n_bjets: 4
+      n_prebjets: 4
+      m_vis: 15
+      mt_tot: 15
+      FastMTT_mass: 15
+      met_pt: 15
+      met_phi: 30
+      met_dphi: 30
+      met_dphi_other: 30
+      met_var_qcd_1: 50
+      met_var_qcd_2: 50
+      decayModePNet: 12
+      decayModePNet_other: 12
+      BDT_raw_score_tau: 10
+      BDT_raw_score_higgs: 10
+      BDT_raw_score_fake: 10
+    ranges:
+      decayMode: *id004
+      decayMode_other: *id005
+      jpt_pt: *id006
+      jpt_pt_other: *id007
+      pt: *id008
+      pt_other: *id009
+      pt_tt: *id010
+      eta: *id011
+      eta_other: *id012
+      phi: *id013
+      phi_other: *id014
+      dR: *id015
+      charge: *id016
+      charge_other: *id017
+      n_jets: *id018
+      n_bjets: *id019
+      n_prebjets: *id020
+      m_vis: *id021
+      mt_tot: *id022
+      FastMTT_mass: *id023
+      met_pt: *id024
+      met_phi: *id025
+      met_dphi: *id026
+      met_dphi_other: *id027
+      met_var_qcd_1: *id028
+      met_var_qcd_2: *id029
+      decayModePNet: *id030
+      decayModePNet_other: *id031
+      BDT_raw_score_tau: *id032
+      BDT_raw_score_higgs: *id033
+      BDT_raw_score_fake: *id034
+    discrete_bins_lead: *id035
+    discrete_bins_sublead: *id036
