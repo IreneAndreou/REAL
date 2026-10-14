@@ -1,11 +1,17 @@
 import argparse
 import logging
+import os
+import pathlib
+import awkward as ak
 import pandas as pd
+import pyarrow as pa
 import pyarrow.parquet as pq
 import subprocess
 import sys
+import uproot
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
+from typing import List, Optional
 import yaml
 
 # Set up argument parser
@@ -14,6 +20,8 @@ parser.add_argument("--eras", required=True, type=str, help="Comma-separated lis
 parser.add_argument("--channels", required=False, default="all", choices=["all", "et", "mt", "tt"], help="Select the channel to run (default: all).")
 parser.add_argument("--process", required=False, default="all", choices=["all", "QCD", "Wjets", "WjetsMC", "ttbarMC"], help="Select the FF process to run (default: all).")
 parser.add_argument("--workers", type=int, default=4, help="Parallel workers for preprocessing.")
+parser.add_argument("--from_root", action="store_true", help="Inputs are ROOT ntuples: convert <sample>/nominal/*.root to parquet before scaling.")
+parser.add_argument("--tree_name", type=str, default="ntuple", help="Name of the ROOT tree to read when using --from_root (default: ntuple).")
 
 args = parser.parse_args()
 eras = [e.strip() for e in args.eras.split(",") if e.strip()]
@@ -100,7 +108,56 @@ def row_count(file_path):
         return 0
 
 
-def preprocessing(src_file, dest_file, era):
+def dump_ak_array(
+    akarr: ak.Array,
+    fname: str,
+    location: str,
+    metadata: Optional[dict] = None,
+    subdirs: Optional[List[str]] = None,
+) -> None:
+    """
+    Dump an awkward array to disk at location/'/'.join(subdirs)/fname.
+    """
+    subdirs = subdirs or []
+
+    merged_subdirs = "/".join(subdirs)
+    if merged_subdirs:
+        destination = f"{location.rstrip('/')}/{merged_subdirs}/{fname}"
+    else:
+        destination = f"{location.rstrip('/')}/{fname}"
+
+    pa_table = ak.to_arrow_table(akarr, extensionarray=False)
+    # Ensure deterministic column ordering in output parquet files to fix reading issue
+    col_names = sorted(pa_table.schema.names)
+    pa_table = pa.table([pa_table.column(n) for n in col_names], names=col_names)
+    if metadata:
+        merged_metadata = {**metadata, **(pa_table.schema.metadata or {})}
+        pa_table = pa_table.replace_schema_metadata(merged_metadata)
+
+    if destination.startswith("root://"):
+        import fsspec
+        with fsspec.open(destination, 'wb') as f:
+            pq.write_table(pa_table, f)
+    else:
+        dirname = os.path.dirname(destination)
+        if not os.path.exists(dirname):
+            pathlib.Path(dirname).mkdir(parents=True, exist_ok=True)
+        pq.write_table(pa_table, destination)
+
+
+def root_to_parquet(root_files, dest_file, tree_name):
+    """Read a tree from one or more ROOT files and write it as a single parquet file."""
+    logging.info(f"Converting {len(root_files)} ROOT file(s) -> {dest_file.name}")
+    arrays = []
+    for rf in root_files:
+        with uproot.open(rf) as f:
+            arrays.append(f[tree_name].arrays())
+    akarr = ak.concatenate(arrays) if len(arrays) > 1 else arrays[0]
+    dump_ak_array(akarr, dest_file.name, str(dest_file.parent))
+    logging.info(f"Converted -> {dest_file} ({len(akarr)} rows)")
+
+
+def preprocessing(src_file, dest_file, era, sample=None, channel=None):
     """Preprocess and lumi-scales files to the destination directory."""
     cmd = [
         sys.executable, "scripts/scaling.py",
@@ -108,6 +165,10 @@ def preprocessing(src_file, dest_file, era):
         "--file_path", str(src_file),
         "--dest_file", str(dest_file),
     ]
+    if sample:
+        cmd += ["--sample", sample]
+    if channel:
+        cmd += ["--channel", channel]
     logging.info(f"Scaling -> {dest_file.name}")
 
     try:
@@ -154,18 +215,40 @@ def merge_files(files, target_file):
             writer.close()
 
 
-def parallel_preprocess(era, category, source_dir, dest_dir, filenames, workers):
+def convert_and_preprocess(root_files, converted, dst, era, tree_name, sample, channel):
+    """Convert ROOT inputs to parquet, scale them, then delete the converted file."""
+    try:
+        root_to_parquet(root_files, converted, tree_name)
+    except Exception as e:
+        logging.error(f"ROOT -> parquet conversion failed for {converted.name}: {e}")
+        return False
+    try:
+        return preprocessing(converted, dst, era, sample, channel)
+    finally:
+        converted.unlink(missing_ok=True)
+
+
+def parallel_preprocess(era, channel, category, source_dir, dest_dir, filenames, workers):
     """Preprocess all files in a category, merge and cleanup."""
     # Preprocessing (parallel)
     jobs = []
     with ThreadPoolExecutor(max_workers=max(1, workers)) as ex:
         for name in filenames:
-            src = source_dir / name / "nominal" / "merged.parquet"
             dst = dest_dir / f"{name}_scaled.parquet"
+            if args.from_root:
+                root_dir = source_dir / name / "cat_res1b" / "FF_MUFFIN"
+                root_files = sorted(root_dir.glob("*.root"))
+                if not root_files:
+                    logging.error(f"No ROOT files found in: {root_dir}")
+                    continue
+                converted = dest_dir / f"{name}_converted.parquet"
+                jobs.append(ex.submit(convert_and_preprocess, root_files, converted, dst, era, args.tree_name, name, channel))
+                continue
+            src = source_dir / name / name / "cat_res1b" / "FF_MUFFIN"
             if not src.exists():
                 logging.error(f"Missing input: {src}")
                 continue
-            jobs.append(ex.submit(preprocessing, src, dst, era))
+            jobs.append(ex.submit(preprocessing, src, dst, era, name, channel))
 
         ok = True
         for fut in as_completed(jobs):
@@ -244,7 +327,7 @@ for era in eras:
                     if ff_process == "Wjets" and category == "mc":
                         filenames = [fn for fn in filenames if "Wto" not in fn]
                     # Preprocessing (parallel)
-                    parallel_preprocess(era, category, source_dir, dest_dir, filenames, args.workers)
+                    parallel_preprocess(era, channel, category, source_dir, dest_dir, filenames, args.workers)
             if ff_process in {"WjetsMC", "ttbarMC"}:
                 category = "mc"
                 if category not in config["source_files"]:
@@ -256,4 +339,4 @@ for era in eras:
                 if ff_process == "ttbarMC":
                     filenames = [fn for fn in filenames if fn.startswith("TT")]
                 # Preprocessing (parallel)
-                parallel_preprocess(era, category, source_dir, dest_dir, filenames, args.workers)
+                parallel_preprocess(era, channel, category, source_dir, dest_dir, filenames, args.workers)
