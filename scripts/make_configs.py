@@ -5,7 +5,7 @@ Edit these files, then run:
 
     python scripts/make_configs.py
 
-    configs/project.yaml                         storage and eras    -> configs/<era>/input_files.yaml
+    configs/source/create_project_config.yaml                  storage and eras    -> configs/<era>/input_files.yaml
     configs/source/create_process_config.yaml    branches, triggers, -> configs/<process>.yaml
                                                  regions, processes     (QCD, Wjets, WjetsMC, ttbarMC)
     configs/source/create_training_config.yaml   features, eras,     -> configs/training.yaml
@@ -128,7 +128,7 @@ def check_path_exists(value, where):
 
 
 # ======================================================================================
-# Storage and per-era input files (configs/project.yaml)
+# Storage and per-era input files (configs/source/create_project_config.yaml)
 # ======================================================================================
 def resolve_storage(storage):
     # "." or "./" means the repository this script belongs to, so the paths follow the clone wherever it is.
@@ -421,7 +421,7 @@ def write_process_configs(cfg, storage, out_dir, names=None):
 
 # ======================================================================================
 # Training config (configs/source/create_training_config.yaml)
-#   Does not use project.yaml: relative paths are placed under base_dir (default: this repository).
+#   Does not use create_project_config.yaml: relative paths are placed under base_dir (default: this repository).
 # ======================================================================================
 TRAINING_KEYS = {"eras", "output_dir", "lumi", "hyperparameters"}
 TAU_LEGS = {"lead_tau": 1, "sublead_tau": 2}
@@ -542,7 +542,7 @@ def load_yaml(path):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--project", default=os.path.join(CONFIG_DIR, "project.yaml"))
+    parser.add_argument("--project", default=os.path.join(SOURCE_DIR, "create_project_config.yaml"))
     parser.add_argument("--process-config", default=os.path.join(SOURCE_DIR, "create_process_config.yaml"))
     parser.add_argument("--training-config", default=os.path.join(SOURCE_DIR, "create_training_config.yaml"))
     parser.add_argument("--out-dir", default=CONFIG_DIR)
@@ -550,7 +550,7 @@ def main():
     parser.add_argument("--processes", nargs="+", help="only write these processes (default: all)")
     args = parser.parse_args()
 
-    # The training config does not use project.yaml, so it is only read for the other parts.
+    # The training config does not use create_project_config.yaml, so it is only read for the other parts.
     if {"input_files", "processes"} & set(args.only):
         project = load_yaml(args.project)
         check_settings_file(project, args.project)
