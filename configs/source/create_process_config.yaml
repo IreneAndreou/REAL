@@ -1,0 +1,215 @@
+# =====================================================================================
+# create_config.yaml
+#
+# User-facing settings for the fake-factor process configs in channels:
+#     QCD.yaml, Wjets.yaml, WjetsMC.yaml, ttbarMC.yaml
+#
+# Fill in the sections below; the baseline cut strings and the iso / anti-iso selections
+# of each process are built from them. The values given here reproduce the current configs.
+#
+# Conventions
+#   - Cuts are pandas-query strings, as in the generated configs.
+#   - {min: a, max: b} ranges are strict:  a < x < b.  Leave a side out for no bound.
+#   - {index}, {tau_index}, {tau_other_index}, {baseline}, {era}, {channel}, {region}
+#     are placeholders filled by the framework; leave them as they are.
+#   - Paths are relative to storage.real_base in project.yaml (same as processes.yaml).
+# =====================================================================================
+
+
+# -------------------------------------------------------------------------------------
+# 1. Branch names: replace with how each quantity is called in your ntuples / framework
+# -------------------------------------------------------------------------------------
+branches:
+  # Say how you define opposite-sign vs same-sign events.
+  charge:
+    name: os
+    opposite_sign: 1
+    same_sign: 0
+
+  # Define working points (DeepTau, ParticleNet, UParT). {index} is replaced by the leg number (1, 2) defined elsewhere
+  tau_id:
+    wp_jet: idDeepTau2018v2p5VSjet_{index}
+    wp_ele: idDeepTau2018v2p5VSe_{index}
+    wp_mu: idDeepTau2018v2p5VSmu_{index}
+
+  lepton_iso: iso_1            # relative isolation of the light lepton (mt, et)
+  mt: mt_1                     # transverse mass
+  n_bjets: n_bjets
+  wjets_score: Wjets_pred_score
+  gen_match: genPartFlav_{index}   # 0 = jet -> tau fake
+  weight: wt_sf                # event weight; its sign splits mc_* and mc_*_neg
+
+
+# -------------------------------------------------------------------------------------
+# 2. Era groups
+#    Define naming of eras.
+# -------------------------------------------------------------------------------------
+era_groups:
+  EarlyRun3: [Run3_2022, Run3_2022EE, Run3_2023, Run3_2023BPix]
+  Run3_2024: [Run3_2024]
+
+# Processes with split_by_era_group: false get one categories block shared by all eras.
+# Any era-dependent setting (per-group trigger cuts, era_group_overrides) is taken from
+# this group for them. Only set split_by_era_group: false if those settings are the same across groups.
+default_era_group: EarlyRun3
+
+
+# -------------------------------------------------------------------------------------
+# 3. Triggers per channel
+#    Define the triggers used in each channel and the cuts to apply.
+# -------------------------------------------------------------------------------------
+triggers:
+  tt:
+    doubletau:
+      flag: trg_doubletau
+      cuts:
+        EarlyRun3: ["pt_1 > 40", "pt_2 > 40"]
+        Run3_2024: ["pt_1 > 35", "pt_2 > 35"]
+    doubletauandjet:
+      flag: trg_doubletauandjet
+      cuts:
+        EarlyRun3: ["pt_1 > 35", "pt_2 > 35", "pt_1 < 190", "pt_2 < 190", "jpt_1 > 60"]
+        Run3_2024: ["pt_1 > 31", "pt_2 > 31", "pt_1 < 140", "pt_2 < 140", "jpt_1 > 60"]
+    singletau:
+      flag: trg_singletau
+      cuts:
+        EarlyRun3: ["pt_1 > 190"]
+        Run3_2024: ["pt_1 > 140"]
+    singletau_2:
+      flag: trg_singletau_2
+      cuts:
+        EarlyRun3: ["pt_2 > 190"]
+        Run3_2024: ["pt_2 > 140"]
+
+  mt:
+    mt_cross:
+      flag: trg_mt_cross
+      cuts: ["pt_1 > 21", "pt_1 <= 26", "abs(eta_1) < 2.1", "pt_2 > 32", "abs(eta_2) < 2.1"]
+    singlemuon:
+      flag: trg_singlemuon
+      cuts: ["pt_1 > 26", "abs(eta_1) < 2.4"]
+
+  et:
+    singleelectron:
+      flag: trg_singleelectron
+      cuts: ["pt_1 > 31", "abs(eta_1) < 2.1"]
+
+
+# -------------------------------------------------------------------------------------
+# 4. Tau ID working points
+# -------------------------------------------------------------------------------------
+tau_vs_jet:
+  iso_min: 4                   # isolated (iso):       VSjet > iso_min
+  antiiso_range: [0, 4]        # anti-isolated (aiso): 0 <= VSjet <= 4   (inclusive)
+
+# Anti-lepton working points applied in every region of a channel: {leg: WP}, cut is >=.
+anti_lepton:
+  tt:
+    wp_ele: {1: 2, 2: 2}
+    wp_mu: {1: 1, 2: 1}
+  mt:
+    wp_ele: {2: 2}
+    wp_mu: {2: 4}
+  et:
+    wp_ele: {2: 6}
+    wp_mu: {2: 4}
+
+
+# -------------------------------------------------------------------------------------
+# 5. Processes
+#
+#  Region options (per channel), all optional:
+#    charge:       opposite_sign | same_sign             (omit = no charge cut)
+#    other_tau:    iso | antiiso | not_iso    VSjet of the other tau, tt only
+#                  (not_iso = VSjet <= iso_min, without the antiiso lower bound)
+#    lepton_iso:   {min, max}       on branches.lepton_iso
+#    electron_id:  pass | fail      on branches.electron_id (omit = no cut)
+#    mt:           {min, max}       on branches.mt
+#    bjet_veto:    true             n_bjets == 0
+#    wjets_score:  {min, max}       on branches.wjets_score
+#    extra:        [cut, ...]       any other cuts, AND'ed to the baseline
+#  Cuts are written in the order the options are given here, followed by the
+#  anti-lepton IDs and the triggers of the channel (always added).
+#
+#  Selections:
+#    samples:       which of data / mc to write (data_iso, data_aiso, mc_iso, mc_aiso,
+#                   mc_iso_neg, mc_aiso_neg)
+#    mc_gen_match:  condition on gen_match of the measured tau in MC
+#                   ("!= 0" = genuine taus/leptons, subtracted from data;
+#                    "== 0" = jet fakes, used directly)
+#
+#  era_group_overrides: per era group, region and channel, keys that replace the ones above.
+# -------------------------------------------------------------------------------------
+processes:
+
+  QCD:
+    input_folder: data_January26/{era}/{channel}_QCD/
+    input_files:
+      mc: mc_all_events_{era}.parquet
+      data: data_all_events_{era}.parquet
+    output_dir: data_January26/{era}/{region}_region/QCD/
+    split_by_era_group: true
+    regions:
+      determination:
+        tt: {charge: same_sign, other_tau: iso}
+        mt: {charge: same_sign, mt: {max: 65}, lepton_iso: {min: 0.05, max: 0.15}}
+        et: {charge: same_sign, mt: {max: 65}, electron_id: pass, lepton_iso: {min: 0.05, max: 0.15}}
+      validation:
+        tt: {charge: opposite_sign, other_tau: not_iso}
+        mt: {charge: same_sign, mt: {max: 65}, lepton_iso: {min: 0.25, max: 0.5}}
+        et: {charge: same_sign, mt: {max: 65}, electron_id: pass, lepton_iso: {min: 0.25, max: 0.5}}
+    era_group_overrides:
+      # Reproduces the current EarlyRun3 et validation region (failing electron ID, no lower iso bound).
+      # Differs from Run3_2024; check whether this is intended.
+      EarlyRun3:
+        validation:
+          et: {electron_id: fail, lepton_iso: {max: 0.5}}
+    selections:
+      samples: [data, mc]
+      mc_gen_match: "!= 0"
+
+  Wjets:
+    input_folder: data_January26/{era}/{channel}_Wjets/
+    input_files:
+      mc: mc_all_events_{era}.parquet
+      data: data_all_events_{era}.parquet
+    output_dir: data_January26/{era}/{region}_region/Wjets/
+    split_by_era_group: false
+    regions:
+      determination:
+        mt: {charge: opposite_sign, wjets_score: {min: 0.15}, mt: {min: 65}, bjet_veto: true, lepton_iso: {max: 0.15}}
+        et: {charge: opposite_sign, wjets_score: {min: 0.15}, electron_id: pass, mt: {min: 65}, bjet_veto: true, lepton_iso: {max: 0.15}}
+    selections:
+      samples: [data, mc]
+      mc_gen_match: "!= 0"
+
+  WjetsMC:
+    input_folder: data_January26/{era}/{channel}_WjetsMC/
+    input_files:
+      mc: mc_all_events_{era}.parquet
+    output_dir: data_January26/{era}/{region}_region/WjetsMC/
+    split_by_era_group: false
+    regions:
+      determination:
+        mt: {charge: opposite_sign, wjets_score: {min: 0.15}, mt: {min: 65}, bjet_veto: true, lepton_iso: {max: 0.15}}
+        et: {charge: opposite_sign, wjets_score: {min: 0.15}, electron_id: pass, mt: {min: 65}, bjet_veto: true, lepton_iso: {max: 0.15}}
+      validation:
+        mt: {charge: opposite_sign, wjets_score: {min: 0.15}, mt: {max: 65}, bjet_veto: true, lepton_iso: {max: 0.15}}
+        et: {charge: opposite_sign, wjets_score: {min: 0.15}, electron_id: pass, mt: {max: 65}, bjet_veto: true, lepton_iso: {max: 0.15}}
+    selections:
+      samples: [mc]
+      mc_gen_match: "== 0"
+
+  ttbarMC:
+    input_folder: data_January26/{era}/{channel}_ttbarMC/
+    input_files:
+      mc: mc_all_events_{era}.parquet
+    output_dir: data_January26/{era}/{region}_region/ttbarMC
+    split_by_era_group: false
+    regions:
+      determination:
+        mt: {charge: opposite_sign, lepton_iso: {max: 0.15}}
+        et: {charge: opposite_sign, lepton_iso: {max: 0.15}}
+    selections:
+      samples: [mc]
+      mc_gen_match: "== 0"
