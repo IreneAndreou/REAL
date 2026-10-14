@@ -1,11 +1,13 @@
 # =====================================================================================
-# create_config.yaml
+# create_process_config.yaml
 #
 # User-facing settings for the fake-factor process configs in channels:
 #     QCD.yaml, Wjets.yaml, WjetsMC.yaml, ttbarMC.yaml
 #
-# Fill in the sections below; the baseline cut strings and the iso / anti-iso selections
-# of each process are built from them. The values given here reproduce the current configs.
+# Fill in the sections below, then run:
+#     python scripts/make_configs.py            (or --only processes for just these files)
+# The baseline cut strings and the iso / anti-iso selections of each process are built from them.
+# The values given here reproduce the current configs.
 #
 # Conventions
 #   - Cuts are pandas-query strings, as in the generated configs.
@@ -33,7 +35,8 @@ branches:
     wp_mu: idDeepTau2018v2p5VSmu_{index}
 
   lepton_iso: iso_1            # relative isolation of the light lepton (mt, et)
-  mt: mt_1                     # transverse mass
+  electron_id: e_pass90_1      # electron ID flag (et)
+  mt: mt_1                    # transverse mass
   n_bjets: n_bjets
   wjets_score: Wjets_pred_score
   gen_match: genPartFlav_{index}   # 0 = jet -> tau fake

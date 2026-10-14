@@ -1,0 +1,73 @@
+# =====================================================================================
+# create_training_config.yaml
+#
+# User-facing settings for the BDT training config: training.yaml
+#
+# Fill in the sections below, then run:
+#     python scripts/make_configs.py            (or --only training for just this file)
+#
+# Conventions
+#   - {era} is filled in by make_configs.py with each era of the training.
+#   - {index} in the tau variables is filled in with 1 (leading tau) and 2 (subleading tau).
+#   - {ff_process}, {channel}, {tau_suffix}, {global_prefix} are placeholders filled by
+#     training.py; leave them as they are.
+#   - Relative paths (input_dir, output_dir) are placed under base_dir.
+# =====================================================================================
+
+
+# -------------------------------------------------------------------------------------
+# 1. Input files
+#    Folder holding the determination-region parquet files, and the file names in it.
+# -------------------------------------------------------------------------------------
+base_dir: path_to_base_directory
+
+input_dir: data_January26/{era}/determination_region/{ff_process}
+
+input_files:
+  data_iso_file: data_iso_{channel}_{tau_suffix}.parquet
+  data_aiso_file: data_aiso_{channel}_{tau_suffix}.parquet
+  mc_iso_file: mc_iso_{channel}_{tau_suffix}.parquet
+  mc_aiso_file: mc_aiso_{channel}_{tau_suffix}.parquet
+
+
+# -------------------------------------------------------------------------------------
+# 2. Training features
+#    tau_variables are used for each tau leg; global_variables once per event.
+# -------------------------------------------------------------------------------------
+features:
+  tau_variables:
+    - decayMode_{index}
+    - jpt_pt_{index}
+    - pt_{index}
+    - eta_{index}
+    - phi_{index}
+  global_variables:
+    - n_jets
+    - n_bjets
+
+# -------------------------------------------------------------------------------------
+# 3. Trainings
+#    One configs/<name>.yaml is written per entry.
+#      eras:            eras whose files are combined in this training
+#      output_dir:      where the trained models are saved
+#      lumi:            integrated luminosity (fb^-1) shown on the plots
+#      hyperparameters: [low, high] ranges searched for each parameter, plus the search settings
+# -------------------------------------------------------------------------------------
+trainings:
+  training:
+    eras: [Run3_2022, Run3_2022EE, Run3_2023, Run3_2023BPix]
+    output_dir: outputs/best_models/ARCReview{global_prefix}/{channel}_{ff_process}/
+    lumi: 62.4
+    hyperparameters:
+      max_depth: [3, 10]
+      learning_rate: [0.01, 0.3]
+      subsample: [0.5, 1.0]
+      colsample_bytree: [0.5, 1.0]
+      min_child_weight: [1, 10]
+      reg_alpha: [1e-8, 1.0]
+      reg_lambda: [1e-8, 1.0]
+      n_trials: 50
+      n_jobs: 3
+      early_stopping_rounds: 20
+      num_boost_round: 10000
+

@@ -1,5 +1,5 @@
 # Storage locations, eras and sample names. Analysis settings are in configs/source/.
-# scripts/make_configs.py builds configs/ from this file and configs/source/*.yaml.
+# scripts/make_configs.py builds configs/ from this file and configs/source/create_*_config.yaml.
 # Relative path values under configs/source/ are resolved against storage.real_base.
 # real_base "./" means the REAL repository this file is in.
 storage:
