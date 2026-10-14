@@ -3,8 +3,7 @@
 # Relative path values under configs/source/ are resolved against storage.real_base.
 # real_base "./" means the REAL repository this file is in.
 storage:
-  real_base: /eos/user/i/irandreo/REAL
-  ntuple_base: path_to_ntuple_production
+  real_base: path_to_real_repository
   fake_factor_base: path_to_classical_fake_factor # if this is not set, the classical fake factor method is disabled -- need to add to MUFFIN tools to make this work
 eras:
   Run3_2022:

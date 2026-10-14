@@ -11,9 +11,42 @@ for each config defined in configs/source/. Edit the source files, not the gener
 """
 import argparse
 import glob
+import logging
 import os
 
 import yaml
+
+# ----------------------- Logging ----------------------
+class ColoredFormatter(logging.Formatter):
+    """Custom formatter to add colors to log levels."""
+
+    # ANSI color codes
+    COLORS = {
+        'DEBUG': '\033[36m',    # Cyan
+        'INFO': '\033[32m',     # Green
+        'WARNING': '\033[33m',  # Yellow
+        'ERROR': '\033[31m',    # Red
+        'CRITICAL': '\033[35m',  # Magenta
+    }
+    RESET = '\033[0m'  # Reset to default color
+
+    def format(self, record):
+        # Get the color for this log level
+        color = self.COLORS.get(record.levelname, self.RESET)
+
+        # Format the message
+        formatted = super().format(record)
+
+        # Add color to the entire message
+        return f"{color}{formatted}{self.RESET}"
+
+
+# Set up colored logging
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
+handler = logging.StreamHandler()
+handler.setFormatter(ColoredFormatter())
+logger.addHandler(handler)
 
 REPO_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 CONFIG_DIR = os.path.join(REPO_DIR, "configs")
@@ -43,11 +76,12 @@ def resolve_storage(storage):
 
 
 def check_storage(storage):
-    placeholders = [key for key, value in storage.items() if str(value).startswith("path_to_")]
-    if placeholders:
-        print(f"WARNING: storage in project.yaml still has placeholder values: {', '.join(placeholders)}. "
-              "Paths built from them will be wrong until they are set.")
-
+    paths = [key for key, value in storage.items()]
+    # check if path is valid and not a placeholder
+    for path in paths:
+        valid_path = storage[path]
+        if not os.path.exists(valid_path):
+            logger.warning(f"storage.{path} = {valid_path} does not exist")
 
 def resolve_path(value, storage):
     # A value that already starts with a storage location is kept. Any other relative path goes under real_base.
@@ -67,31 +101,39 @@ def resolve_paths(obj, storage):
     return obj
 
 
-def load_configs(source_dir):
-    # Each source file holds one or more configs, keyed by the config name.
-    configs = {}
-    for path in sorted(glob.glob(os.path.join(source_dir, "*.yaml"))):
-        with open(path) as f:
-            for name, cfg in yaml.safe_load(f).items():
-                if name in configs:
-                    raise SystemExit(f"config '{name}' is defined twice, last in {path}")
-                configs[name] = cfg
-    return configs
-
-
 def write_yaml(content, path):
     os.makedirs(os.path.dirname(path), exist_ok=True)
     with open(path, "w") as f:
         f.write(yaml.safe_dump(content, sort_keys=False, default_flow_style=False, width=200, allow_unicode=True))
-    print(f"wrote {path}")
+    logger.info(f"wrote {path}")
 
 
 def write_input_files(project, out_dir):
     storage = project["storage"]
     for era, era_cfg in project["eras"].items():
+        # MC samples need eff, filter_efficiency and xs in the era's params.yaml. Data samples have no entry there.
+        params_path = os.path.join(CONFIG_DIR, era, "params.yaml")
+        if not os.path.exists(params_path):
+            logger.warning(f"{era}: no params.yaml at {params_path}, MC samples cannot be checked")
+        else:
+            with open(params_path) as f:
+                params = yaml.safe_load(f) or {}
+            if "lumi" not in params:
+                logger.warning(f"{era}: 'lumi' is missing from {params_path}")
+            for name in era_cfg["mc"]:
+                if name not in params:
+                    logger.warning(
+                        f"{era}: MC sample '{name}' is not in {params_path}. Check the name against the existing "
+                        "names. If it is new, add it there and measure its effective events (eff), "
+                        "filter_efficiency and cross-section (xs)."
+                    )
+                    continue
+                missing = [key for key in ("eff", "filter_efficiency", "xs") if (params[name] or {}).get(key) is None]
+                if missing:
+                    logger.warning(f"{era}: MC sample '{name}' has no {', '.join(missing)} in {params_path}")
         content = {
-            "source_dir": os.path.join(storage["ntuple_base"], era_cfg["ntuple_dir"], "{channel}"),
-            "destination_dir": os.path.join(storage["real_base"], "data_January26", era, "{channel}_{ff_process}"),
+            "source_dir": os.path.join(era_cfg["ntuple_dir"], "{channel}"),
+            "destination_dir": os.path.join(storage["real_base"], "processed", era, "{channel}_{ff_process}"),
             "source_files": {
                 "tt_data": era_cfg["data"]["tt"],
                 "mt_data": era_cfg["data"]["mt"],
@@ -120,7 +162,6 @@ def main():
     check_storage(storage)
 
     write_input_files(project, args.out_dir)
-    write_configs(load_configs(args.source_dir), storage, args.out_dir)
 
 
 if __name__ == "__main__":

@@ -10,12 +10,15 @@ REAL improves the modeling of jet to τ<sub>h</sub> backgrounds by leveraging ad
 ## Repository layout
 ```
 configs/                       # YAML configs for training/plotting, per era and per ff_process
-  training.yaml, plotting.yaml         # EarlyRun3 (2022-2023BPix) configs
-  training_2024.yaml, plotting_2024.yaml  # 2024 config
-  Run3_2022/, Run3_2022EE/, Run3_2023/, Run3_2023BPix/, Run3_2024/  # per-era classical FF configs
-  QCD.yaml, Wjets.yaml, WjetsMC.yaml, ttbarMC.yaml  # per-process settings
+  project.yaml                         # storage locations, eras and sample names (edit this first)
+  source/processes.yaml, training.yaml, plotting.yaml   # analysis settings, one file per stage (edit these)
+  training.yaml, plotting.yaml         # generated from source/ (EarlyRun3, 2022-2023BPix)
+  training_2024.yaml, plotting_2024.yaml  # 2024 config (generated)
+  Run3_2022/, Run3_2022EE/, Run3_2023/, Run3_2023BPix/, Run3_2024/  # per-era input_files.yaml (generated) and params.yaml
+  QCD.yaml, Wjets.yaml, WjetsMC.yaml, ttbarMC.yaml  # per-process settings (generated)
 
 scripts/                       # Main pipeline
+  make_configs.py                                              # generates configs/ from configs/project.yaml
   preprocessing.py, processing.py, scaling.py, get_pileup.py   # ROOT ntuples -> parquet
   training.py, run_all_trainings.py                            # BDT training (Optuna hyperparameter search)
   plotting.py, non_closures.py, run_all_plotting.py            # Result plots + non-closure checks
@@ -33,7 +36,7 @@ TAU-25-001/                    # Preservation of trainings/plots/classical FFs u
   trainings/, classical/, plot_loss.py
 
 source_root.sh                 # Sources CMS ROOT (needed by scripts/plotting.py)
-environment.yml.               # Conda environments (see below)
+environment.yml                # Conda environment (see below)
 ```
 
 ## Installation and Setup
@@ -44,19 +47,49 @@ cd REAL
 ```
 
 ### Environment
-Three conda environment files are provided:
-- `environment.yml` — Python 3.12 environment version used during 8th CAT Hackathon
+`environment.yml` defines the Python 3.12 environment (the version used during the 8th CAT Hackathon). On lxplus, install it with micromamba and keep the package cache and environment on EOS, since the AFS home directory has a small quota:
 
 ```bash
-conda env create -f environment.yml
-conda activate real
+export MAMBA_ROOT_PREFIX=/eos/user/$(whoami | cut -c1)/$(whoami)/conda/micromamba
+export CONDA_PKGS_DIRS=/eos/user/$(whoami | cut -c1)/$(whoami)/conda/pkgs
+mkdir -p $MAMBA_ROOT_PREFIX $CONDA_PKGS_DIRS
+micromamba env create -y -f environment.yml -p /eos/user/$(whoami | cut -c1)/$(whoami)/conda/envs/real
+micromamba activate /eos/user/$(whoami | cut -c1)/$(whoami)/conda/envs/real
 ```
+
+The first install takes a while, because the environment has about 230 packages and EOS is slow with many small files. Conda works too (`conda env create -f environment.yml -p <same path>`), but it prints harmless version warnings and is slower to solve.
 
 ### ROOT
 `scripts/plotting.py` needs CMS ROOT on the path. It auto-sources this on first run, but you can also do it manually:
 ```bash
 source source_root.sh
 ```
+
+## Configuration (set up for a new dataset or location)
+Storage and sample names are set in `configs/project.yaml`. Analysis settings are in `configs/source/`, one file per stage. The configs in `configs/` are generated from both:
+
+1. Set the storage locations in `storage:` (replace the `path_to_...` placeholders with real paths):
+   - `real_base`: where processed data, models and plots are written
+   - `ntuple_base`: where the HiggsDNA input ntuples are
+   - `fake_factor_base`: where the classical fake factor files are
+2. For each era under `eras:`, set `ntuple_dir` (relative to `ntuple_base`), and list the data samples per channel (`tt`, `mt`, `et`) and the MC samples (`mc`).
+3. Edit the files in `configs/source/` for analysis settings:
+   - `processes.yaml`: input files, categories and selections for each process
+   - `training.yaml`: BDT training settings for the EarlyRun3 and 2024 configs
+   - `plotting.yaml`: plot settings for the EarlyRun3 and 2024 configs
+
+   Blocks that are identical between configs are written once and referenced with YAML aliases (`&id` / `*id`). Edit the anchor's block to change every config that uses it.
+4. Regenerate the configs:
+   ```bash
+   python scripts/make_configs.py
+   ```
+   This writes `configs/<era>/input_files.yaml` and `configs/<name>.yaml` for each config in `configs/source/`.
+
+Path values in the source files that are relative are placed under `real_base`. Values that already start with `real_base` or `fake_factor_base` are kept as they are. The script prints a warning while `storage` still has placeholder values, and the paths will be wrong until they're set.
+
+Do not edit the generated files in `configs/` by hand, because the next run overwrites them. The generator doesn't keep comments from the old YAML files, so put any notes in `project.yaml` itself.
+
+**Known remaining hardcoded paths:** `scripts/get_pileup.py`, the data paths in `scripts/bootstrap_fake_factors.py`, the default `--base` in `TAU-25-001/plot_loss.py`, and the conda and CUDA setup lines in `scripts/bootstrap_submission.py` and `scripts/bootstrap_plotting_submission.py` still point to the original `/vols/cms/ia2318` locations. Set these by hand for your own storage until they're moved to `project.yaml`.
 
 ## Data pipeline (raw ntuples → training parquets)
 Inputs are produced in three steps, run per era (`Run3_2022`, `Run3_2022EE`, `Run3_2023`, `Run3_2023BPix`, or `Run3_2024`):
