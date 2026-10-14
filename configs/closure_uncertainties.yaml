@@ -1,0 +1,16 @@
+base: "/eos/home-w/wmatyszk/data_mutau/PNet/REAL/outputs"
+
+input:
+  folder: "plots/dr_comparison_rem/mt_QCD/Run3_2024"
+
+output:
+  folder: "uncertainties/Run3_2024Thesis/mt_QCD"
+
+ratio_label: "QCD (base-dR)"
+
+features:
+  - "m_vis"
+  - "mt_tot"
+  - "decayModePNet"
+  - "met_pt"
+  - "eta"
