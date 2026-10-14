@@ -10,6 +10,7 @@ Edit these files, then run:
                                                  regions, processes     (QCD, Wjets, WjetsMC, ttbarMC)
     configs/source/create_training_config.yaml   features, eras,     -> configs/training.yaml
                                                  hyperparameters
+    configs/source/create_branches_config.yaml   branches per era    -> configs/<era>/branches.yaml
 
 Use --only to write just some of them, e.g. --only training. Edit the settings files, not the generated files.
 """
@@ -17,6 +18,7 @@ import argparse
 import json
 import logging
 import os
+import re
 
 import yaml
 
@@ -215,7 +217,7 @@ def write_input_files(project, out_dir):
                 if missing:
                     logger.warning(f"{era}: MC sample '{name}' has no {', '.join(missing)} in {params_path}")
         content = {
-            "source_dir": os.path.join(era_cfg["ntuple_dir"], "{channel}"),
+            "source_dir": os.path.join(era_cfg["ntuple_dir"]),
             "destination_dir": os.path.join(storage["real_base"], "processed", era, "{channel}_{ff_process}"),
             "source_files": {
                 "tt_data": era_cfg["data"]["tt"],
@@ -329,7 +331,12 @@ def baseline(cfg, channel, opts, era_group, where):
                 raise SystemExit(f"{where}: other_tau must be one of {sorted(OTHER_TAU_CUTS)}")
             cuts.append(OTHER_TAU_CUTS[value](cfg, "{tau_other_index}"))
         elif key == "extra":
-            cuts += [f"({cut})" for cut in value]
+            if isinstance(value, list):
+                # A list holds complete cut strings.
+                cuts += [f"({cut})" for cut in value]
+            else:
+                # A single value is compared to branches.extra, e.g. extra: "0" -> (pairType == 0).
+                cuts.append(f"({branch(cfg, 'extra', where)} == {value})")
 
     for kind, legs in cfg["anti_lepton"].get(channel, {}).items():
         cuts += [f"({tau_id(cfg, kind, leg)} >= {wp})" for leg, wp in legs.items()]
@@ -530,9 +537,51 @@ def write_training(cfg, path, out_dir):
 
 
 # ======================================================================================
+# Per-era branch lists (configs/source/create_branches_config.yaml)
+# ======================================================================================
+def write_branches(cfg, path, out_dir, project_eras=None):
+    if not cfg:
+        raise SystemExit(f"{path}: no eras listed")
+    for era, branches in cfg.items():
+        if project_eras is not None and era not in project_eras:
+            logger.warning(f"{era} in {os.path.basename(path)} is not an era in create_project_config.yaml")
+        if not isinstance(branches, list):
+            raise SystemExit(f"{path}: '{era}' must be a list of branch names")
+        branches = [b for b in branches if not is_empty(b)]
+        duplicates = sorted({b for b in branches if branches.count(b) > 1})
+        if duplicates:
+            logger.warning(f"{era}: branches listed more than once: {', '.join(duplicates)}")
+        unique = list(dict.fromkeys(branches))
+        write_text(quoted_yaml_lines({"common_branches": unique}), os.path.join(out_dir, era, "branches.yaml"))
+
+
+def preweight_branches(process_cfg):
+    # preweight is an expression such as "genWeight * puWeight", every name in it is a branch.
+    preweight = (process_cfg.get("branches") or {}).get("preweight")
+    if is_empty(preweight):
+        return []
+    return list(dict.fromkeys(re.findall(r"[A-Za-z_]\w*", str(preweight))))
+
+
+def check_preweight_branches(process_cfg, branches_cfg, process_path, branches_path):
+    # scaling.py builds wt_sf from preweight, so its branches must be in every era's branch list.
+    needed = preweight_branches(process_cfg)
+    problems = []
+    for era, branches in (branches_cfg or {}).items():
+        missing = [name for name in needed if name not in (branches or [])]
+        if missing:
+            problems.append(f"{era}: {', '.join(missing)}")
+    if problems:
+        raise SystemExit(
+            f"branches.preweight in {os.path.basename(process_path)} uses branches missing from "
+            f"{os.path.basename(branches_path)}, add them there: " + "; ".join(problems)
+        )
+
+
+# ======================================================================================
 # Main
 # ======================================================================================
-PARTS = ["input_files", "processes", "training"]
+PARTS = ["input_files", "processes", "training", "branches"]
 
 
 def load_yaml(path):
@@ -545,10 +594,16 @@ def main():
     parser.add_argument("--project", default=os.path.join(SOURCE_DIR, "create_project_config.yaml"))
     parser.add_argument("--process-config", default=os.path.join(SOURCE_DIR, "create_process_config.yaml"))
     parser.add_argument("--training-config", default=os.path.join(SOURCE_DIR, "create_training_config.yaml"))
+    parser.add_argument("--branches-config", default=os.path.join(SOURCE_DIR, "create_branches_config.yaml"))
     parser.add_argument("--out-dir", default=CONFIG_DIR)
     parser.add_argument("--only", nargs="+", choices=PARTS, default=PARTS, help="only write these configs (default: all)")
     parser.add_argument("--processes", nargs="+", help="only write these processes (default: all)")
     args = parser.parse_args()
+
+    # preweight's branches must be in the branch lists; checked before anything is written.
+    if {"processes", "branches"} & set(args.only):
+        check_preweight_branches(load_yaml(args.process_config), load_yaml(args.branches_config),
+                                 args.process_config, args.branches_config)
 
     # The training config does not use create_project_config.yaml, so it is only read for the other parts.
     if {"input_files", "processes"} & set(args.only):
@@ -567,6 +622,11 @@ def main():
         training_cfg = load_yaml(args.training_config)
         check_settings_file(training_cfg, args.training_config)
         write_training(training_cfg, args.training_config, args.out_dir)
+    if "branches" in args.only:
+        branches_cfg = load_yaml(args.branches_config)
+        check_settings_file(branches_cfg, args.branches_config)
+        project_eras = project["eras"] if {"input_files", "processes"} & set(args.only) else None
+        write_branches(branches_cfg, args.branches_config, args.out_dir, project_eras)
 
 
 if __name__ == "__main__":

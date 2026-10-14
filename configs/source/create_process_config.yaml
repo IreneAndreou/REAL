@@ -40,8 +40,9 @@ branches:
   n_bjets: n_bjets
   wjets_score: Wjets_pred_score
   gen_match: genPartFlav_{index}   # 0 = jet -> tau fake
+  preweight: genWeight * puWeight * topKinWeight * idAndIsoAndFakeSF
   weight: wt_sf                # event weight; its sign splits mc_* and mc_*_neg
-
+  extra: pairType
 
 # -------------------------------------------------------------------------------------
 # 2. Era groups
@@ -130,7 +131,8 @@ anti_lepton:
 #    mt:           {min, max}       on branches.mt
 #    bjet_veto:    true             n_bjets == 0
 #    wjets_score:  {min, max}       on branches.wjets_score
-#    extra:        [cut, ...]       any other cuts, AND'ed to the baseline
+#    extra:        value            branches.extra == value, e.g. extra: "0" -> (pairType == 0)
+#                  [cut, ...]       or a list of complete cuts, AND'ed to the baseline
 #  Cuts are written in the order the options are given here, followed by the
 #  anti-lepton IDs and the triggers of the channel (always added).
 #
@@ -154,13 +156,13 @@ processes:
     split_by_era_group: true
     regions:
       determination:
-        tt: {charge: same_sign, other_tau: iso}
-        mt: {charge: same_sign, mt: {max: 65}, lepton_iso: {min: 0.05, max: 0.15}}
-        et: {charge: same_sign, mt: {max: 65}, electron_id: pass, lepton_iso: {min: 0.05, max: 0.15}}
+        tt: {charge: same_sign, other_tau: iso, extra: "2"}
+        mt: {charge: same_sign, mt: {max: 65}, lepton_iso: {min: 0.05, max: 0.15}, extra: "0"}
+        et: {charge: same_sign, mt: {max: 65}, electron_id: pass, lepton_iso: {min: 0.05, max: 0.15}, extra: "1"}
       validation:
-        tt: {charge: opposite_sign, other_tau: not_iso}
-        mt: {charge: same_sign, mt: {max: 65}, lepton_iso: {min: 0.25, max: 0.5}}
-        et: {charge: same_sign, mt: {max: 65}, electron_id: pass, lepton_iso: {min: 0.25, max: 0.5}}
+        tt: {charge: opposite_sign, other_tau: not_iso, extra: "2"}
+        mt: {charge: same_sign, mt: {max: 65}, lepton_iso: {min: 0.25, max: 0.5}, extra: "0"}
+        et: {charge: same_sign, mt: {max: 65}, electron_id: pass, lepton_iso: {min: 0.25, max: 0.5}, extra: "1"}
     era_group_overrides:
       # Reproduces the current EarlyRun3 et validation region (failing electron ID, no lower iso bound).
       # Differs from Run3_2024; check whether this is intended.
@@ -180,8 +182,8 @@ processes:
     split_by_era_group: false
     regions:
       determination:
-        mt: {charge: opposite_sign, wjets_score: {min: 0.15}, mt: {min: 65}, bjet_veto: true, lepton_iso: {max: 0.15}}
-        et: {charge: opposite_sign, wjets_score: {min: 0.15}, electron_id: pass, mt: {min: 65}, bjet_veto: true, lepton_iso: {max: 0.15}}
+        mt: {charge: opposite_sign, wjets_score: {min: 0.15}, mt: {min: 65}, bjet_veto: true, lepton_iso: {max: 0.15}, extra: "0"}
+        et: {charge: opposite_sign, wjets_score: {min: 0.15}, electron_id: pass, mt: {min: 65}, bjet_veto: true, lepton_iso: {max: 0.15}, extra: "1"}
     selections:
       samples: [data, mc]
       mc_gen_match: "!= 0"
@@ -194,11 +196,11 @@ processes:
     split_by_era_group: false
     regions:
       determination:
-        mt: {charge: opposite_sign, wjets_score: {min: 0.15}, mt: {min: 65}, bjet_veto: true, lepton_iso: {max: 0.15}}
-        et: {charge: opposite_sign, wjets_score: {min: 0.15}, electron_id: pass, mt: {min: 65}, bjet_veto: true, lepton_iso: {max: 0.15}}
+        mt: {charge: opposite_sign, wjets_score: {min: 0.15}, mt: {min: 65}, bjet_veto: true, lepton_iso: {max: 0.15}, extra: "0"}
+        et: {charge: opposite_sign, wjets_score: {min: 0.15}, electron_id: pass, mt: {min: 65}, bjet_veto: true, lepton_iso: {max: 0.15}, extra: "1"}
       validation:
-        mt: {charge: opposite_sign, wjets_score: {min: 0.15}, mt: {max: 65}, bjet_veto: true, lepton_iso: {max: 0.15}}
-        et: {charge: opposite_sign, wjets_score: {min: 0.15}, electron_id: pass, mt: {max: 65}, bjet_veto: true, lepton_iso: {max: 0.15}}
+        mt: {charge: opposite_sign, wjets_score: {min: 0.15}, mt: {max: 65}, bjet_veto: true, lepton_iso: {max: 0.15}, extra: "0"}
+        et: {charge: opposite_sign, wjets_score: {min: 0.15}, electron_id: pass, mt: {max: 65}, bjet_veto: true, lepton_iso: {max: 0.15}, extra: "1"}
     selections:
       samples: [mc]
       mc_gen_match: "== 0"
@@ -211,8 +213,8 @@ processes:
     split_by_era_group: false
     regions:
       determination:
-        mt: {charge: opposite_sign, lepton_iso: {max: 0.15}}
-        et: {charge: opposite_sign, lepton_iso: {max: 0.15}}
+        mt: {charge: opposite_sign, lepton_iso: {max: 0.15}, extra: "0"}
+        et: {charge: opposite_sign, lepton_iso: {max: 0.15}, extra: "1"}
     selections:
       samples: [mc]
       mc_gen_match: "== 0"
