@@ -14,7 +14,7 @@
 #   - {min: a, max: b} ranges are strict:  a < x < b.  Leave a side out for no bound.
 #   - {index}, {tau_index}, {tau_other_index}, {baseline}, {era}, {channel}, {region}
 #     are placeholders filled by the framework; leave them as they are.
-#   - Paths are relative to storage.real_base in project.yaml (same as processes.yaml).
+#   - Paths are relative to storage.real_base in create_project_config.yaml.
 # =====================================================================================
 
 
