@@ -20,10 +20,22 @@ era:
     mc_iso_file: "/vols/cms/ia2318/REAL/data_with_pileup_January26/Run3_2023BPix/{region}_region/{ff_process}/mc_iso_{channel}_{tau_suffix}.parquet"
     mc_aiso_file: "/vols/cms/ia2318/REAL/data_with_pileup_January26/Run3_2023BPix/{region}_region/{ff_process}/mc_aiso_{channel}_{tau_suffix}.parquet"
 
-model_path: "/vols/cms/ia2318/REAL/TAU-25-001/trainings/best_model_{channel}_{ff_process}.pkl"
-train_test_split_path: "/vols/cms/ia2318/REAL/outputs/best_models/Run3_2024_{global_str}/{channel}_{ff_process}/test_event_ids.csv"
+enabled:
+  ml_1: true
+  ml_2: false
+  classical: true
+
+models:
+  ml_1:
+    name: "ML reweighting"
+    global_str: "withGlobal"
+    model_path: "/vols/cms/ia2318/REAL/TAU-25-001/trainings/best_model_{channel}_{ff_process}.pkl"
+    train_test_split_path: "/vols/cms/ia2318/REAL/outputs/best_models/Run3_2024_{global_str}/{channel}_{ff_process}/test_event_ids.csv"
+    optimal_temperature_path: "/vols/cms/ia2318/REAL/TAU-25-001/trainings/temperature_scaling_results_{channel}_{ff_process}.json"
+  classical:
+    name: "Classical reweighting"
+
 classical_ff_path: "/vols/cms/ia2318/REAL/TAU-25-001/classical/{year}_fake_factors_{channel}_{ff_process}.json"
-optimal_temperature_path: "/vols/cms/ia2318/REAL/TAU-25-001/trainings/temperature_scaling_results_{channel}_{ff_process}.json"
 output_dir: "/vols/cms/ia2318/REAL/outputs/plots/TAU-25-001_Preservation/{channel}_{ff_process}/pileup_studies"
 lead_tau: 
   - "decayMode_1"

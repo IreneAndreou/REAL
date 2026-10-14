@@ -5,10 +5,28 @@ era:
     mc_iso_file: "/vols/cms/ia2318/REAL/data_January26/Run3_2024/{region}_region/{ff_process}/mc_iso_{channel}_{tau_suffix}.parquet"
     mc_aiso_file: "/vols/cms/ia2318/REAL/data_January26/Run3_2024/{region}_region/{ff_process}/mc_aiso_{channel}_{tau_suffix}.parquet"
 
-model_path: "/vols/cms/ia2318/REAL/outputs/best_models/Run3_2024Thesis_{global_str}/{channel}_{ff_process}/best_model.pkl"
-train_test_split_path: "/vols/cms/ia2318/REAL/outputs/best_models/Run3_2024Thesis_{global_str}/{channel}_{ff_process}/test_event_ids.csv"
+enabled:
+  ml_1: true
+  ml_2: true
+  classical: true
+
+models:
+  ml_1:
+    name: "ML reweighting (no global variables)"
+    global_str: "noGlobal"
+    model_path: "/vols/cms/ia2318/REAL/outputs/best_models/Run3_2024Thesis_{global_str}/{channel}_{ff_process}/best_model.pkl"
+    train_test_split_path: "/vols/cms/ia2318/REAL/outputs/best_models/Run3_2024Thesis_{global_str}/{channel}_{ff_process}/test_event_ids.csv"
+    optimal_temperature_path: "/vols/cms/ia2318/REAL/outputs/best_models/Run3_2024Thesis_{global_str}/{channel}_{ff_process}/temperature_scaling_results.json"
+  ml_2:
+    name: "ML reweighting (with global variables)"
+    global_str: "withGlobal"
+    model_path: "/vols/cms/ia2318/REAL/outputs/best_models/Run3_2024Thesis_{global_str}/{channel}_{ff_process}/best_model.pkl"
+    train_test_split_path: "/vols/cms/ia2318/REAL/outputs/best_models/Run3_2024Thesis_{global_str}/{channel}_{ff_process}/test_event_ids.csv"
+    optimal_temperature_path: "/vols/cms/ia2318/REAL/outputs/best_models/Run3_2024Thesis_{global_str}/{channel}_{ff_process}/temperature_scaling_results.json"
+  classical:
+    name: "Classical reweighting"
+
 classical_ff_path: "/vols/cms/ia2318/HiggsDNA/Run3FakeFactors/{channel}/{year}_fake_factors_{ff_process}.json"
-optimal_temperature_path: "/vols/cms/ia2318/REAL/outputs/best_models/Run3_2024Thesis_{global_str}/{channel}_{ff_process}/temperature_scaling_results.json"
 output_dir: "/vols/cms/ia2318/REAL/outputs/plots/Run3_2024Thesis_{global_str}/{channel}_{ff_process}"
 lead_tau: 
   - "decayMode_1"

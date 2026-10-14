@@ -29,6 +29,8 @@ print("ROOTSYS detected; continuing...")
 import ROOT
 hep.style.use("CMS")
 
+RATIO_YLIM = (0.8, 1.2)
+
 CMS_LABEL = dict(data=True, label="", com=13.6, loc=0)
 lumis = {
     "Run3_2022": 7.98,
@@ -120,6 +122,63 @@ logger.addHandler(console_handler)
 
 
 # -------------------- Helpers -------------------------
+def configure_methods(config):
+    """Build the enabled plotting methods without coupling visibility to paths."""
+    defaults = {
+        "ml_1": dict(name="ML reweighting", color="#f89c20", weight="weight_BDT_ff",
+                     data_weight="weight_BDT_ff_data", mc_weight="weight_BDT_ff_mc"),
+        "ml_2": dict(name="ML reweighting (withGlobal)", color="#5790fc", weight="weight_BDT_ff_alt",
+                     data_weight="weight_BDT_ff_data_alt", mc_weight="weight_BDT_ff_mc_alt"),
+        "classical": dict(name="Classical reweighting", color="#e42536", weight="ff_classical"),
+    }
+    enabled = config.get("enabled", {})
+    definitions = config.get("models", {})
+    methods = {}
+    for key, default in defaults.items():
+        visible = enabled.get(key, key == "ml_1")
+        if not isinstance(visible, bool):
+            raise ValueError(f"enabled.{key} must be true or false")
+        if not visible:
+            continue
+        method = dict(default)
+        method.update(definitions.get(key, {}))
+        if key != "classical":
+            for field in ("model_path", "train_test_split_path", "optimal_temperature_path"):
+                method[field] = method.get(field, config.get(field) if key == "ml_1" else None)
+            if not method.get("model_path"):
+                raise ValueError(f"models.{key}.model_path is required for an enabled model")
+            method.setdefault("global_str", "withGlobal")
+        methods[key] = method
+    return methods
+
+
+def load_models(methods, channel, process):
+    """Load each enabled ML model together with its own metadata."""
+    models, feature_cols, temperatures, test_indices = {}, {}, {}, {}
+    for key, method in methods.items():
+        if key == "classical":
+            continue
+        context = dict(channel=channel, ff_process=process, global_str=method["global_str"])
+        model_path = method["model_path"].format(**context)
+        logger.info(f"Using {key} ({method['name']}): {model_path}")
+        with open(model_path, "rb") as f_model:
+            model = pickle.load(f_model)
+        if not getattr(model, "feature_names", None):
+            raise ValueError(f"Model {key} must contain its ordered feature_names")
+        models[key] = model
+        feature_cols[key] = list(model.feature_names)
+
+        split_path = method.get("train_test_split_path")
+        test_indices[key] = (pd.read_csv(split_path.format(**context))["event_uid"].astype(str)
+                             if split_path else None)
+        temperature_path = method.get("optimal_temperature_path")
+        temperatures[key] = 1.0
+        if temperature_path:
+            with open(temperature_path.format(**context), "r") as f_temperature:
+                temperatures[key] = json.load(f_temperature).get("optimal_temperature", 1.0)
+    return models, feature_cols, temperatures, test_indices
+
+
 def build_channel_processes(channels, requested_process):
     """Build a dictionary mapping channels to their valid processes."""
     ch_procs = {}
@@ -502,7 +561,7 @@ def process_reweighting(df, model, feature_cols, pt_col, dm_col, temperature=1.0
         batch = df.iloc[start:stop]
 
         # Build DMatrix for this batch
-        X = batch[model.feature_names]
+        X = batch[feature_cols]
         dmat = xgb.DMatrix(X)
 
         # Raw probabilities & logits
@@ -791,12 +850,12 @@ def plot_individual_reweighing(feature, bins, ranges, df_data_iso, df_data_aiso,
     axs[2, 0].errorbar(bin_centers, ratio_data, yerr=np.abs(err_ratio_data), fmt="o", color="gray")  # TODO: Fix definitions so not go negative
     axs[2, 0].errorbar(bin_centers, ratio_data_rw, yerr=np.abs(err_ratio_data_rw), fmt="o", color="blue")
     axs[2, 0].axhline(1, color="black", linestyle="--")
-    axs[2, 0].set_ylim(0, 3)
+    axs[2, 0].set_ylim(*RATIO_YLIM)
 
     axs[2, 1].errorbar(bin_centers, ratio_mc, yerr=np.abs(err_ratio_mc), fmt="o", color="gray")
     axs[2, 1].errorbar(bin_centers, ratio_mc_rw, yerr=np.abs(err_ratio_mc_rw), fmt="o", color="blue")
     axs[2, 1].axhline(1, color="black", linestyle="--")
-    axs[2, 1].set_ylim(0, 3)
+    axs[2, 1].set_ylim(*RATIO_YLIM)
 
     # Save plot
     hep.cms.label(**CMS_LABEL, lumi=lumis[era_map[era_id]], ax=axs[0, 0])
@@ -1117,7 +1176,7 @@ def plot_subtraction_reweighting(feature, bins, ranges, df_data_iso, df_data_ais
         axs[1].errorbar(bin_centers, ratio_rw_alt, yerr=np.abs(err_ratio_rw_alt), xerr=bin_widths/2, fmt="o", fillstyle="none", color="#5790fc", label=labels[1])  # TODO: fix logic for subtraction here
         axs[1].errorbar(bin_centers, ratio_classical, yerr=np.abs(err_ratio_classical), xerr=bin_widths/2, fmt="o", fillstyle="none", color="#e42536", label=labels[2])
         axs[1].set_ylabel("Ratio")
-        axs[1].set_ylim(0.8, 1.2)
+        axs[1].set_ylim(*RATIO_YLIM)
         leg = axs[1].legend(loc="lower right", ncols=3, bbox_to_anchor=(1.0, 0.95))
         # Highlight the best SWRD entry with a box
         for i, text in enumerate(leg.get_texts()):
@@ -1134,7 +1193,7 @@ def plot_subtraction_reweighting(feature, bins, ranges, df_data_iso, df_data_ais
     else:
         axs[1].axhline(1, color="black", linestyle="--")
         axs[1].set_ylabel("Ratio", fontsize=32)
-        axs[1].set_ylim(0.75, 1.25)
+        axs[1].set_ylim(*RATIO_YLIM)
         axs[1].set_yticks([0.8, 1.0, 1.2], labels=[0.8, 1.0, 1.2], fontsize=32)
         # if feature.startswith("decayMode"):
         #     # Set the desired decay modes and their labels
@@ -1155,7 +1214,7 @@ def plot_subtraction_reweighting(feature, bins, ranges, df_data_iso, df_data_ais
         #         text.set_bbox(None)
 
         # --- out-of-range arrows ---
-        ylo, yhi = 0.75, 1.25
+        ylo, yhi = RATIO_YLIM
         arrow_margin = 0.04  # fraction of ylim range from edge
         yrange = yhi - ylo
         ratio_rw_alt_arr = np.asarray(ratio_rw_alt,   dtype=float)
@@ -1923,13 +1982,8 @@ era_cfg = plotting_config['era']
 channel_processes = build_channel_processes(channels, ff_process)
 taus_per_channel = {ch: sorted(get_taus_for_channel(ch)) for ch in channels}
 
-# Convenience for global tag string used in model paths
-if plotting_config['era'].get('Run3', False):
-    global_str_main = "noGlobal"
-    global_str_alt = "withGlobal"
-else:
-    global_str_main = "withGlobal"
-    global_str_alt = "withGlobal"
+methods = configure_methods(plotting_config)
+USE_CLASSICAL_FF = "classical" in methods
 
 stxs_bins = {
     "inclusive": ["200 <= pt_tt <= 300", "pt_tt > 300"],
@@ -1950,41 +2004,8 @@ for channel in channels:
         if not process:
             continue  # skip invalid combos
 
-        models = {}
-        feature_cols_map = {}
-        temperature_map = {}
-        test_indices = {}
-        for tag in [global_str_main, global_str_alt]:
-            model_path = plotting_config["model_path"].format(channel=channel, ff_process=process, global_str=tag)
-            logger.info(f"Using model: {model_path}")
-            with open(model_path, "rb") as f_model:
-                model = pickle.load(f_model)
-            if not hasattr(model, "feature_names"):
-                raise RuntimeError(
-                    "Model has no 'feature_names' attribute. "
-                    "Please add them or provide feature list via config."
-                )
-            models[tag] = model
-            feature_cols_map[tag] = list(models[tag].feature_names)
-
-            # Load train/test split
-            split_path = plotting_config.get("train_test_split_path").format(channel=channel, ff_process=process, global_str=tag)
-            test_indices[tag] = pd.read_csv(split_path)["event_uid"].astype(str)
-
-            # Temperature scaling value
-            temperature_path = plotting_config.get("optimal_temperature_path").format(channel=channel, ff_process=process, global_str=tag)
-            with open(temperature_path, "r") as f_temperature:
-                temperature_scaling = json.load(f_temperature)
-            temperature_map[tag] = temperature_scaling.get("optimal_temperature", 1.0)
-
-        model_main = models[global_str_main]
-        model_alt = models[global_str_alt]
-        feature_cols_main = feature_cols_map[global_str_main]
-        feature_cols_alt = feature_cols_map[global_str_alt]
-        test_indices_main = test_indices[global_str_main]
-        test_indices_alt = test_indices[global_str_alt]
-        optimal_temperature_main = temperature_map[global_str_main]
-        optimal_temperature_alt = temperature_map[global_str_alt]
+        models, feature_cols_map, temperature_map, test_indices = load_models(
+            methods, channel, process)
         for region in regions:
 
             for tau in taus_per_channel[channel]:
@@ -2045,14 +2066,22 @@ for channel in channels:
                 data_aiso = data_aiso.copy()
                 mc_aiso = mc_aiso.copy()
 
-                data_aiso["weight_BDT_ff"] = 1.0
-                data_aiso["weight_BDT_ff_data"] = 1.0
-                data_aiso["weight_BDT_ff_alt"] = 1.0
-                data_aiso["weight_BDT_ff_data_alt"] = 1.0
-                mc_aiso["weight_BDT_ff"] = 1.0
-                mc_aiso["weight_BDT_ff_mc"] = 1.0
-                mc_aiso["weight_BDT_ff_alt"] = 1.0
-                mc_aiso["weight_BDT_ff_mc_alt"] = 1.0
+                data_weight_columns = ["weight_BDT_ff", "weight_BDT_ff_data",
+                                       "weight_BDT_ff_alt", "weight_BDT_ff_data_alt"]
+                mc_weight_columns = ["weight_BDT_ff", "weight_BDT_ff_mc",
+                                     "weight_BDT_ff_alt", "weight_BDT_ff_mc_alt"]
+                data_weight_columns.append("ff_classical")
+                mc_weight_columns.append("ff_classical")
+                for key, method in methods.items():
+                    data_weight_columns.append(method["weight"])
+                    mc_weight_columns.append(method["weight"])
+                    if key != "classical":
+                        data_weight_columns.append(method["data_weight"])
+                        mc_weight_columns.append(method["mc_weight"])
+                for column in dict.fromkeys(data_weight_columns):
+                    data_aiso[column] = np.nan
+                for column in dict.fromkeys(mc_weight_columns):
+                    mc_aiso[column] = np.nan
 
                 if not args.binary:
                     for df in data_iso, data_aiso, mc_iso, mc_aiso:
@@ -2075,6 +2104,19 @@ for channel in channels:
                             df["era_label"].astype(str)
                         )
 
+                for key, required_features in feature_cols_map.items():
+                    frames_to_check = [("MC AISO", mc_aiso)]
+                    if not args.binary and not data_aiso.empty:
+                        frames_to_check.append(("data AISO", data_aiso))
+                    for sample_name, frame in frames_to_check:
+                        missing = set(required_features) - set(frame.columns)
+                        if missing:
+                            raise ValueError(
+                                f"{key}: features missing from {sample_name} after tau normalisation: "
+                                f"{sorted(missing)}. Add their raw columns to lead_tau, sublead_tau "
+                                "or global_variables."
+                            )
+
                 # Attach classical FF category
                 data_aiso = assign_ff_category(data_aiso, process=process) if not data_aiso.empty else data_aiso
                 mc_aiso = assign_ff_category(mc_aiso, process=process)
@@ -2085,62 +2127,65 @@ for channel in channels:
                         era_map = {0: "Run3_2024", -1: "Run3_Combined"}
                     else:
                         era_map = {0: "Run3_2022", 1: "Run3_2022EE", 2: "Run3_2023", 3: "Run3_2023BPix", -1: "Run3_Combined"}
-                    classical_path = plotting_config["classical_ff_path"].format(channel=channel, year=era_map[era_id], ff_process=process)
-                    logger.info(f"Loading classical fake-factor data from '{classical_path}'")
-                    classical_data = load_classical_ff(classical_path, channel=channel, use_fit_values=True)
+                    if USE_CLASSICAL_FF:
+                        classical_path = plotting_config["classical_ff_path"].format(channel=channel, year=era_map[era_id], ff_process=process)
+                        logger.info(f"Loading classical fake-factor data from '{classical_path}'")
+                        classical_data = load_classical_ff(classical_path, channel=channel, use_fit_values=True)
                     data_iso_era = data_iso[data_iso["era_label"] == era_id].copy() if not data_iso.empty else data_iso
                     mc_iso_era = mc_iso[mc_iso["era_label"] == era_id].copy()
                     data_aiso_era = data_aiso[data_aiso["era_label"] == era_id].copy() if not data_aiso.empty else data_aiso
                     mc_aiso_era = mc_aiso[mc_aiso["era_label"] == era_id].copy()
 
-                    if not args.binary:
-                        data_reweighting_main = process_reweighting(df=data_aiso_era, model=model_main, feature_cols=feature_cols_main, pt_col=pt_col, dm_col=dm_col, temperature=optimal_temperature_main, data_iso_idx=0, data_aiso_idx=1, mc_iso_idx=2, mc_aiso_idx=3, binary=args.binary)
-                        data_aiso_era["weight_BDT_ff"] = data_reweighting_main["weights_ml"]
-                        data_aiso_era["weight_BDT_ff_data"] = data_reweighting_main["weights_data_ml"]
-                        data_reweighting_alt = process_reweighting(df=data_aiso_era, model=model_alt, feature_cols=feature_cols_alt, pt_col=pt_col, dm_col=dm_col, temperature=optimal_temperature_alt, data_iso_idx=0, data_aiso_idx=1, mc_iso_idx=2, mc_aiso_idx=3, binary=args.binary)
-                        data_aiso_era["weight_BDT_ff_alt"] = data_reweighting_alt["weights_ml"]
-                        data_aiso_era["weight_BDT_ff_data_alt"] = data_reweighting_alt["weights_data_ml"]
-
-
-                    mc_reweighting_main = process_reweighting(df=mc_aiso_era, model=model_main, feature_cols=feature_cols_main, pt_col=pt_col, dm_col=dm_col, temperature=optimal_temperature_main, data_iso_idx=0, data_aiso_idx=1, mc_iso_idx=2, mc_aiso_idx=3, binary=args.binary)
-                    mc_aiso_era["weight_BDT_ff"] = mc_reweighting_main["weights_ml"]
-                    mc_aiso_era["weight_BDT_ff_mc"] = mc_reweighting_main["weights_mc_ml"]
-                    mc_reweighting_alt = process_reweighting(df=mc_aiso_era, model=model_alt, feature_cols=feature_cols_alt, pt_col=pt_col, dm_col=dm_col, temperature=optimal_temperature_alt, data_iso_idx=0, data_aiso_idx=1, mc_iso_idx=2, mc_aiso_idx=3, binary=args.binary)
-                    mc_aiso_era["weight_BDT_ff_alt"] = mc_reweighting_alt["weights_ml"]
-                    mc_aiso_era["weight_BDT_ff_mc_alt"] = mc_reweighting_alt["weights_mc_ml"]
+                    for key, model in models.items():
+                        method = methods[key]
+                        for df, sample in [(data_aiso_era, "data"), (mc_aiso_era, "mc")]:
+                            if df.empty or (args.binary and sample == "data"):
+                                continue
+                            result = process_reweighting(
+                                df=df, model=model, feature_cols=feature_cols_map[key],
+                                pt_col=pt_col, dm_col=dm_col,
+                                temperature=temperature_map[key], binary=args.binary)
+                            df[method["weight"]] = result["weights_ml"]
+                            df[method[sample + "_weight"]] = result["weights_" + sample + "_ml"]
+                            # Preserve the legacy internal aliases used by the old plotting logic.
+                            legacy = {
+                                "ml_1": ("weight_BDT_ff", "weight_BDT_ff_" + sample),
+                                "ml_2": ("weight_BDT_ff_alt", "weight_BDT_ff_" + sample + "_alt"),
+                            }[key]
+                            df[legacy[0]] = result["weights_ml"]
+                            df[legacy[1]] = result["weights_" + sample + "_ml"]
 
                     # Attach classical FF value
-                    if channel in ["et", "mt"]:
+                    if USE_CLASSICAL_FF and channel in ["et", "mt"]:
                         data_aiso_era = assign_ff_value(data_aiso_era, classical_data=classical_data, process=process, tag="nominal") if not data_aiso_era.empty else data_aiso_era
                         mc_aiso_era = assign_ff_value(mc_aiso_era, classical_data=classical_data, process=process, tag="nominal")
-                    elif channel == "tt":
+                    elif USE_CLASSICAL_FF and channel == "tt":
                         data_aiso_era = assign_ff_value(data_aiso_era, classical_data=classical_data, process=process, tag="nominal") #TODO: will need to change this to nominal if choose new production
                         mc_aiso_era = assign_ff_value(mc_aiso_era, classical_data=classical_data, process=process, tag="nominal")
+                    if USE_CLASSICAL_FF and methods["classical"]["weight"] != "ff_classical":
+                        classical_weight = methods["classical"]["weight"]
+                        data_aiso_era[classical_weight] = data_aiso_era["ff_classical"]
+                        mc_aiso_era[classical_weight] = mc_aiso_era["ff_classical"]
                     # Attach values to combined DataFrames as well
+                    data_columns = ["weight_BDT_ff", "weight_BDT_ff_data",
+                                    "weight_BDT_ff_alt", "weight_BDT_ff_data_alt"]
+                    mc_columns = ["weight_BDT_ff", "weight_BDT_ff_mc",
+                                  "weight_BDT_ff_alt", "weight_BDT_ff_mc_alt", "ff_classical"]
+                    data_columns.append("ff_classical")
+                    for key, method in methods.items():
+                        data_columns.append(method["weight"])
+                        mc_columns.append(method["weight"])
+                        if key != "classical":
+                            data_columns.append(method["data_weight"])
+                            mc_columns.append(method["mc_weight"])
+                    data_columns = list(dict.fromkeys(data_columns))
+                    mc_columns = list(dict.fromkeys(mc_columns))
                     data_era_mask = (data_aiso["era_label"] == era_id) if not data_aiso.empty else pd.Series([], dtype=bool)
                     if not data_aiso_era.empty:
-                        data_aiso.loc[data_era_mask, ["weight_BDT_ff",
-                                                      "weight_BDT_ff_data",
-                                                      "weight_BDT_ff_alt",
-                                                      "weight_BDT_ff_data_alt",
-                                                      "ff_classical"]] = \
-                            data_aiso_era[["weight_BDT_ff",
-                                           "weight_BDT_ff_data",
-                                           "weight_BDT_ff_alt",
-                                           "weight_BDT_ff_data_alt",
-                                           "ff_classical"]]
+                        data_aiso.loc[data_era_mask, data_columns] = data_aiso_era[data_columns]
 
                     mc_era_mask = (mc_aiso["era_label"] == era_id)
-                    mc_aiso.loc[mc_era_mask, ["weight_BDT_ff",
-                                              "weight_BDT_ff_mc",
-                                              "weight_BDT_ff_alt",
-                                              "weight_BDT_ff_mc_alt",
-                                              "ff_classical"]] = \
-                        mc_aiso_era[["weight_BDT_ff",
-                                     "weight_BDT_ff_mc",
-                                     "weight_BDT_ff_alt",
-                                     "weight_BDT_ff_mc_alt",
-                                     "ff_classical"]]
+                    mc_aiso.loc[mc_era_mask, mc_columns] = mc_aiso_era[mc_columns]
                     # Plotting
                     for feature in plotting_config["features_to_plot"]:
                         if channel in ["et", "mt"] and "_other" in feature:  # TODO: need to fix the config
@@ -2219,8 +2264,8 @@ for channel in channels:
                         tau_suffix=tau_suffix,
                         region=region,
                         binary=args.binary,
-                        validation_indices_main=test_indices[global_str_main] if region =="determination" and not args.paper_plots else None,
-                        validation_indices_alt=test_indices[global_str_alt] if region =="determination" and not args.paper_plots else None,
+                        validation_indices_main=test_indices.get("ml_1") if region =="determination" and not args.paper_plots else None,
+                        validation_indices_alt=test_indices.get("ml_2") if region =="determination" and not args.paper_plots else None,
                         feature_tag=feature
                     )
 
