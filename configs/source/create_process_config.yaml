@@ -42,7 +42,7 @@ branches:
   gen_match: genPartFlav_{index}   # 0 = jet -> tau fake
   preweight: genWeight * puWeight * topKinWeight * idAndIsoAndFakeSF
   weight: wt_sf                # event weight; its sign splits mc_* and mc_*_neg
-  extra: pairType
+  extra: add_extra_information_here
 
 # -------------------------------------------------------------------------------------
 # 2. Era groups
@@ -156,13 +156,13 @@ processes:
     split_by_era_group: true
     regions:
       determination:
-        tt: {charge: same_sign, other_tau: iso, extra: "2"}
-        mt: {charge: same_sign, mt: {max: 65}, lepton_iso: {min: 0.05, max: 0.15}, extra: "0"}
-        et: {charge: same_sign, mt: {max: 65}, electron_id: pass, lepton_iso: {min: 0.05, max: 0.15}, extra: "1"}
+        tt: {charge: same_sign, other_tau: iso}
+        mt: {charge: same_sign, mt: {max: 65}, lepton_iso: {min: 0.05, max: 0.15}}
+        et: {charge: same_sign, mt: {max: 65}, electron_id: pass, lepton_iso: {min: 0.05, max: 0.15}}
       validation:
-        tt: {charge: opposite_sign, other_tau: not_iso, extra: "2"}
-        mt: {charge: same_sign, mt: {max: 65}, lepton_iso: {min: 0.25, max: 0.5}, extra: "0"}
-        et: {charge: same_sign, mt: {max: 65}, electron_id: pass, lepton_iso: {min: 0.25, max: 0.5}, extra: "1"}
+        tt: {charge: opposite_sign, other_tau: not_iso}
+        mt: {charge: same_sign, mt: {max: 65}, lepton_iso: {min: 0.25, max: 0.5}}
+        et: {charge: same_sign, mt: {max: 65}, electron_id: pass, lepton_iso: {min: 0.25, max: 0.5}}
     era_group_overrides:
       # Reproduces the current EarlyRun3 et validation region (failing electron ID, no lower iso bound).
       # Differs from Run3_2024; check whether this is intended.
@@ -182,8 +182,8 @@ processes:
     split_by_era_group: false
     regions:
       determination:
-        mt: {charge: opposite_sign, wjets_score: {min: 0.15}, mt: {min: 65}, bjet_veto: true, lepton_iso: {max: 0.15}, extra: "0"}
-        et: {charge: opposite_sign, wjets_score: {min: 0.15}, electron_id: pass, mt: {min: 65}, bjet_veto: true, lepton_iso: {max: 0.15}, extra: "1"}
+        mt: {charge: opposite_sign, wjets_score: {min: 0.15}, mt: {min: 65}, bjet_veto: true, lepton_iso: {max: 0.15}}
+        et: {charge: opposite_sign, wjets_score: {min: 0.15}, electron_id: pass, mt: {min: 65}, bjet_veto: true, lepton_iso: {max: 0.15}}
     selections:
       samples: [data, mc]
       mc_gen_match: "!= 0"
@@ -196,11 +196,11 @@ processes:
     split_by_era_group: false
     regions:
       determination:
-        mt: {charge: opposite_sign, wjets_score: {min: 0.15}, mt: {min: 65}, bjet_veto: true, lepton_iso: {max: 0.15}, extra: "0"}
-        et: {charge: opposite_sign, wjets_score: {min: 0.15}, electron_id: pass, mt: {min: 65}, bjet_veto: true, lepton_iso: {max: 0.15}, extra: "1"}
+        mt: {charge: opposite_sign, wjets_score: {min: 0.15}, mt: {min: 65}, bjet_veto: true, lepton_iso: {max: 0.15}}
+        et: {charge: opposite_sign, wjets_score: {min: 0.15}, electron_id: pass, mt: {min: 65}, bjet_veto: true, lepton_iso: {max: 0.15}}
       validation:
-        mt: {charge: opposite_sign, wjets_score: {min: 0.15}, mt: {max: 65}, bjet_veto: true, lepton_iso: {max: 0.15}, extra: "0"}
-        et: {charge: opposite_sign, wjets_score: {min: 0.15}, electron_id: pass, mt: {max: 65}, bjet_veto: true, lepton_iso: {max: 0.15}, extra: "1"}
+        mt: {charge: opposite_sign, wjets_score: {min: 0.15}, mt: {max: 65}, bjet_veto: true, lepton_iso: {max: 0.15}}
+        et: {charge: opposite_sign, wjets_score: {min: 0.15}, electron_id: pass, mt: {max: 65}, bjet_veto: true, lepton_iso: {max: 0.15}}
     selections:
       samples: [mc]
       mc_gen_match: "== 0"
@@ -213,8 +213,8 @@ processes:
     split_by_era_group: false
     regions:
       determination:
-        mt: {charge: opposite_sign, lepton_iso: {max: 0.15}, extra: "0"}
-        et: {charge: opposite_sign, lepton_iso: {max: 0.15}, extra: "1"}
+        mt: {charge: opposite_sign, lepton_iso: {max: 0.15}}
+        et: {charge: opposite_sign, lepton_iso: {max: 0.15}}
     selections:
       samples: [mc]
       mc_gen_match: "== 0"
