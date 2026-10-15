@@ -100,6 +100,29 @@ def get_taus_for_channel(channel):
     return TAUS_PER_CHANNEL.get(channel, set())
 
 
+def get_ntuple_categories(era):
+    """Get the ntuple categories of an era, as used in preprocessing.
+
+    sample_paths in configs/<era>/input_files.yaml is {ntuple category: [paths]} with
+    ntuple_categories.loop: true, otherwise a list of paths (no categories, returns [None]).
+    """
+    cfg_path = Path(f"configs/{era}/input_files.yaml")
+    if not cfg_path.exists():
+        logging.warning(f"Missing {cfg_path}; assuming no ntuple categories.")
+        return [None]
+    with cfg_path.open("r") as f:
+        sample_paths = yaml.safe_load(f).get("sample_paths")
+    return list(sample_paths) if isinstance(sample_paths, dict) else [None]
+
+
+def category_file(input_folder, name, era, ntuple_category):
+    """Input parquet of an ntuple category, e.g. data_all_events_Run3_2024_cat_res1b.parquet."""
+    path = Path(input_folder) / name.format(era=era)
+    if ntuple_category:
+        path = path.with_name(f"{path.stem}_{ntuple_category}{path.suffix}")
+    return path
+
+
 def calculate_delta_phi(phi1, phi2):
     """
     Calculate the difference in azimuthal angles while handling angle wrapping.
@@ -273,6 +296,8 @@ def process_selection(data_path, mc_path, tau_index, file_suffix, output_dir, ba
 channel_processes = build_channel_processes(channels, ff_process)
 taus = {ch: sorted(get_taus_for_channel(ch)) for ch in channels}
 for era in eras:
+    ntuple_categories = get_ntuple_categories(era)
+    logging.info(f"Ntuple categories for {era}: {', '.join(c or '(none)' for c in ntuple_categories)}")
     for channel in channels:
         for ff_process in channel_processes[channel]:
             cfg_path = Path(f"configs/{ff_process}.yaml")
@@ -289,54 +314,63 @@ for era in eras:
             input_folder = config["input_folder"].format(era=era, channel=channel)
             input_files = config["input_files"]
 
-            data_input_file = None
-            # Data input file (skip for WjetsMC and ttbarMC)
-            if ff_process not in ["WjetsMC", "ttbarMC"]:
-                data_input_file = Path(input_folder) / input_files["data"].format(era=era)
-                logging.info(f"Loading data file: {data_input_file}")
+            for ntuple_category in ntuple_categories:
+                data_input_file = None
+                # Data input file (skip for WjetsMC and ttbarMC)
+                if ff_process not in ["WjetsMC", "ttbarMC"]:
+                    data_input_file = category_file(input_folder, input_files["data"], era, ntuple_category)
+                    logging.info(f"Loading data file: {data_input_file}")
 
-            mc_input_file = Path(input_folder) / input_files["mc"].format(era=era)
-            logging.info(f"Loading MC file: {mc_input_file}")
+                mc_input_file = category_file(input_folder, input_files["mc"], era, ntuple_category)
+                logging.info(f"Loading MC file: {mc_input_file}")
 
-            for tau in taus[channel]:
-                for region in regions:
-                    logging.info(f"==== Processing era: {era} | channel: {channel} | process: {ff_process} | tau: {tau} | region: {region} ====")
-                    if ff_process == "Wjets" and region == "validation":
-                        logging.warning("Wjets process FF: no suitable validation region defined, skipping.")
-                        continue
-                    if ff_process == "ttbarMC" and region == "validation":
-                        logging.warning("ttbar process FF: no validation region needed, skipping.")
-                        continue
-                    output_dir = Path(config["output_dir"].format(era=era, region=region))
-                    output_dir.mkdir(parents=True, exist_ok=True)
+                missing = [p for p in (data_input_file, mc_input_file) if p is not None and not p.exists()]
+                if missing:
+                    logging.error(f"Missing input file(s): {', '.join(map(str, missing))}; skipping category {ntuple_category or '(none)'}.")
+                    continue
 
-                    logging.info(f"Output directory: {output_dir}")
+                for tau in taus[channel]:
+                    for region in regions:
+                        logging.info(f"==== Processing era: {era} | channel: {channel} | process: {ff_process} | category: {ntuple_category or '(none)'} | tau: {tau} | region: {region} ====")
+                        if ff_process == "Wjets" and region == "validation":
+                            logging.warning("Wjets process FF: no suitable validation region defined, skipping.")
+                            continue
+                        if ff_process == "ttbarMC" and region == "validation":
+                            logging.warning("ttbar process FF: no validation region needed, skipping.")
+                            continue
+                        output_dir = Path(config["output_dir"].format(era=era, region=region))
+                        output_dir.mkdir(parents=True, exist_ok=True)
 
-                    # Tau index and file suffix
-                    tau_index = "1" if tau == "leading" else "2"
-                    tau_other_index = "2" if tau == "leading" else "1"
-                    file_suffix = "lead" if tau == "leading" else "sublead"
+                        logging.info(f"Output directory: {output_dir}")
 
-                    if ff_process == "QCD":
-                        if era == "Run3_2024":
-                            baseline = config["categories"]["Run3_2024"][region][f"{channel}_baseline"].format(tau_other_index=tau_other_index)
+                        # Tau index and file suffix
+                        tau_index = "1" if tau == "leading" else "2"
+                        tau_other_index = "2" if tau == "leading" else "1"
+                        file_suffix = "lead" if tau == "leading" else "sublead"
+                        # One output per ntuple category, e.g. data_iso_mt_sublead_cat_res1b.parquet
+                        if ntuple_category:
+                            file_suffix += f"_{ntuple_category}"
+
+                        if ff_process == "QCD":
+                            if era == "Run3_2024":
+                                baseline = config["categories"]["Run3_2024"][region][f"{channel}_baseline"].format(tau_other_index=tau_other_index)
+                            else:
+                                baseline = config["categories"]["EarlyRun3"][region][f"{channel}_baseline"].format(tau_other_index=tau_other_index)
                         else:
-                            baseline = config["categories"]["EarlyRun3"][region][f"{channel}_baseline"].format(tau_other_index=tau_other_index)
-                    else:
-                        baseline = config["categories"][region][f"{channel}_baseline"].format(tau_other_index=tau_other_index)
-                    stats = process_selection(
-                        data_input_file,
-                        mc_input_file,
-                        tau_index,
-                        file_suffix,
-                        output_dir,
-                        baseline,
-                        config["selections"],
-                        ff_process,
-                        channel
-                    )
-                    logging.info(f"Events after migration: "
-                                 f"data_iso={stats['n_data_iso']}  data_aiso={stats['n_data_aiso']}  "
-                                 f"mc_iso={stats['n_mc_iso']}  mc_aiso={stats['n_mc_aiso']}"
-                                 )
+                            baseline = config["categories"][region][f"{channel}_baseline"].format(tau_other_index=tau_other_index)
+                        stats = process_selection(
+                            data_input_file,
+                            mc_input_file,
+                            tau_index,
+                            file_suffix,
+                            output_dir,
+                            baseline,
+                            config["selections"],
+                            ff_process,
+                            channel
+                        )
+                        logging.info(f"Events after migration: "
+                                     f"data_iso={stats['n_data_iso']}  data_aiso={stats['n_data_aiso']}  "
+                                     f"mc_iso={stats['n_mc_iso']}  mc_aiso={stats['n_mc_aiso']}"
+                                     )
             gc.collect()
