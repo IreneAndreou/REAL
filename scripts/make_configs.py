@@ -5,7 +5,8 @@ Edit these files, then run:
 
     python scripts/make_configs.py
 
-    configs/source/create_project_config.yaml                  storage and eras    -> configs/<era>/input_files.yaml
+    configs/source/create_project_config.yaml    storage and eras    -> configs/<era>/input_files.yaml
+      + ntuple_categories of create_process_config.yaml
     configs/source/create_process_config.yaml    branches, triggers, -> configs/<process>.yaml
                                                  regions, processes     (QCD, Wjets, WjetsMC, ttbarMC)
     configs/source/create_training_config.yaml   features, eras,     -> configs/training.yaml
@@ -192,7 +193,41 @@ def quoted_yaml_lines(obj, indent=0):
     return lines
 
 
-def write_input_files(project, out_dir):
+def sample_paths(era, sample_path, ntuple_categories):
+    # {category} and {file} are filled and {sample} is left for preprocessing.py. With loop: true the
+    # paths are grouped by category ({category: [paths]}), otherwise they are a plain list.
+    ntuple_categories = ntuple_categories or {}
+    uses_categories = "{category}" in sample_path or "{file}" in sample_path
+    if not ntuple_categories.get("loop", False):
+        # Without categories the {category} level is dropped: {sample}/{category}/Prod/{file} -> {sample}/Prod/{file}.
+        path = re.sub(r"/?\{category\}", "", sample_path).lstrip("/")
+        if "{file}" not in path:
+            return [path]
+        files = ntuple_categories.get("file")
+        if is_empty(files):
+            raise SystemExit(f"eras.{era}.sample_path contains {{file}}, but ntuple_categories.file is not set in "
+                             "create_process_config.yaml. Set it to the ROOT file to read when loop is false.")
+        return [path.replace("{file}", str(file)) for file in (files if isinstance(files, list) else [files])]
+    if not uses_categories:
+        logger.warning(f"{era}: ntuple_categories.loop is true, but sample_path has no {{category}} / {{file}} "
+                       "to fill, so it is used as written")
+        return [sample_path]
+    names = ntuple_categories.get("names") or {}
+    if not isinstance(names, dict) or not names:
+        raise SystemExit("ntuple_categories.names in create_process_config.yaml must map each category to its "
+                         "ROOT file, e.g. cat_res1b: data_0.root")
+    # Grouped by category, so preprocessing.py writes one parquet file per category.
+    paths = {}
+    for category, files in names.items():
+        if is_empty(files):
+            raise SystemExit(f"ntuple_categories.names.{category} has no ROOT file set")
+        category_path = sample_path.replace("{category}", str(category))
+        paths[str(category)] = [category_path.replace("{file}", str(file))
+                                for file in (files if isinstance(files, list) else [files])]
+    return paths
+
+
+def write_input_files(project, out_dir, ntuple_categories=None):
     storage = project["storage"]
     for era, era_cfg in project["eras"].items():
         check_path_exists(era_cfg.get("ntuple_dir"), f"eras.{era}.ntuple_dir")
@@ -216,8 +251,11 @@ def write_input_files(project, out_dir):
                 missing = [key for key in ("eff", "filter_efficiency", "xs") if (params[name] or {}).get(key) is None]
                 if missing:
                     logger.warning(f"{era}: MC sample '{name}' has no {', '.join(missing)} in {params_path}")
+        if not era_cfg.get("sample_path"):
+            raise SystemExit(f"create_project_config.yaml: eras.{era}.sample_path is not set. Please set it.")
         content = {
             "source_dir": os.path.join(era_cfg["ntuple_dir"]),
+            "sample_paths": sample_paths(era, era_cfg["sample_path"], ntuple_categories),
             "destination_dir": os.path.join(storage["real_base"], "processed", era, "{channel}_{ff_process}"),
             "source_files": {
                 "tt_data": era_cfg["data"]["tt"],
@@ -647,7 +685,9 @@ def main():
         check_storage(storage)
 
     if "input_files" in args.only:
-        write_input_files(project, args.out_dir)
+        # The categories to read are set in create_process_config.yaml.
+        ntuple_categories = (load_yaml(args.process_config) or {}).get("ntuple_categories")
+        write_input_files(project, args.out_dir, ntuple_categories)
     if "processes" in args.only:
         process_cfg = load_yaml(args.process_config)
         check_settings_file(process_cfg, args.process_config)

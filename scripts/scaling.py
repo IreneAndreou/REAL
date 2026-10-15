@@ -89,7 +89,6 @@ def scaling(input_file, dest_file, params, common_branches, preweight, preweight
     # Selected columns
     try:
         available_columns = set(get_columns(input_file))
-        print(f"Available columns in {input_file}: {available_columns}")
 
     except Exception as e:
         logging.error(f"Failed to inspect schema for {input_file}: {e}")

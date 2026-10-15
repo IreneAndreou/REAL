@@ -1,4 +1,5 @@
 import argparse
+import glob
 import logging
 import os
 import pathlib
@@ -20,7 +21,7 @@ parser.add_argument("--eras", required=True, type=str, help="Comma-separated lis
 parser.add_argument("--channels", required=False, default="all", choices=["all", "et", "mt", "tt"], help="Select the channel to run (default: all).")
 parser.add_argument("--process", required=False, default="all", choices=["all", "QCD", "Wjets", "WjetsMC", "ttbarMC"], help="Select the FF process to run (default: all).")
 parser.add_argument("--workers", type=int, default=4, help="Parallel workers for preprocessing.")
-parser.add_argument("--from_root", action="store_true", help="Inputs are ROOT ntuples: convert <sample>/nominal/*.root to parquet before scaling.")
+parser.add_argument("--from_root", action="store_true", help="Inputs are ROOT ntuples: convert the files at <source_dir>/<sample_path> to parquet before scaling.")
 parser.add_argument("--tree_name", type=str, default="ntuple", help="Name of the ROOT tree to read when using --from_root (default: ntuple).")
 
 args = parser.parse_args()
@@ -228,23 +229,42 @@ def convert_and_preprocess(root_files, converted, dst, era, tree_name, sample, c
         converted.unlink(missing_ok=True)
 
 
-def parallel_preprocess(era, channel, category, source_dir, dest_dir, filenames, workers):
-    """Preprocess all files in a category, merge and cleanup."""
+def root_inputs(path):
+    """ROOT files of a sample: all *.root in a directory, or the files matching a file path / glob pattern."""
+    if path.is_dir():
+        return sorted(path.glob("*.root"))
+    return sorted(Path(f) for f in glob.glob(str(path)))
+
+
+def parallel_preprocess(era, channel, category, source_dir, sample_paths, dest_dir, filenames, workers, ntuple_category=None):
+    """Preprocess all files in a category, merge and cleanup.
+
+    ntuple_category (e.g. cat_res1b, from ntuple_categories in create_process_config.yaml) is added
+    to the output name, so every ntuple category gets its own parquet file.
+    """
+    suffix = f"_{ntuple_category}" if ntuple_category else ""
     # Preprocessing (parallel)
     jobs = []
     with ThreadPoolExecutor(max_workers=max(1, workers)) as ex:
         for name in filenames:
-            dst = dest_dir / f"{name}_scaled.parquet"
+            dst = dest_dir / f"{name}{suffix}_scaled.parquet"
+            sources = [source_dir / path.format(sample=name) for path in sample_paths]
             if args.from_root:
-                root_dir = source_dir / name / "cat_res1b" / "FF_MUFFIN"
-                root_files = sorted(root_dir.glob("*.root"))
+                root_files = []
+                for src in sources:
+                    found = root_inputs(src)
+                    if not found:
+                        logging.error(f"No ROOT files found for: {src}")
+                    root_files += found
                 if not root_files:
-                    logging.error(f"No ROOT files found in: {root_dir}")
                     continue
-                converted = dest_dir / f"{name}_converted.parquet"
+                converted = dest_dir / f"{name}{suffix}_converted.parquet"
                 jobs.append(ex.submit(convert_and_preprocess, root_files, converted, dst, era, args.tree_name, name, channel))
                 continue
-            src = source_dir / name / name / "cat_res1b" / "FF_MUFFIN"
+            if len(sources) > 1:
+                logging.error(f"{name}{suffix}: several input files need --from_root; skipping.")
+                continue
+            src = sources[0]
             if not src.exists():
                 logging.error(f"Missing input: {src}")
                 continue
@@ -260,7 +280,7 @@ def parallel_preprocess(era, channel, category, source_dir, dest_dir, filenames,
     # Collect scaled outputs
     scaled_files = []
     for name in filenames:
-        p = dest_dir / f"{name}_scaled.parquet"
+        p = dest_dir / f"{name}{suffix}_scaled.parquet"
         if p.exists():
             scaled_files.append(p)
         else:
@@ -269,7 +289,7 @@ def parallel_preprocess(era, channel, category, source_dir, dest_dir, filenames,
     # Merge
     # Use "data" for data category, otherwise keep category name
     out_cat = "data" if category.endswith("_data") else category
-    target = dest_dir / f"{out_cat}_all_events_{era}.parquet"
+    target = dest_dir / f"{out_cat}_all_events_{era}{suffix}.parquet"
     total_before, total_after = merge_files(scaled_files, target)
     if total_before != total_after:
         logging.warning(f"Row mismatch after merge: before={total_before}, after={total_after}")
@@ -305,9 +325,15 @@ for era in eras:
 
     # Validate config keys
     required = ["source_dir", "destination_dir", "source_files"]
-    if not all(k in config for k in required):
-        logging.error(f"Config {cfg_path} missing required keys {required}. Skipping era.")
+    if not all(k in config for k in required) or not ("sample_paths" in config or "sample_path" in config):
+        logging.error(f"Config {cfg_path} missing required keys {required + ['sample_paths']}. Skipping era.")
         continue
+    # sample_paths is {ntuple category: [paths]} with ntuple_categories.loop: true, otherwise a list of paths.
+    # input_files.yaml written before ntuple categories have a single sample_path.
+    sample_paths = config.get("sample_paths") or [config["sample_path"]]
+    path_groups = sample_paths if isinstance(sample_paths, dict) else {None: sample_paths}
+    for ntuple_category, paths in path_groups.items():
+        logging.info(f"Ntuple category {ntuple_category or '(none)'}: {', '.join(paths)}")
 
     # Process each channel / category independently
     for channel in channels:
@@ -326,8 +352,9 @@ for era in eras:
                     filenames = config["source_files"][category]
                     if ff_process == "Wjets" and category == "mc":
                         filenames = [fn for fn in filenames if "Wto" not in fn]
-                    # Preprocessing (parallel)
-                    parallel_preprocess(era, channel, category, source_dir, dest_dir, filenames, args.workers)
+                    # Preprocessing (parallel), one output per ntuple category
+                    for ntuple_category, paths in path_groups.items():
+                        parallel_preprocess(era, channel, category, source_dir, paths, dest_dir, filenames, args.workers, ntuple_category)
             if ff_process in {"WjetsMC", "ttbarMC"}:
                 category = "mc"
                 if category not in config["source_files"]:
@@ -338,5 +365,6 @@ for era in eras:
                     filenames = [fn for fn in filenames if fn.startswith("Wto")]
                 if ff_process == "ttbarMC":
                     filenames = [fn for fn in filenames if fn.startswith("TT")]
-                # Preprocessing (parallel)
-                parallel_preprocess(era, channel, category, source_dir, dest_dir, filenames, args.workers)
+                # Preprocessing (parallel), one output per ntuple category
+                for ntuple_category, paths in path_groups.items():
+                    parallel_preprocess(era, channel, category, source_dir, paths, dest_dir, filenames, args.workers, ntuple_category)

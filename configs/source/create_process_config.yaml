@@ -40,9 +40,16 @@ branches:
   n_bjets: n_bjets
   wjets_score: Wjets_pred_score
   gen_match: genPartFlav_{index}   # 0 = jet -> tau fake
-  preweight: genWeight * puWeight * topKinWeight * idAndIsoAndFakeSF
+  preweight: total_weight  # define total weight for scaling in preprocessing step
   weight: wt_sf                # event weight; its sign splits mc_* and mc_*_neg
-  extra: add_extra_information_here
+  extra: # add extra information if needed
+
+ntuple_categories:
+  loop: true   # If true, the ntuple categories are read from the input files. If false, the ntuple categories are read from the names block below. 
+  file: data_0.root  # ROOT file used when loop is false
+  names:
+    cat_res1b: data_0.root # category name: root file name
+    cat_res2b: data_0.root
 
 # -------------------------------------------------------------------------------------
 # 2. Era groups
@@ -148,7 +155,7 @@ anti_lepton:
 processes:
 
   QCD:
-    input_folder: data_January26/{era}/{channel}_QCD/
+    input_folder: processed/{era}/{channel}_QCD/
     input_files:
       mc: mc_all_events_{era}.parquet
       data: data_all_events_{era}.parquet
@@ -174,7 +181,7 @@ processes:
       mc_gen_match: "!= 0"
 
   Wjets:
-    input_folder: data_January26/{era}/{channel}_Wjets/
+    input_folder: processed/{era}/{channel}_Wjets/
     input_files:
       mc: mc_all_events_{era}.parquet
       data: data_all_events_{era}.parquet
@@ -189,7 +196,7 @@ processes:
       mc_gen_match: "!= 0"
 
   WjetsMC:
-    input_folder: data_January26/{era}/{channel}_WjetsMC/
+    input_folder: processed/{era}/{channel}_WjetsMC/
     input_files:
       mc: mc_all_events_{era}.parquet
     output_dir: data_January26/{era}/{region}_region/WjetsMC/
@@ -206,7 +213,7 @@ processes:
       mc_gen_match: "== 0"
 
   ttbarMC:
-    input_folder: data_January26/{era}/{channel}_ttbarMC/
+    input_folder: processed/{era}/{channel}_ttbarMC/
     input_files:
       mc: mc_all_events_{era}.parquet
     output_dir: data_January26/{era}/{region}_region/ttbarMC
