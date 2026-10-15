@@ -423,9 +423,13 @@ def categories(cfg, name, process, era_group):
 def selections(cfg, process):
     if not per_channel_vs_jet(cfg):
         return channel_selections(cfg, process, None)
-    # Per-channel VSjet working points give one set of selections per channel.
-    channels = dict.fromkeys(ch for region in process["regions"].values() for ch in region)
-    return {channel: channel_selections(cfg, process, channel) for channel in channels}
+    # One selections block is shared by all channels, so their VSjet working points must agree.
+    channels = list(dict.fromkeys(ch for region in process["regions"].values() for ch in region))
+    wps = {channel: vs_jet_wps(cfg, channel) for channel in channels}
+    if any(wp != wps[channels[0]] for wp in wps.values()):
+        raise SystemExit(f"tau_vs_jet differs between channels {wps}, but selections are shared by all channels; "
+                         "use one {iso_min, antiiso_range} for all of them")
+    return channel_selections(cfg, process, channels[0])
 
 
 def channel_selections(cfg, process, channel):
@@ -466,12 +470,10 @@ def build_process(cfg, name, process):
     }
 
 
-def yaml_lines(obj, indent=0, blank_between=False):
+def yaml_lines(obj, indent=0):
     # Strings are double-quoted and kept on one line, as in the hand-written configs.
     lines = []
-    for i, (key, value) in enumerate(obj.items()):
-        if blank_between and i > 0:
-            lines.append("")
+    for key, value in obj.items():
         prefix = "  " * indent + f"{key}:"
         if isinstance(value, dict):
             lines.append(prefix)
@@ -486,7 +488,7 @@ def write_process_config(content, path):
     for key, value in content.items():
         if key in ("categories", "selections"):
             lines.append("")
-        lines += yaml_lines({key: value}) if key != "selections" else ["selections:"] + yaml_lines(value, 1, blank_between=True)
+        lines += yaml_lines({key: value})
     write_text(lines, path)
 
 
