@@ -249,7 +249,12 @@ def branch(cfg, name, where):
 
 
 def tau_id(cfg, kind, index):
+    # Branches may be per leg (rawDeepTau2018v2p5VSjet_{index}) or a single branch (rawDeepTau2018v2p5VSjet).
     return cfg["branches"]["tau_id"][kind].replace("{index}", str(index))
+
+
+def tau_id_per_leg(cfg, kind):
+    return "{index}" in cfg["branches"]["tau_id"][kind]
 
 
 def range_cuts(variable, bounds, where):
@@ -264,18 +269,31 @@ def range_cuts(variable, bounds, where):
     return cuts
 
 
-def iso_cut(cfg, index):
-    return f"({tau_id(cfg, 'wp_jet', index)} > {cfg['tau_vs_jet']['iso_min']})"
+def per_channel_vs_jet(cfg):
+    # tau_vs_jet is either one {iso_min, antiiso_range} for all channels or one per channel.
+    return "iso_min" not in cfg["tau_vs_jet"]
 
 
-def antiiso_cut(cfg, index):
-    low, high = cfg["tau_vs_jet"]["antiiso_range"]
+def vs_jet_wps(cfg, channel):
+    if not per_channel_vs_jet(cfg):
+        return cfg["tau_vs_jet"]
+    if channel not in cfg["tau_vs_jet"]:
+        raise SystemExit(f"tau_vs_jet has no working points for channel '{channel}'")
+    return cfg["tau_vs_jet"][channel]
+
+
+def iso_cut(cfg, channel, index):
+    return f"({tau_id(cfg, 'wp_jet', index)} > {vs_jet_wps(cfg, channel)['iso_min']})"
+
+
+def antiiso_cut(cfg, channel, index):
+    low, high = vs_jet_wps(cfg, channel)["antiiso_range"]
     vs_jet = tau_id(cfg, "wp_jet", index)
     return f"({vs_jet} <= {high}) & ({vs_jet} >= {low})"
 
 
-def not_iso_cut(cfg, index):
-    return f"({tau_id(cfg, 'wp_jet', index)} <= {cfg['tau_vs_jet']['iso_min']})"
+def not_iso_cut(cfg, channel, index):
+    return f"({tau_id(cfg, 'wp_jet', index)} <= {vs_jet_wps(cfg, channel)['iso_min']})"
 
 
 OTHER_TAU_CUTS = {"iso": iso_cut, "antiiso": antiiso_cut, "not_iso": not_iso_cut}
@@ -329,7 +347,10 @@ def baseline(cfg, channel, opts, era_group, where):
         elif key == "other_tau":
             if value not in OTHER_TAU_CUTS:
                 raise SystemExit(f"{where}: other_tau must be one of {sorted(OTHER_TAU_CUTS)}")
-            cuts.append(OTHER_TAU_CUTS[value](cfg, "{tau_other_index}"))
+            if not tau_id_per_leg(cfg, "wp_jet"):
+                raise SystemExit(f"{where}: other_tau needs a per-leg VSjet branch, "
+                                 f"add _{{index}} to branches.tau_id.wp_jet or remove other_tau")
+            cuts.append(OTHER_TAU_CUTS[value](cfg, channel, "{tau_other_index}"))
         elif key == "extra":
             if isinstance(value, list):
                 # A list holds complete cut strings.
@@ -339,7 +360,12 @@ def baseline(cfg, channel, opts, era_group, where):
                 cuts.append(f"({branch(cfg, 'extra', where)} == {value})")
 
     for kind, legs in cfg["anti_lepton"].get(channel, {}).items():
-        cuts += [f"({tau_id(cfg, kind, leg)} >= {wp})" for leg, wp in legs.items()]
+        # Without a per-leg branch all legs share one branch, so only the tightest WP is kept.
+        wps = {}
+        for leg, wp in legs.items():
+            name = tau_id(cfg, kind, leg)
+            wps[name] = max(wps.get(name, wp), wp)
+        cuts += [f"({name} >= {wp})" for name, wp in wps.items()]
     cuts.append(trigger_cut(cfg, channel, era_group))
     return " & ".join(cuts)
 
@@ -357,10 +383,18 @@ def categories(cfg, name, process, era_group):
 
 
 def selections(cfg, process):
+    if not per_channel_vs_jet(cfg):
+        return channel_selections(cfg, process, None)
+    # Per-channel VSjet working points give one set of selections per channel.
+    channels = dict.fromkeys(ch for region in process["regions"].values() for ch in region)
+    return {channel: channel_selections(cfg, process, channel) for channel in channels}
+
+
+def channel_selections(cfg, process, channel):
     branches = cfg["branches"]
     settings = process["selections"]
-    iso = iso_cut(cfg, "{tau_index}")
-    aiso = antiiso_cut(cfg, "{tau_index}")
+    iso = iso_cut(cfg, channel, "{tau_index}")
+    aiso = antiiso_cut(cfg, channel, "{tau_index}")
     gen_match = f"({branches['gen_match'].replace('{index}', '{tau_index}')} {settings['mc_gen_match']})"
 
     result = {}
